@@ -65,6 +65,11 @@ void QGnomePlatformTheme::getFont() {
     gchar *name = g_settings_get_string(m_settings, "font-name");
     if (!name)
         return;
+    gchar *fixed = g_settings_get_string(m_settings, "monospace-font-name");
+    if (!fixed) {
+        free(name);
+        return;
+    }
 
     QString rawFont(name);
 
@@ -72,15 +77,17 @@ void QGnomePlatformTheme::getFont() {
         delete m_font;
 
     QRegExp re("(.+)[ \t]+([0-9]+)");
+    int fontSize;
     if (re.indexIn(rawFont) == 0) {
-        m_font = new QFont(re.cap(1), re.cap(2).toInt(), QFont::Normal);
+        fontSize = re.cap(2).toInt();
+        m_font = new QFont(re.cap(1), fontSize, QFont::Normal);
     }
     else {
         m_font = new QFont(rawFont);
+        fontSize = m_font->pixelSize();
     }
 
-    qCritical() << m_font->pointSizeF() << scaling;
-    m_font->setPointSizeF(m_font->pointSizeF() * sqrt(scaling));
+    m_font->setPixelSize(fontSize * scaling);
 
     QGuiApplication::setFont(*m_font);
 
