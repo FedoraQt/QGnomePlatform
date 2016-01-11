@@ -29,7 +29,6 @@
 
 class QGnomePlatformTheme : public QGnomeTheme
 {
-    //Q_PLUGIN_METADATA(IID "org.qt-project.Qt.QStyleFactoryInterface" FILE "adwaita.json");
 public:
     QGnomePlatformTheme();
 
