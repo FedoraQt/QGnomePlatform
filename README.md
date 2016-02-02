@@ -20,6 +20,6 @@ make && make install
 You can use this platform theme by setting the QT_QPA_PLATFORMTHEME to "qgnomeplatform" - so for example putting the following command in your `.bashrc` works well:
 
 ```
-export QT_QPA_PLATFORMTHEME='kde'
+export QT_QPA_PLATFORMTHEME='qgnomeplatform'
 ```
 
