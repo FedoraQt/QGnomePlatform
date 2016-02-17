@@ -1,7 +1,7 @@
 QGnomePlatform
 ==========
 
-QGnomePlatform is a Qt Platform Theme aimed to accomodate as much of GNOME settings as possible and utilize them in Qt applications without modifying them - making them fit into the environment as well as possible.
+QGnomePlatform is a Qt Platform Theme aimed to accommodate as much of GNOME settings as possible and utilize them in Qt applications without modifying them - making them fit into the environment as well as possible.
 
 ## How to compile
 
