@@ -84,10 +84,10 @@ void QGnomePlatformTheme::getFont() {
     }
     else {
         m_font = new QFont(rawFont);
-        fontSize = m_font->pixelSize();
+        fontSize = m_font->pointSize();
     }
 
-    m_font->setPixelSize(fontSize * scaling);
+    m_font->setPointSizeF(fontSize * scaling);
 
     QGuiApplication::setFont(*m_font);
 
