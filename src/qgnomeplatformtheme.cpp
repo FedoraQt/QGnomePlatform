@@ -18,98 +18,53 @@
  */
 
 #include "qgnomeplatformtheme.h"
-
+#include "gnomehintssettings.h"
+#include <QDebug>
 #include <QApplication>
 #include <QStyleFactory>
-#include <QDebug>
-#include <QRegExp>
 
 QGnomePlatformTheme::QGnomePlatformTheme()
-        : QGnomeTheme()
-        , m_settings(g_settings_new("org.gnome.desktop.interface")) {
-    getFont();
-    getIconTheme();
-    getGtkTheme();
+{
+    loadSettings();
 }
 
-QVariant QGnomePlatformTheme::themeHint(ThemeHint hint) const {
-    switch(hint) {
-        case StyleNames:
-            return QStringList() << m_themeName << m_fallbackThemeNames;
-        case SystemIconThemeName:
-            return m_iconThemeName;
-        case SystemIconFallbackThemeName:
-            return "oxygen";
-        default:
-            return QGnomeTheme::themeHint(hint);
+QGnomePlatformTheme::~QGnomePlatformTheme()
+{
+    delete m_hints;
+}
+
+QVariant QGnomePlatformTheme::themeHint(QPlatformTheme::ThemeHint hintType) const
+{
+    QVariant hint = m_hints->hint(hintType);
+    if (hint.isValid()) {
+        return hint;
+    } else {
+        return QPlatformTheme::themeHint(hintType);
     }
 }
 
-const QFont *QGnomePlatformTheme::font(Font type) const {
-    Q_UNUSED(type)
-    return m_font;
+const QPalette *QGnomePlatformTheme::palette(Palette type) const
+{
+    QPalette *palette = m_hints->palette();
+    if (palette && type == QPlatformTheme::SystemPalette) {
+        return palette;
+    } else {
+        return QPlatformTheme::palette(type);
+    }
 }
 
-QPalette *QGnomePlatformTheme::palette(Palette type) const {
-    Q_UNUSED(type)
-    return new QPalette();
-}
-
-bool QGnomePlatformTheme::usePlatformNativeDialog(DialogType type) const {
-    Q_UNUSED(type)
+bool QGnomePlatformTheme::usePlatformNativeDialog(QPlatformTheme::DialogType type) const
+{
+    Q_UNUSED(type);
     return true;
 }
 
-void QGnomePlatformTheme::getFont() {
-    gdouble scaling = g_settings_get_double(m_settings, "text-scaling-factor");
-    gchar *name = g_settings_get_string(m_settings, "font-name");
-    if (!name)
-        return;
-    gchar *fixed = g_settings_get_string(m_settings, "monospace-font-name");
-    if (!fixed) {
-        free(name);
-        return;
-    }
-
-    QString rawFont(name);
-
-    if (m_font)
-        delete m_font;
-
-    QRegExp re("(.+)[ \t]+([0-9]+)");
-    int fontSize;
-    if (re.indexIn(rawFont) == 0) {
-        fontSize = re.cap(2).toInt();
-        m_font = new QFont(re.cap(1), fontSize, QFont::Normal);
-    }
-    else {
-        m_font = new QFont(rawFont);
-        fontSize = m_font->pointSize();
-    }
-
-    m_font->setPointSizeF(fontSize * scaling);
-
-    QGuiApplication::setFont(*m_font);
-
-    free(name);
+const QFont *QGnomePlatformTheme::font(Font type) const
+{
+    return m_hints->font(type);
 }
 
-void QGnomePlatformTheme::getIconTheme() {
-    gchar *data = g_settings_get_string(m_settings, "icon-theme");
-    if (!data)
-        return;
-
-    m_iconThemeName = QString(data);
-
-    free(data);
-}
-
-void QGnomePlatformTheme::getGtkTheme() {
-    gchar *data = g_settings_get_string(m_settings, "gtk-theme");
-    if (!data)
-        return;
-
-    m_themeName = QString(data);
-
-    free(data);
+void QGnomePlatformTheme::loadSettings()
+{
+    m_hints = new GnomeHintsSettings;
 }

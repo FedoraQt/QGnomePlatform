@@ -16,38 +16,31 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  *
  */
-#ifndef QGNOMEPLATFORMTHEME_H
-#define QGNOMEPLATFORMTHEME_H
+#ifndef QGNOME_PLATFORM_THEME_H
+#define QGNOME_PLATFORM_THEME_H
 
 #include <QVariant>
 #include <QFont>
 #include <QPalette>
 #include <qpa/qplatformtheme.h>
-#include <private/qgenericunixthemes_p.h>
 
-#include <gio/gio.h>
+class GnomeHintsSettings;
 
-class QGnomePlatformTheme : public QGnomeTheme
+class QGnomePlatformTheme : public QPlatformTheme
 {
 public:
     QGnomePlatformTheme();
+    ~QGnomePlatformTheme();
 
-    virtual QVariant themeHint(ThemeHint hint) const;
-    virtual const QFont *font(Font type) const;
-    virtual QPalette *palette(Palette type) const;
-    virtual bool usePlatformNativeDialog(DialogType type) const;
+    QVariant themeHint(ThemeHint hint) const Q_DECL_OVERRIDE;
+    const QFont *font(Font type) const Q_DECL_OVERRIDE;
+    const QPalette *palette(Palette type = SystemPalette) const Q_DECL_OVERRIDE;
+    bool usePlatformNativeDialog(DialogType type) const Q_DECL_OVERRIDE;
 
-protected:
-    void getFont();
-    void getIconTheme();
-    void getGtkTheme();
+private:
+    void loadSettings();
 
-    QFont *m_font { nullptr };
-    QString m_themeName { "Adwaita" };
-    QString m_iconThemeName { "Adwaita" };
-    GSettings *m_settings { nullptr };
-
-    const QStringList m_fallbackThemeNames { "adwaita", "gtk+", "oxygen", "breeze" };
+    GnomeHintsSettings *m_hints;
 };
 
-#endif // STYLEPLUGIN_H
+#endif // QGNOME_PLATFORM_THEME_HH
