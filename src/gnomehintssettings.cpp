@@ -131,40 +131,36 @@ void GnomeHintsSettings::loadFonts()
 {
 //     gdouble scaling = g_settings_get_double(m_settings, "text-scaling-factor");
 
-    gchar *fontName = g_settings_get_string(m_settings, "font-name");
-    if (!fontName) {
-        qWarning() << "Couldn't get font-name!";
-    } else {
-        QString fontNameString(fontName);
-        QRegExp re("(.+)[ \t]+([0-9]+)");
-        int fontSize;
-        if (re.indexIn(fontNameString) == 0) {
-            fontSize = re.cap(2).toInt();
-            m_fonts[QPlatformTheme::SystemFont] = new QFont(re.cap(1), fontSize, QFont::Normal);
-            qDebug() << "Font name: " << re.cap(1) << " (size " << fontSize << ")";
-        } else {
-            m_fonts[QPlatformTheme::SystemFont] = new QFont(fontNameString);
-            qDebug() << "Font name: " << fontNameString;
-        }
-        free(fontName);
-    }
+    QStringList fontTypes { "font-name", "monospace-font-name" };
 
-    gchar *monospaceFontName = g_settings_get_string(m_settings, "monospace-font-name");
-    if (!monospaceFontName) {
-        qWarning() << "Couldn't get monospace-font-name!";
-    } else {
-        QString monospaceFontNameString(monospaceFontName);
-        QRegExp re("(.+)[ \t]+([0-9]+)");
-        int fontSize;
-        if (re.indexIn(monospaceFontNameString) == 0) {
-            fontSize = re.cap(2).toInt();
-            m_fonts[QPlatformTheme::FixedFont] = new QFont(re.cap(1), fontSize, QFont::Normal);
-            qDebug() << "Monospace font name: " << re.cap(1) << " (size " << fontSize << ")";
+    Q_FOREACH (const QString fontType, fontTypes) {
+        gchar *fontName = g_settings_get_string(m_settings, fontType.toStdString().c_str());
+        if (!fontName) {
+            qWarning() << "Couldn't get " << fontType;
         } else {
-            m_fonts[QPlatformTheme::FixedFont] = new QFont(monospaceFontNameString);
-            qDebug() << "Monospace font name: " << monospaceFontNameString;
+            QString fontNameString(fontName);
+            QRegExp re("(.+)[ \t]+([0-9]+)");
+            int fontSize;
+            if (re.indexIn(fontNameString) == 0) {
+                fontSize = re.cap(2).toInt();
+                if (fontType == QLatin1String("font-name")) {
+                    m_fonts[QPlatformTheme::SystemFont] = new QFont(re.cap(1), fontSize, QFont::Normal);
+                    qDebug() << "Font name: " << re.cap(1) << " (size " << fontSize << ")";
+                } else if (fontType == QLatin1String("monospace-font-name")) {
+                    m_fonts[QPlatformTheme::FixedFont] = new QFont(re.cap(1), fontSize, QFont::Normal);
+                    qDebug() << "Monospace font name: " << re.cap(1) << " (size " << fontSize << ")";
+                }
+            } else {
+                if (fontType == QLatin1String("font-name")) {
+                    m_fonts[QPlatformTheme::SystemFont] = new QFont(fontNameString);
+                    qDebug() << "Font name: " << fontNameString;
+                } else if (fontType == QLatin1String("monospace-font-name")) {
+                    m_fonts[QPlatformTheme::FixedFont] = new QFont(fontNameString);
+                    qDebug() << "Monospace font name: " << fontNameString;
+                }
+            }
+            free(fontName);
         }
-        free(monospaceFontName);
     }
 }
 
