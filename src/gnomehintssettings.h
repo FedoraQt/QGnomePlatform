@@ -79,8 +79,8 @@ private:
 
     gboolean m_gtkThemeDarkVariant;
     gchar *m_gtkTheme;
-    QPalette *m_palette { nullptr };
-    GSettings *m_settings { nullptr };
+    QPalette *m_palette;
+    GSettings *m_settings;
     QHash<QPlatformTheme::Font, QFont*> m_fonts;
     QHash<QPlatformTheme::ThemeHint, QVariant> m_hints;
 };
