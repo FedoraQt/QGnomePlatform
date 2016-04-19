@@ -10,14 +10,17 @@ QT += core-private \
       platformsupport-private \
       widgets
 
-PKGCONFIG += gio-2.0
+PKGCONFIG += gio-2.0 \
+             gtk+-3.0
 
 TARGET = qgnomeplatform
 target.path += $$[QT_INSTALL_PLUGINS]/platformthemes
 INSTALLS += target
 
 SOURCES += src/platformplugin.cpp \
-           src/qgnomeplatformtheme.cpp
+           src/qgnomeplatformtheme.cpp \
+           src/gnomehintssettings.cpp
 
 HEADERS += src/platformplugin.h \
-           src/qgnomeplatformtheme.h
+           src/qgnomeplatformtheme.h \
+           src/gnomehintssettings.h
