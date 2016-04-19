@@ -19,7 +19,6 @@
 
 #include "qgnomeplatformtheme.h"
 #include "gnomehintssettings.h"
-#include <QDebug>
 #include <QApplication>
 #include <QStyleFactory>
 
