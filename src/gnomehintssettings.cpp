@@ -143,6 +143,8 @@ GnomeHintsSettings::~GnomeHintsSettings()
 
 void GnomeHintsSettings::gsettingPropertyChanged(GSettings *settings, gchar *key, GnomeHintsSettings *gnomeHintsSettings)
 {
+    Q_UNUSED(settings);
+
     const QString changedProperty = key;
 
     if (changedProperty == QLatin1String("gtk-theme")) {
