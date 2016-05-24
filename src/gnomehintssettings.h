@@ -70,9 +70,18 @@ public:
         return m_palette;
     }
 
+public Q_SLOTS:
+    void cursorBlinkTimeChanged();
+    void fontChanged();
+    void iconsChanged();
+    void themeChanged();
+
 private Q_SLOTS:
     void loadFonts();
     void loadPalette();
+
+protected:
+    static void gsettingPropertyChanged(GSettings *settings, gchar *key, GnomeHintsSettings *gnomeHintsSettings);
 
 private:
     QStringList xdgIconThemePaths() const;

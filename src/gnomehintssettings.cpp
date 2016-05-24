@@ -26,6 +26,7 @@
 #include <QApplication>
 #include <QGuiApplication>
 #include <QDialogButtonBox>
+#include <QtGui/QToolBar>
 #include <QtCore/QLoggingCategory>
 
 #include <gtk-3.0/gtk/gtksettings.h>
@@ -41,7 +42,9 @@ GnomeHintsSettings::GnomeHintsSettings()
     gtk_init(nullptr, nullptr);
 
     // Get current theme and variant
-    g_object_get(gtk_settings_get_default(), "gtk-theme-name", &m_gtkTheme, "gtk-application-prefer-dark-theme", &m_gtkThemeDarkVariant, NULL);
+    // g_object_get(gtk_settings_get_default(), "gtk-theme-name", &m_gtkTheme, NULL);
+    m_gtkTheme = g_settings_get_string(m_settings, "gtk-theme");
+    g_object_get(gtk_settings_get_default(), "gtk-application-prefer-dark-theme", &m_gtkThemeDarkVariant, NULL);
 
     if (!m_gtkTheme) {
         qCWarning(QGnomePlatform) << "Couldn't get current gtk theme!";
@@ -109,6 +112,15 @@ GnomeHintsSettings::GnomeHintsSettings()
     m_hints[QPlatformTheme::IconPixmapSizes] = QVariant::fromValue(QList<int>() << 512 << 256 << 128 << 64 << 32 << 22 << 16 << 8);
     m_hints[QPlatformTheme::PasswordMaskCharacter] = QVariant(QChar(0x2022));
 
+    // Watch for changes
+    g_signal_connect(m_settings, "changed::gtk-theme", G_CALLBACK(gsettingPropertyChanged), this);
+    g_signal_connect(m_settings, "changed::icon-theme", G_CALLBACK(gsettingPropertyChanged), this);
+    g_signal_connect(m_settings, "changed::cursor-blink-time", G_CALLBACK(gsettingPropertyChanged), this);
+    g_signal_connect(m_settings, "changed::font-name", G_CALLBACK(gsettingPropertyChanged), this);
+    g_signal_connect(m_settings, "changed::monospace-font-name", G_CALLBACK(gsettingPropertyChanged), this);
+
+    // g_signal_connect(gtk_settings_get_default(), "notify::gtk-theme-name", G_CALLBACK(gtkThemeChanged), this);
+
                                         /* Other theme hints */
     // KeyboardInputInterval, StartDragTime, KeyboardAutoRepeatRate, StartDragVelocity, DropShadow,
     // MaximumScrollBarDragDistance, ItemViewActivateItemOnSingleClick, WindowAutoPlacement, DialogButtonBoxButtonsHaveIcons
@@ -129,11 +141,105 @@ GnomeHintsSettings::~GnomeHintsSettings()
     delete m_palette;
 }
 
+void GnomeHintsSettings::gsettingPropertyChanged(GSettings *settings, gchar *key, GnomeHintsSettings *gnomeHintsSettings)
+{
+    const QString changedProperty = key;
+
+    if (changedProperty == QLatin1String("gtk-theme")) {
+        gnomeHintsSettings->themeChanged();
+    } else if (changedProperty == QLatin1String("icon-theme")) {
+        gnomeHintsSettings->iconsChanged();
+    } else if (changedProperty == QLatin1String("cursor-blink-time")) {
+        gnomeHintsSettings->cursorBlinkTimeChanged();
+    } else if (changedProperty == QLatin1String("font-name")) {
+        gnomeHintsSettings->fontChanged();
+    } else if (changedProperty == QLatin1String("monospace-font-name")) {
+        gnomeHintsSettings->fontChanged();
+    } else {
+        qCDebug(QGnomePlatform) << "GSetting property change: " << key;
+    }
+}
+
+void GnomeHintsSettings::cursorBlinkTimeChanged()
+{
+    gint cursorBlinkTime = g_settings_get_int(m_settings, "cursor-blink-time");
+    if (cursorBlinkTime >= 100) {
+        qCDebug(QGnomePlatform) << "Cursor blink time changed to: " << cursorBlinkTime;
+        m_hints[QPlatformTheme::CursorFlashTime] = cursorBlinkTime;
+    } else {
+        qCDebug(QGnomePlatform) << "Cursor blink time changed to: 1200";
+        m_hints[QPlatformTheme::CursorFlashTime] = 1200;
+    }
+
+    //If we are not a QApplication, means that we are a QGuiApplication, then we do nothing.
+    if (!qobject_cast<QApplication *>(QCoreApplication::instance())) {
+        return;
+    }
+
+    QWidgetList widgets = QApplication::allWidgets();
+    Q_FOREACH (QWidget *widget, widgets) {
+        if (qobject_cast<QToolBar *>(widget) || qobject_cast<QMainWindow *>(widget)) {
+            QEvent event(QEvent::StyleChange);
+            QApplication::sendEvent(widget, &event);
+        }
+    }
+}
+
+void GnomeHintsSettings::fontChanged()
+{
+    loadFonts();
+
+    if (qobject_cast<QApplication *>(QCoreApplication::instance())) {
+        QApplication::setFont(*m_fonts[QPlatformTheme::SystemFont]);
+    } else {
+        QGuiApplication::setFont(*m_fonts[QPlatformTheme::SystemFont]);
+    }
+}
+
+void GnomeHintsSettings::iconsChanged()
+{
+    gchar *systemIconTheme = g_settings_get_string(m_settings, "icon-theme");
+    if (systemIconTheme) {
+        qCDebug(QGnomePlatform) << "Icon theme changed to: " << systemIconTheme;
+        m_hints[QPlatformTheme::SystemIconThemeName] = systemIconTheme;
+        free(systemIconTheme);
+    } else {
+        qCDebug(QGnomePlatform) << "Icon theme changed to: Adwaita";
+        m_hints[QPlatformTheme::SystemIconThemeName] = "Adwaita";
+    }
+
+    //If we are not a QApplication, means that we are a QGuiApplication, then we do nothing.
+    if (!qobject_cast<QApplication *>(QCoreApplication::instance())) {
+        return;
+    }
+
+    QWidgetList widgets = QApplication::allWidgets();
+    Q_FOREACH (QWidget *widget, widgets) {
+        if (qobject_cast<QToolBar *>(widget) || qobject_cast<QMainWindow *>(widget)) {
+            QEvent event(QEvent::StyleChange);
+            QApplication::sendEvent(widget, &event);
+        }
+    }
+}
+
+void GnomeHintsSettings::themeChanged()
+{
+    loadPalette();
+
+    // QApplication::setPalette and QGuiApplication::setPalette are different functions
+    // and non virtual. Call the correct one
+    if (qobject_cast<QApplication *>(QCoreApplication::instance())) {
+        QApplication::setPalette(*m_palette);
+    } else if (qobject_cast<QGuiApplication *>(QCoreApplication::instance())) {
+        QGuiApplication::setPalette(*m_palette);
+    }
+}
+
 void GnomeHintsSettings::loadFonts()
 {
 //     gdouble scaling = g_settings_get_double(m_settings, "text-scaling-factor");
 
-    QStringList fontTypes { "font-name", "monospace-font-name" };
+    const QStringList fontTypes { "font-name", "monospace-font-name" };
 
     Q_FOREACH (const QString fontType, fontTypes) {
         gchar *fontName = g_settings_get_string(m_settings, fontType.toStdString().c_str());
