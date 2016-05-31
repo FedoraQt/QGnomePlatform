@@ -193,6 +193,10 @@ void GnomeHintsSettings::fontChanged()
 
     if (qobject_cast<QApplication *>(QCoreApplication::instance())) {
         QApplication::setFont(*m_fonts[QPlatformTheme::SystemFont]);
+        QWidgetList widgets = QApplication::allWidgets();
+        Q_FOREACH (QWidget *widget, widgets) {
+            widget->setFont(*m_fonts[QPlatformTheme::SystemFont]);
+        }
     } else {
         QGuiApplication::setFont(*m_fonts[QPlatformTheme::SystemFont]);
     }
