@@ -26,8 +26,8 @@
 #include <QApplication>
 #include <QGuiApplication>
 #include <QDialogButtonBox>
-#include <QtGui/QToolBar>
-#include <QtCore/QLoggingCategory>
+#include <QToolBar>
+#include <QLoggingCategory>
 
 #include <gtk-3.0/gtk/gtksettings.h>
 
