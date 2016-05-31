@@ -118,6 +118,7 @@ GnomeHintsSettings::GnomeHintsSettings()
     g_signal_connect(m_settings, "changed::cursor-blink-time", G_CALLBACK(gsettingPropertyChanged), this);
     g_signal_connect(m_settings, "changed::font-name", G_CALLBACK(gsettingPropertyChanged), this);
     g_signal_connect(m_settings, "changed::monospace-font-name", G_CALLBACK(gsettingPropertyChanged), this);
+    g_signal_connect(m_settings, "changed::text-scaling-factor", G_CALLBACK(gsettingPropertyChanged), this);
 
     // g_signal_connect(gtk_settings_get_default(), "notify::gtk-theme-name", G_CALLBACK(gtkThemeChanged), this);
 
@@ -156,6 +157,8 @@ void GnomeHintsSettings::gsettingPropertyChanged(GSettings *settings, gchar *key
     } else if (changedProperty == QLatin1String("font-name")) {
         gnomeHintsSettings->fontChanged();
     } else if (changedProperty == QLatin1String("monospace-font-name")) {
+        gnomeHintsSettings->fontChanged();
+    } else if (changedProperty == QLatin1String("text-scaling-factor")) {
         gnomeHintsSettings->fontChanged();
     } else {
         qCDebug(QGnomePlatform) << "GSetting property change: " << key;
@@ -243,7 +246,8 @@ void GnomeHintsSettings::themeChanged()
 
 void GnomeHintsSettings::loadFonts()
 {
-//     gdouble scaling = g_settings_get_double(m_settings, "text-scaling-factor");
+    gdouble scaling = g_settings_get_double(m_settings, "text-scaling-factor");
+    qCDebug(QGnomePlatform) << "Font scaling: " << scaling;
 
     const QStringList fontTypes { "font-name", "monospace-font-name" };
 
@@ -258,10 +262,10 @@ void GnomeHintsSettings::loadFonts()
             if (re.indexIn(fontNameString) == 0) {
                 fontSize = re.cap(2).toInt();
                 if (fontType == QLatin1String("font-name")) {
-                    m_fonts[QPlatformTheme::SystemFont] = new QFont(re.cap(1), fontSize, QFont::Normal);
+                    m_fonts[QPlatformTheme::SystemFont] = new QFont(re.cap(1), fontSize * scaling, QFont::Normal);
                     qCDebug(QGnomePlatform) << "Font name: " << re.cap(1) << " (size " << fontSize << ")";
                 } else if (fontType == QLatin1String("monospace-font-name")) {
-                    m_fonts[QPlatformTheme::FixedFont] = new QFont(re.cap(1), fontSize, QFont::Normal);
+                    m_fonts[QPlatformTheme::FixedFont] = new QFont(re.cap(1), fontSize * scaling, QFont::Normal);
                     qCDebug(QGnomePlatform) << "Monospace font name: " << re.cap(1) << " (size " << fontSize << ")";
                 }
             } else {
