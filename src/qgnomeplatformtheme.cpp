@@ -55,7 +55,20 @@ const QPalette *QGnomePlatformTheme::palette(Palette type) const
 bool QGnomePlatformTheme::usePlatformNativeDialog(QPlatformTheme::DialogType type) const
 {
     Q_UNUSED(type);
-    return true;
+    // TODO provide native file dialog
+    return false;
+}
+
+QPlatformDialogHelper *QGnomePlatformTheme::createPlatformDialogHelper(QPlatformTheme::DialogType type) const
+{
+    switch (type) {
+    case QPlatformTheme::FileDialog: // TODO provide native file dialog
+    case QPlatformTheme::FontDialog:
+    case QPlatformTheme::ColorDialog:
+    case QPlatformTheme::MessageDialog:
+    default:
+        return 0;
+    }
 }
 
 const QFont *QGnomePlatformTheme::font(Font type) const

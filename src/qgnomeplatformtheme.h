@@ -36,6 +36,7 @@ public:
     const QFont *font(Font type) const Q_DECL_OVERRIDE;
     const QPalette *palette(Palette type = SystemPalette) const Q_DECL_OVERRIDE;
     bool usePlatformNativeDialog(DialogType type) const Q_DECL_OVERRIDE;
+    QPlatformDialogHelper *createPlatformDialogHelper(DialogType type) const Q_DECL_OVERRIDE;
 
 private:
     void loadSettings();
