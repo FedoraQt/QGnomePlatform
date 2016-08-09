@@ -262,11 +262,13 @@ void GnomeHintsSettings::loadFonts()
             int fontSize;
             if (re.indexIn(fontNameString) == 0) {
                 fontSize = re.cap(2).toInt();
+                QFont* font = new QFont(re.cap(1));
+                font->setPointSizeF(fontSize * scaling);
                 if (fontType == QLatin1String("font-name")) {
-                    m_fonts[QPlatformTheme::SystemFont] = new QFont(re.cap(1), fontSize * scaling, QFont::Normal);
+                    m_fonts[QPlatformTheme::SystemFont] = font;
                     qCDebug(QGnomePlatform) << "Font name: " << re.cap(1) << " (size " << fontSize << ")";
                 } else if (fontType == QLatin1String("monospace-font-name")) {
-                    m_fonts[QPlatformTheme::FixedFont] = new QFont(re.cap(1), fontSize * scaling, QFont::Normal);
+                    m_fonts[QPlatformTheme::FixedFont] = font;
                     qCDebug(QGnomePlatform) << "Monospace font name: " << re.cap(1) << " (size " << fontSize << ")";
                 }
             } else {
