@@ -247,6 +247,9 @@ void GnomeHintsSettings::themeChanged()
 
 void GnomeHintsSettings::loadFonts()
 {
+    qDeleteAll(m_fonts);
+    m_fonts.clear();
+
     gdouble scaling = g_settings_get_double(m_settings, "text-scaling-factor");
     qCDebug(QGnomePlatform) << "Font scaling: " << scaling;
 
