@@ -2,8 +2,7 @@ TEMPLATE = lib
 
 CONFIG += plugin \
           c++11 \
-          link_pkgconfig \
-          no_keywords
+          link_pkgconfig
 
 QT += core-private \
       gui-private \
@@ -19,8 +18,10 @@ INSTALLS += target
 
 SOURCES += src/platformplugin.cpp \
            src/qgnomeplatformtheme.cpp \
-           src/gnomehintssettings.cpp
+           src/gnomehintssettings.cpp \
+           src/qgtk3dialoghelpers.cpp
 
 HEADERS += src/platformplugin.h \
            src/qgnomeplatformtheme.h \
-           src/gnomehintssettings.h
+           src/gnomehintssettings.h \
+           src/qgtk3dialoghelpers.h
