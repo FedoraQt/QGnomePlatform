@@ -96,7 +96,7 @@ GnomeHintsSettings::GnomeHintsSettings()
     } else {
         m_hints[QPlatformTheme::SystemIconThemeName] = "Adwaita";
     }
-    m_hints[QPlatformTheme::SystemIconFallbackThemeName] = "Adwaita";
+    m_hints[QPlatformTheme::SystemIconFallbackThemeName] = "breeze";
     m_hints[QPlatformTheme::IconThemeSearchPaths] = xdgIconThemePaths();
 
     QStringList styleNames;
