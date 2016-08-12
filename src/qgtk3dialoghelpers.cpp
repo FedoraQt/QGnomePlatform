@@ -361,10 +361,14 @@ void QGtk3FileDialogHelper::onAccepted()
     if (filter.isEmpty())
         emit filterSelected(filter);
 
+    // These signals are emitted by QFileDialog::accept(), don't emit them twice
+    /*
     QList<QUrl> files = selectedFiles();
     emit filesSelected(files);
     if (files.count() == 1)
         emit fileSelected(files.first());
+    */
+
 }
 
 void QGtk3FileDialogHelper::onSelectionChanged(GtkDialog *gtkDialog, QGtk3FileDialogHelper *helper)
