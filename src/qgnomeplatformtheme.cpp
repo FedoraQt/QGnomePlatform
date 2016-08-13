@@ -59,7 +59,9 @@ bool QGnomePlatformTheme::usePlatformNativeDialog(QPlatformTheme::DialogType typ
     case QPlatformTheme::FileDialog:
         return true;
     case QPlatformTheme::FontDialog:
+        return true;
     case QPlatformTheme::ColorDialog:
+        return true;
     case QPlatformTheme::MessageDialog:
     default:
         return false;
@@ -72,7 +74,9 @@ QPlatformDialogHelper *QGnomePlatformTheme::createPlatformDialogHelper(QPlatform
     case QPlatformTheme::FileDialog:
         return new QGtk3FileDialogHelper();
     case QPlatformTheme::FontDialog:
+        return new QGtk3FontDialogHelper();
     case QPlatformTheme::ColorDialog:
+        return new QGtk3ColorDialogHelper();
     case QPlatformTheme::MessageDialog:
     default:
         return 0;
