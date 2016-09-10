@@ -117,6 +117,9 @@ GnomeHintsSettings::GnomeHintsSettings()
     m_hints[QPlatformTheme::IconThemeSearchPaths] = xdgIconThemePaths();
 
     QStringList styleNames;
+    if (m_gtkThemeDarkVariant) {
+        styleNames << QStringLiteral("adwaita-dark");
+    }
     styleNames << QStringLiteral("adwaita")
                // Avoid using gtk+ style as it uses gtk2 and we use gtk3 which is causing a crash
                // << QStringLiteral("gtk+")
