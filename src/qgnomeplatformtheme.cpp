@@ -19,6 +19,7 @@
 
 #include "qgnomeplatformtheme.h"
 #include "gnomehintssettings.h"
+#include "qgtk3dialoghelpers.h"
 #include <QApplication>
 #include <QStyleFactory>
 
@@ -54,17 +55,28 @@ const QPalette *QGnomePlatformTheme::palette(Palette type) const
 
 bool QGnomePlatformTheme::usePlatformNativeDialog(QPlatformTheme::DialogType type) const
 {
-    Q_UNUSED(type);
-    // TODO provide native file dialog
-    return false;
+    switch (type) {
+    case QPlatformTheme::FileDialog:
+        return true;
+    case QPlatformTheme::FontDialog:
+        return true;
+    case QPlatformTheme::ColorDialog:
+        return true;
+    case QPlatformTheme::MessageDialog:
+    default:
+        return false;
+    }
 }
 
 QPlatformDialogHelper *QGnomePlatformTheme::createPlatformDialogHelper(QPlatformTheme::DialogType type) const
 {
     switch (type) {
-    case QPlatformTheme::FileDialog: // TODO provide native file dialog
+    case QPlatformTheme::FileDialog:
+        return new QGtk3FileDialogHelper();
     case QPlatformTheme::FontDialog:
+        return new QGtk3FontDialogHelper();
     case QPlatformTheme::ColorDialog:
+        return new QGtk3ColorDialogHelper();
     case QPlatformTheme::MessageDialog:
     default:
         return 0;

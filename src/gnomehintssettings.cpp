@@ -33,6 +33,20 @@
 
 Q_LOGGING_CATEGORY(QGnomePlatform, "qt.qpa.qgnomeplatform")
 
+void gtkMessageHandler(const gchar *log_domain,
+                       GLogLevelFlags log_level,
+                       const gchar *message,
+                       gpointer unused_data) {
+    /* Silence false-positive Gtk warnings (we are using Xlib to set
+     * the WM_TRANSIENT_FOR hint).
+     */
+    if (g_strcmp0(message, "GtkDialog mapped without a transient parent. "
+                           "This is discouraged.") != 0) {
+        /* For other messages, call the default handler. */
+        g_log_default_handler(log_domain, log_level, message, unused_data);
+    }
+}
+
 GnomeHintsSettings::GnomeHintsSettings()
     : QObject(0)
     , m_gtkThemeDarkVariant(false)
@@ -40,6 +54,9 @@ GnomeHintsSettings::GnomeHintsSettings()
     , m_settings(g_settings_new("org.gnome.desktop.interface"))
 {
     gtk_init(nullptr, nullptr);
+
+    // Set log handler to suppress false GtkDialog warnings
+    g_log_set_handler("Gtk", G_LOG_LEVEL_MESSAGE, gtkMessageHandler, NULL);
 
     // Get current theme and variant
     // g_object_get(gtk_settings_get_default(), "gtk-theme-name", &m_gtkTheme, NULL);

@@ -24,6 +24,7 @@
 #include <QObject>
 #include <QVariant>
 
+#undef signals
 #include <gio/gio.h>
 #include <qpa/qplatformtheme.h>
 
