@@ -17,9 +17,10 @@ make && make install
 
 ## Usage
 
-You can use this platform theme by setting the QT_QPA_PLATFORMTHEME to "qgnomeplatform" - so for example putting the following command in your `.bashrc` works well:
+Should be automatically used when using Gtk based desktops (such as Gnome, Cinnamon or Xfce). You can use also use this platform
+theme by setting the QT_QPA_PLATFORMTHEME to "gnome" - so for example putting the following command in your `.bashrc` works well:
 
 ```
-export QT_QPA_PLATFORMTHEME='qgnomeplatform'
+export QT_QPA_PLATFORMTHEME='gnome'
 ```
 

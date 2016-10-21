@@ -23,7 +23,7 @@ QGnomePlatformThemePlugin::QGnomePlatformThemePlugin(QObject *parent) : QPlatfor
 
 QPlatformTheme *QGnomePlatformThemePlugin::create(const QString &key, const QStringList &paramList) {
     Q_UNUSED(paramList)
-    if (key == "qgnomeplatform")
+    if (key == "gnome" || key == "gtk3" || key == "qgnomeplatform")
         return new QGnomePlatformTheme();
     return nullptr;
 }
