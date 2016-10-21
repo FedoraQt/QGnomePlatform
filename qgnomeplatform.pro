@@ -9,8 +9,8 @@ QT += core-private \
       platformsupport-private \
       widgets
 
-PKGCONFIG += gio-2.0 \
-             gtk+-3.0
+PKGCONFIG += gtk+-3.0 \
+             gtk+-x11-3.0
 
 TARGET = qgnomeplatform
 target.path += $$[QT_INSTALL_PLUGINS]/platformthemes
