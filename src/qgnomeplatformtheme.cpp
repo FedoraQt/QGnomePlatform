@@ -24,8 +24,6 @@
 #include <QApplication>
 #include <QStyleFactory>
 
-#include <gdk/gdkx.h>
-
 QGnomePlatformTheme::QGnomePlatformTheme()
 {
     loadSettings();
@@ -58,44 +56,32 @@ const QPalette *QGnomePlatformTheme::palette(Palette type) const
 
 bool QGnomePlatformTheme::usePlatformNativeDialog(QPlatformTheme::DialogType type) const
 {
-#ifdef GDK_WINDOWING_X11
-    GdkDisplay *gdk_display = gdk_display_get_default();
-    if (GDK_IS_X11_DISPLAY (gdk_display)) {
-        switch (type) {
-        case QPlatformTheme::FileDialog:
-            return true;
-        case QPlatformTheme::FontDialog:
-            return true;
-        case QPlatformTheme::ColorDialog:
-            return true;
-        case QPlatformTheme::MessageDialog:
-        default:
-            return false;
-        }
+    switch (type) {
+    case QPlatformTheme::FileDialog:
+        return true;
+    case QPlatformTheme::FontDialog:
+        return true;
+    case QPlatformTheme::ColorDialog:
+        return true;
+    case QPlatformTheme::MessageDialog:
+    default:
+        return false;
     }
-#endif
-    return false;
 }
 
 QPlatformDialogHelper *QGnomePlatformTheme::createPlatformDialogHelper(QPlatformTheme::DialogType type) const
 {
-#ifdef GDK_WINDOWING_X11
-    GdkDisplay *gdk_display = gdk_display_get_default();
-    if (GDK_IS_X11_DISPLAY (gdk_display)) {
-        switch (type) {
-        case QPlatformTheme::FileDialog:
-            return new QGtk3FileDialogHelper();
-        case QPlatformTheme::FontDialog:
-            return new QGtk3FontDialogHelper();
-        case QPlatformTheme::ColorDialog:
-            return new QGtk3ColorDialogHelper();
-        case QPlatformTheme::MessageDialog:
-        default:
-            return 0;
-        }
+    switch (type) {
+    case QPlatformTheme::FileDialog:
+        return new QGtk3FileDialogHelper();
+    case QPlatformTheme::FontDialog:
+        return new QGtk3FontDialogHelper();
+    case QPlatformTheme::ColorDialog:
+        return new QGtk3ColorDialogHelper();
+    case QPlatformTheme::MessageDialog:
+    default:
+        return 0;
     }
-#endif
-    return 0;
 }
 
 const QFont *QGnomePlatformTheme::font(Font type) const
