@@ -19,9 +19,11 @@ INSTALLS += target
 SOURCES += src/platformplugin.cpp \
            src/qgnomeplatformtheme.cpp \
            src/gnomehintssettings.cpp \
-           src/qgtk3dialoghelpers.cpp
+           src/qgtk3dialoghelpers.cpp \
+           src/gnomeproxystyle.cpp
 
 HEADERS += src/platformplugin.h \
            src/qgnomeplatformtheme.h \
            src/gnomehintssettings.h \
-           src/qgtk3dialoghelpers.h
+           src/qgtk3dialoghelpers.h \
+           src/gnomeproxystyle.h
