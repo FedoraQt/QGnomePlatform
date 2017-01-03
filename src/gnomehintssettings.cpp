@@ -116,8 +116,11 @@ GnomeHintsSettings::GnomeHintsSettings()
     m_hints[QPlatformTheme::SystemIconFallbackThemeName] = "breeze";
     m_hints[QPlatformTheme::IconThemeSearchPaths] = xdgIconThemePaths();
 
+    // First try to use GTK theme if it's Qt version is available
+    // Otherwise, use adwaita or try default themes
     QStringList styleNames;
-    styleNames << QStringLiteral("adwaita")
+    styleNames << m_gtkTheme
+               << QStringLiteral("adwaita")
                // Avoid using gtk+ style as it uses gtk2 and we use gtk3 which is causing a crash
                // << QStringLiteral("gtk+")
                << QStringLiteral("fusion")
