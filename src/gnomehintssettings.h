@@ -78,6 +78,7 @@ public Q_SLOTS:
     void themeChanged();
 
 private Q_SLOTS:
+    void loadTheme();
     void loadFonts();
     void loadPalette();
 
