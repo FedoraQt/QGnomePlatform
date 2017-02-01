@@ -6,7 +6,7 @@ CONFIG += plugin \
 
 QT += core-private \
       gui-private \
-      platformsupport-private \
+      theme_support-private \
       widgets
 
 PKGCONFIG += gtk+-3.0 \
