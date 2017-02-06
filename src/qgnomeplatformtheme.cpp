@@ -27,6 +27,12 @@
 QGnomePlatformTheme::QGnomePlatformTheme()
 {
     loadSettings();
+
+    /* Initialize some types here so that Gtk+ does not crash when reading
+     * the treemodel for GtkFontChooser.
+     */
+    g_type_ensure(PANGO_TYPE_FONT_FAMILY);
+    g_type_ensure(PANGO_TYPE_FONT_FACE);
 }
 
 QGnomePlatformTheme::~QGnomePlatformTheme()

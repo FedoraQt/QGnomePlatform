@@ -28,6 +28,7 @@
 #include <QDialogButtonBox>
 #include <QToolBar>
 #include <QLoggingCategory>
+#include <QStyleFactory>
 
 #include <gtk-3.0/gtk/gtksettings.h>
 
@@ -59,9 +60,7 @@ GnomeHintsSettings::GnomeHintsSettings()
     g_log_set_handler("Gtk", G_LOG_LEVEL_MESSAGE, gtkMessageHandler, NULL);
 
     // Get current theme and variant
-    // g_object_get(gtk_settings_get_default(), "gtk-theme-name", &m_gtkTheme, NULL);
-    m_gtkTheme = g_settings_get_string(m_settings, "gtk-theme");
-    g_object_get(gtk_settings_get_default(), "gtk-application-prefer-dark-theme", &m_gtkThemeDarkVariant, NULL);
+    loadTheme();
 
     if (!m_gtkTheme) {
         qCWarning(QGnomePlatform) << "Couldn't get current gtk theme!";
@@ -116,11 +115,14 @@ GnomeHintsSettings::GnomeHintsSettings()
     m_hints[QPlatformTheme::SystemIconFallbackThemeName] = "breeze";
     m_hints[QPlatformTheme::IconThemeSearchPaths] = xdgIconThemePaths();
 
+    // First try to use GTK theme if it's Qt version is available
+    // Otherwise, use adwaita or try default themes
     QStringList styleNames;
     if (m_gtkThemeDarkVariant) {
         styleNames << QStringLiteral("adwaita-dark");
     }
-    styleNames << QStringLiteral("adwaita")
+    styleNames << m_gtkTheme
+               << QStringLiteral("adwaita")
                // Avoid using gtk+ style as it uses gtk2 and we use gtk3 which is causing a crash
                // << QStringLiteral("gtk+")
                << QStringLiteral("fusion")
@@ -258,14 +260,24 @@ void GnomeHintsSettings::iconsChanged()
 void GnomeHintsSettings::themeChanged()
 {
     loadPalette();
+    loadTheme();
 
     // QApplication::setPalette and QGuiApplication::setPalette are different functions
     // and non virtual. Call the correct one
     if (qobject_cast<QApplication *>(QCoreApplication::instance())) {
         QApplication::setPalette(*m_palette);
+        if (QStyleFactory::keys().contains(m_gtkTheme, Qt::CaseInsensitive))
+            QApplication::setStyle(m_gtkTheme);
     } else if (qobject_cast<QGuiApplication *>(QCoreApplication::instance())) {
         QGuiApplication::setPalette(*m_palette);
     }
+}
+
+void GnomeHintsSettings::loadTheme()
+{
+    // g_object_get(gtk_settings_get_default(), "gtk-theme-name", &m_gtkTheme, NULL);
+    m_gtkTheme = g_settings_get_string(m_settings, "gtk-theme");
+    g_object_get(gtk_settings_get_default(), "gtk-application-prefer-dark-theme", &m_gtkThemeDarkVariant, NULL);
 }
 
 void GnomeHintsSettings::loadFonts()
