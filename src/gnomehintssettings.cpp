@@ -118,6 +118,9 @@ GnomeHintsSettings::GnomeHintsSettings()
     // First try to use GTK theme if it's Qt version is available
     // Otherwise, use adwaita or try default themes
     QStringList styleNames;
+    if (m_gtkThemeDarkVariant) {
+        styleNames << QStringLiteral("adwaita-dark");
+    }
     styleNames << m_gtkTheme
                << QStringLiteral("adwaita")
                // Avoid using gtk+ style as it uses gtk2 and we use gtk3 which is causing a crash
