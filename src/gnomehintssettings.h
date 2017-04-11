@@ -81,7 +81,6 @@ private Q_SLOTS:
     void loadTheme();
     void loadFonts();
     void loadPalette();
-    void updateProxyStyle();
 
 protected:
     static void gsettingPropertyChanged(GSettings *settings, gchar *key, GnomeHintsSettings *gnomeHintsSettings);
