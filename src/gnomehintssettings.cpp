@@ -32,6 +32,8 @@
 
 #include <gtk-3.0/gtk/gtksettings.h>
 
+#include "gnomeproxystyle.h"
+
 Q_LOGGING_CATEGORY(QGnomePlatform, "qt.qpa.qgnomeplatform")
 
 void gtkMessageHandler(const gchar *log_domain,
@@ -130,7 +132,6 @@ GnomeHintsSettings::GnomeHintsSettings()
     m_hints[QPlatformTheme::StyleNames] = styleNames;
 
     m_hints[QPlatformTheme::DialogButtonBoxLayout] = QDialogButtonBox::GnomeLayout;
-    m_hints[QPlatformTheme::DialogButtonBoxButtonsHaveIcons] = true;
     m_hints[QPlatformTheme::KeyboardScheme] = QPlatformTheme::GnomeKeyboardScheme;
     m_hints[QPlatformTheme::IconPixmapSizes] = QVariant::fromValue(QList<int>() << 512 << 256 << 128 << 64 << 32 << 22 << 16 << 8);
     m_hints[QPlatformTheme::PasswordMaskCharacter] = QVariant(QChar(0x2022));
@@ -155,8 +156,32 @@ GnomeHintsSettings::GnomeHintsSettings()
     // Load fonts
     loadFonts();
 
-    // Load palette
-    loadPalette();
+    // Disable icons in menus
+    QCoreApplication::setAttribute(Qt::AA_DontShowIconsInMenus);
+
+    // Apply proxy style
+    if (QGuiApplication::desktopSettingsAware()) {
+        // Apply custom style hints before creating QApplication
+        // Using Fusion style should avoid problems with some styles like qtcurve
+        QApplication::setStyle(new GnomeProxyStyle("Fusion"));
+
+        // When QApplication is created, update style to match GTK theme
+        QMetaObject::invokeMethod(this, "updateProxyStyle", Qt::QueuedConnection);
+    } else {
+        // Load palette
+        loadPalette();
+    }
+}
+
+void GnomeHintsSettings::updateProxyStyle()
+{
+    if (qobject_cast<QApplication *> (qApp) != 0) {
+        // Do not override proxy style (fixes crash in qupzilla)
+        QProxyStyle *proxyStyle = qobject_cast<QProxyStyle *>(qApp->style());
+        proxyStyle ? proxyStyle->setBaseStyle(0) : qApp->setStyle(new GnomeProxyStyle(m_gtkTheme));
+    }
+
+    themeChanged();
 }
 
 GnomeHintsSettings::~GnomeHintsSettings()
