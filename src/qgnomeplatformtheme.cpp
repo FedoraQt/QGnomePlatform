@@ -50,6 +50,11 @@ QVariant QGnomePlatformTheme::themeHint(QPlatformTheme::ThemeHint hintType) cons
     }
 }
 
+const QFont *QGnomePlatformTheme::font(Font type) const
+{
+    return m_hints->font(type);
+}
+
 const QPalette *QGnomePlatformTheme::palette(Palette type) const
 {
     QPalette *palette = m_hints->palette();
@@ -90,10 +95,12 @@ QPlatformDialogHelper *QGnomePlatformTheme::createPlatformDialogHelper(QPlatform
     }
 }
 
-const QFont *QGnomePlatformTheme::font(Font type) const
+#ifndef QT_NO_SYSTEMTRAYICON
+QPlatformSystemTrayIcon * QGnomePlatformTheme::createPlatformSystemTrayIcon() const
 {
-    return m_hints->font(type);
+    return nullptr;
 }
+#endif
 
 void QGnomePlatformTheme::loadSettings()
 {
