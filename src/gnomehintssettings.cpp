@@ -331,14 +331,6 @@ void GnomeHintsSettings::loadPalette()
     }
 
     m_palette = new QPalette();
-//     GtkCssProvider *gtkCssProvider = gtk_css_provider_get_named(themeName, preferDark ? "dark" : NULL);
-//
-//     if (!gtkCssProvider) {
-//         qCDebug(QGnomePlatform) << "Couldn't load current gtk css provider!";
-//         return;
-//     }
-
-//     qCDebug(QGnomePlatform) << gtk_css_provider_to_string(gtkCssProvider);
 }
 
 QStringList GnomeHintsSettings::xdgIconThemePaths() const
