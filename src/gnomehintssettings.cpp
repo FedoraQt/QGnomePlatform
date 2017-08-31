@@ -29,6 +29,8 @@
 #include <QToolBar>
 #include <QLoggingCategory>
 #include <QStyleFactory>
+#include <QSettings>
+#include <QStandardPaths>
 
 #include <gtk-3.0/gtk/gtksettings.h>
 
@@ -62,72 +64,7 @@ GnomeHintsSettings::GnomeHintsSettings()
     // Get current theme and variant
     loadTheme();
 
-    if (!m_gtkTheme) {
-        qCWarning(QGnomePlatform) << "Couldn't get current gtk theme!";
-    } else {
-        qCDebug(QGnomePlatform) << "Theme name: " << m_gtkTheme;
-        qCDebug(QGnomePlatform) << "Dark version: " << (m_gtkThemeDarkVariant ? "yes" : "no");
-    }
-
-    gint cursorBlinkTime = g_settings_get_int(m_settings, "cursor-blink-time");
-//     g_object_get(gtk_settings_get_default(), "gtk-cursor-blink-time", &cursorBlinkTime, NULL);
-    if (cursorBlinkTime >= 100) {
-        qCDebug(QGnomePlatform) << "Cursor blink time: " << cursorBlinkTime;
-        m_hints[QPlatformTheme::CursorFlashTime] = cursorBlinkTime;
-    } else {
-        m_hints[QPlatformTheme::CursorFlashTime] = 1200;
-    }
-
-    gint doubleClickTime = 400;
-    g_object_get(gtk_settings_get_default(), "gtk-double-click-time", &doubleClickTime, NULL);
-    qCDebug(QGnomePlatform) << "Double click time: " << doubleClickTime;
-    m_hints[QPlatformTheme::MouseDoubleClickInterval] = doubleClickTime;
-
-    guint longPressTime = 500;
-    g_object_get(gtk_settings_get_default(), "gtk-long-press-time", &longPressTime, NULL);
-    qCDebug(QGnomePlatform) << "Long press time: " << longPressTime;
-    m_hints[QPlatformTheme::MousePressAndHoldInterval] = longPressTime;
-
-    gint doubleClickDistance = 5;
-    g_object_get(gtk_settings_get_default(), "gtk-double-click-distance", &doubleClickDistance, NULL);
-    qCDebug(QGnomePlatform) << "Double click distance: " << doubleClickDistance;
-    m_hints[QPlatformTheme::MouseDoubleClickDistance] = doubleClickDistance;
-
-    gint startDragDistance = 8;
-    g_object_get(gtk_settings_get_default(), "gtk-dnd-drag-threshold", &startDragDistance, NULL);
-    qCDebug(QGnomePlatform) << "Dnd drag threshold: " << startDragDistance;
-    m_hints[QPlatformTheme::StartDragDistance] = startDragDistance;
-
-    guint passwordMaskDelay = 0;
-    g_object_get(gtk_settings_get_default(), "gtk-entry-password-hint-timeout", &passwordMaskDelay, NULL);
-    qCDebug(QGnomePlatform) << "Password hint timeout: " << passwordMaskDelay;
-    m_hints[QPlatformTheme::PasswordMaskDelay] = passwordMaskDelay;
-
-    gchar *systemIconTheme = g_settings_get_string(m_settings, "icon-theme");
-//     g_object_get(gtk_settings_get_default(), "gtk-icon-theme-name", &systemIconTheme, NULL);
-    if (systemIconTheme) {
-        qCDebug(QGnomePlatform) << "Icon theme: " << systemIconTheme;
-        m_hints[QPlatformTheme::SystemIconThemeName] = systemIconTheme;
-        free(systemIconTheme);
-    } else {
-        m_hints[QPlatformTheme::SystemIconThemeName] = "Adwaita";
-    }
-    m_hints[QPlatformTheme::SystemIconFallbackThemeName] = "breeze";
-    m_hints[QPlatformTheme::IconThemeSearchPaths] = xdgIconThemePaths();
-
-    // First try to use GTK theme if it's Qt version is available
-    // Otherwise, use adwaita or try default themes
-    QStringList styleNames;
-    if (m_gtkThemeDarkVariant) {
-        styleNames << QStringLiteral("adwaita-dark");
-    }
-    styleNames << m_gtkTheme
-               << QStringLiteral("adwaita")
-               // Avoid using gtk+ style as it uses gtk2 and we use gtk3 which is causing a crash
-               // << QStringLiteral("gtk+")
-               << QStringLiteral("fusion")
-               << QStringLiteral("windows");
-    m_hints[QPlatformTheme::StyleNames] = styleNames;
+    loadStaticHints();
 
     m_hints[QPlatformTheme::DialogButtonBoxLayout] = QDialogButtonBox::GnomeLayout;
     m_hints[QPlatformTheme::DialogButtonBoxButtonsHaveIcons] = true;
@@ -278,6 +215,44 @@ void GnomeHintsSettings::loadTheme()
     // g_object_get(gtk_settings_get_default(), "gtk-theme-name", &m_gtkTheme, NULL);
     m_gtkTheme = g_settings_get_string(m_settings, "gtk-theme");
     g_object_get(gtk_settings_get_default(), "gtk-application-prefer-dark-theme", &m_gtkThemeDarkVariant, NULL);
+
+    if (!m_gtkTheme) {
+        qCWarning(QGnomePlatform) << "Couldn't get current gtk theme!";
+    } else {
+        qCDebug(QGnomePlatform) << "Theme name: " << m_gtkTheme;
+        qCDebug(QGnomePlatform) << "Dark version: " << (m_gtkThemeDarkVariant ? "yes" : "no");
+    }
+
+
+    QStringList styleNames;
+
+    // First try to use GTK theme if it's Qt version is available
+    styleNames << m_gtkTheme;
+
+    // Detect if we have a Kvantum theme for this Gtk theme
+    QString kvTheme = kvantumThemeForGtkTheme();
+
+    if (!kvTheme.isEmpty()) {
+        // Found matching Kvantum theme, configure user's Kvantum setting to use this
+        configureKvantum(kvTheme);
+
+        if (m_gtkThemeDarkVariant) {
+            styleNames << QStringLiteral("kvantum-dark");
+        }
+        styleNames << QStringLiteral("kvantum");
+    }
+
+    // Otherwise, use adwaita or try default themes
+    if (m_gtkThemeDarkVariant) {
+        styleNames << QStringLiteral("adwaita-dark");
+    }
+
+    styleNames << QStringLiteral("adwaita")
+               // Avoid using gtk+ style as it uses gtk2 and we use gtk3 which is causing a crash
+               // << QStringLiteral("gtk+")
+               << QStringLiteral("fusion")
+               << QStringLiteral("windows");
+    m_hints[QPlatformTheme::StyleNames] = styleNames;
 }
 
 void GnomeHintsSettings::loadFonts()
@@ -331,14 +306,54 @@ void GnomeHintsSettings::loadPalette()
     }
 
     m_palette = new QPalette();
-//     GtkCssProvider *gtkCssProvider = gtk_css_provider_get_named(themeName, preferDark ? "dark" : NULL);
-//
-//     if (!gtkCssProvider) {
-//         qCDebug(QGnomePlatform) << "Couldn't load current gtk css provider!";
-//         return;
-//     }
+}
 
-//     qCDebug(QGnomePlatform) << gtk_css_provider_to_string(gtkCssProvider);
+void GnomeHintsSettings::loadStaticHints() {
+    gint cursorBlinkTime = g_settings_get_int(m_settings, "cursor-blink-time");
+//     g_object_get(gtk_settings_get_default(), "gtk-cursor-blink-time", &cursorBlinkTime, NULL);
+    if (cursorBlinkTime >= 100) {
+        qCDebug(QGnomePlatform) << "Cursor blink time: " << cursorBlinkTime;
+        m_hints[QPlatformTheme::CursorFlashTime] = cursorBlinkTime;
+    } else {
+        m_hints[QPlatformTheme::CursorFlashTime] = 1200;
+    }
+
+    gint doubleClickTime = 400;
+    g_object_get(gtk_settings_get_default(), "gtk-double-click-time", &doubleClickTime, NULL);
+    qCDebug(QGnomePlatform) << "Double click time: " << doubleClickTime;
+    m_hints[QPlatformTheme::MouseDoubleClickInterval] = doubleClickTime;
+
+    guint longPressTime = 500;
+    g_object_get(gtk_settings_get_default(), "gtk-long-press-time", &longPressTime, NULL);
+    qCDebug(QGnomePlatform) << "Long press time: " << longPressTime;
+    m_hints[QPlatformTheme::MousePressAndHoldInterval] = longPressTime;
+
+    gint doubleClickDistance = 5;
+    g_object_get(gtk_settings_get_default(), "gtk-double-click-distance", &doubleClickDistance, NULL);
+    qCDebug(QGnomePlatform) << "Double click distance: " << doubleClickDistance;
+    m_hints[QPlatformTheme::MouseDoubleClickDistance] = doubleClickDistance;
+
+    gint startDragDistance = 8;
+    g_object_get(gtk_settings_get_default(), "gtk-dnd-drag-threshold", &startDragDistance, NULL);
+    qCDebug(QGnomePlatform) << "Dnd drag threshold: " << startDragDistance;
+    m_hints[QPlatformTheme::StartDragDistance] = startDragDistance;
+
+    guint passwordMaskDelay = 0;
+    g_object_get(gtk_settings_get_default(), "gtk-entry-password-hint-timeout", &passwordMaskDelay, NULL);
+    qCDebug(QGnomePlatform) << "Password hint timeout: " << passwordMaskDelay;
+    m_hints[QPlatformTheme::PasswordMaskDelay] = passwordMaskDelay;
+
+    gchar *systemIconTheme = g_settings_get_string(m_settings, "icon-theme");
+//     g_object_get(gtk_settings_get_default(), "gtk-icon-theme-name", &systemIconTheme, NULL);
+    if (systemIconTheme) {
+        qCDebug(QGnomePlatform) << "Icon theme: " << systemIconTheme;
+        m_hints[QPlatformTheme::SystemIconThemeName] = systemIconTheme;
+        free(systemIconTheme);
+    } else {
+        m_hints[QPlatformTheme::SystemIconThemeName] = "Adwaita";
+    }
+    m_hints[QPlatformTheme::SystemIconFallbackThemeName] = "breeze";
+    m_hints[QPlatformTheme::IconThemeSearchPaths] = xdgIconThemePaths();
 }
 
 QStringList GnomeHintsSettings::xdgIconThemePaths() const
@@ -364,4 +379,49 @@ QStringList GnomeHintsSettings::xdgIconThemePaths() const
     }
 
     return paths;
+}
+
+QString GnomeHintsSettings::kvantumThemeForGtkTheme() const
+{
+    if (!m_gtkTheme) {
+        // No Gtk theme? Then can't match to Kvantum!
+        return QString();
+    }
+
+    QString gtkName(m_gtkTheme);
+    QStringList dirs = QStandardPaths::standardLocations(QStandardPaths::GenericDataLocation);
+
+    // Look for a matching KVantum config file in the theme's folder
+    Q_FOREACH(const QString &dir, dirs) {
+        if (QFile::exists(QStringLiteral("%1/themes/%2/Kvantum/%3.kvconfig").arg(dir).arg(gtkName).arg(gtkName))) {
+            return gtkName;
+        }
+    }
+
+    // No config found in theme folder, look for a Kv<Theme> as shipped as part of Kvantum itself
+    // (Kvantum ships KvAdapta, KvAmbiance, KvArc, etc.
+    QStringList names { QStringLiteral("Kv") + gtkName };
+
+    // Convert Ark-Dark to ArcDark to look for KvArcDark
+    if (gtkName.indexOf("-") != -1) {
+        names.append("Kv" + gtkName.replace("-", ""));
+    }
+
+    Q_FOREACH(const QString &name, names) {
+        Q_FOREACH(const QString &dir, dirs) {
+            if (QFile::exists(QStringLiteral("%1/Kvantum/%2/%3.kvconfig").arg(dir).arg(name).arg(name))) {
+                return name;
+            }
+        }
+    }
+
+    return QString();
+}
+
+void GnomeHintsSettings::configureKvantum(const QString &theme) const
+{
+    QSettings config(QDir::homePath() + "/.config/Kvantum/kvantum.kvconfig", QSettings::NativeFormat);
+    if (!config.contains("theme") || config.value("theme").toString() != theme) {
+        config.setValue("theme", theme);
+    }
 }

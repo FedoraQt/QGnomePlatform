@@ -81,12 +81,15 @@ private Q_SLOTS:
     void loadTheme();
     void loadFonts();
     void loadPalette();
+    void loadStaticHints();
 
 protected:
     static void gsettingPropertyChanged(GSettings *settings, gchar *key, GnomeHintsSettings *gnomeHintsSettings);
 
 private:
     QStringList xdgIconThemePaths() const;
+    QString kvantumThemeForGtkTheme() const;
+    void configureKvantum(const QString &theme) const;
 
     gboolean m_gtkThemeDarkVariant;
     gchar *m_gtkTheme;
