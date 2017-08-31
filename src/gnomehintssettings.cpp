@@ -223,7 +223,6 @@ void GnomeHintsSettings::loadTheme()
         qCDebug(QGnomePlatform) << "Dark version: " << (m_gtkThemeDarkVariant ? "yes" : "no");
     }
 
-
     QStringList styleNames;
 
     // First try to use GTK theme if it's Qt version is available
