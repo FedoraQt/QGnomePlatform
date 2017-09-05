@@ -29,6 +29,8 @@
 #include <QToolBar>
 #include <QLoggingCategory>
 #include <QStyleFactory>
+#include <QSettings>
+#include <QStandardPaths>
 
 #include <gtk-3.0/gtk/gtksettings.h>
 
@@ -221,14 +223,30 @@ void GnomeHintsSettings::loadTheme()
         qCDebug(QGnomePlatform) << "Dark version: " << (m_gtkThemeDarkVariant ? "yes" : "no");
     }
 
-    // First try to use GTK theme if it's Qt version is available
-    // Otherwise, use adwaita or try default themes
     QStringList styleNames;
+
+    // First try to use GTK theme if it's Qt version is available
+    styleNames << m_gtkTheme;
+
+    // Detect if we have a Kvantum theme for this Gtk theme
+    QString kvTheme = kvantumThemeForGtkTheme();
+
+    if (!kvTheme.isEmpty()) {
+        // Found matching Kvantum theme, configure user's Kvantum setting to use this
+        configureKvantum(kvTheme);
+
+        if (m_gtkThemeDarkVariant) {
+            styleNames << QStringLiteral("kvantum-dark");
+        }
+        styleNames << QStringLiteral("kvantum");
+    }
+
+    // Otherwise, use adwaita or try default themes
     if (m_gtkThemeDarkVariant) {
         styleNames << QStringLiteral("adwaita-dark");
     }
-    styleNames << m_gtkTheme
-               << QStringLiteral("adwaita")
+
+    styleNames << QStringLiteral("adwaita")
                // Avoid using gtk+ style as it uses gtk2 and we use gtk3 which is causing a crash
                // << QStringLiteral("gtk+")
                << QStringLiteral("fusion")
@@ -360,4 +378,49 @@ QStringList GnomeHintsSettings::xdgIconThemePaths() const
     }
 
     return paths;
+}
+
+QString GnomeHintsSettings::kvantumThemeForGtkTheme() const
+{
+    if (!m_gtkTheme) {
+        // No Gtk theme? Then can't match to Kvantum!
+        return QString();
+    }
+
+    QString gtkName(m_gtkTheme);
+    QStringList dirs = QStandardPaths::standardLocations(QStandardPaths::GenericDataLocation);
+
+    // Look for a matching KVantum config file in the theme's folder
+    Q_FOREACH(const QString &dir, dirs) {
+        if (QFile::exists(QStringLiteral("%1/themes/%2/Kvantum/%3.kvconfig").arg(dir).arg(gtkName).arg(gtkName))) {
+            return gtkName;
+        }
+    }
+
+    // No config found in theme folder, look for a Kv<Theme> as shipped as part of Kvantum itself
+    // (Kvantum ships KvAdapta, KvAmbiance, KvArc, etc.
+    QStringList names { QStringLiteral("Kv") + gtkName };
+
+    // Convert Ark-Dark to ArcDark to look for KvArcDark
+    if (gtkName.indexOf("-") != -1) {
+        names.append("Kv" + gtkName.replace("-", ""));
+    }
+
+    Q_FOREACH(const QString &name, names) {
+        Q_FOREACH(const QString &dir, dirs) {
+            if (QFile::exists(QStringLiteral("%1/Kvantum/%2/%3.kvconfig").arg(dir).arg(name).arg(name))) {
+                return name;
+            }
+        }
+    }
+
+    return QString();
+}
+
+void GnomeHintsSettings::configureKvantum(const QString &theme) const
+{
+    QSettings config(QDir::homePath() + "/.config/Kvantum/kvantum.kvconfig", QSettings::NativeFormat);
+    if (!config.contains("theme") || config.value("theme").toString() != theme) {
+        config.setValue("theme", theme);
+    }
 }

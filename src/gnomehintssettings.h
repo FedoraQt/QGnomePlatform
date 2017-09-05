@@ -88,6 +88,8 @@ protected:
 
 private:
     QStringList xdgIconThemePaths() const;
+    QString kvantumThemeForGtkTheme() const;
+    void configureKvantum(const QString &theme) const;
 
     gboolean m_gtkThemeDarkVariant;
     gchar *m_gtkTheme;
