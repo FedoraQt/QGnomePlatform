@@ -26,9 +26,10 @@
 
 #undef signals
 #include <gio/gio.h>
-#include <qpa/qplatformtheme.h>
-
 #include <gtk-3.0/gtk/gtk.h>
+#define signals Q_SIGNALS
+
+#include <qpa/qplatformtheme.h>
 
 class QPalette;
 
