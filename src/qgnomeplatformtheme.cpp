@@ -24,6 +24,8 @@
 #include <QApplication>
 #include <QStyleFactory>
 
+#include <QtThemeSupport/private/qgenericunixthemes_p.h>
+
 QGnomePlatformTheme::QGnomePlatformTheme()
 {
     loadSettings();
@@ -33,11 +35,14 @@ QGnomePlatformTheme::QGnomePlatformTheme()
      */
     g_type_ensure(PANGO_TYPE_FONT_FAMILY);
     g_type_ensure(PANGO_TYPE_FONT_FACE);
+
+    m_gnome_theme = new QGnomeTheme;
 }
 
 QGnomePlatformTheme::~QGnomePlatformTheme()
 {
     delete m_hints;
+    delete m_gnome_theme;
 }
 
 QVariant QGnomePlatformTheme::themeHint(QPlatformTheme::ThemeHint hintType) const
@@ -95,10 +100,10 @@ QPlatformDialogHelper *QGnomePlatformTheme::createPlatformDialogHelper(QPlatform
     }
 }
 
-#ifndef QT_NO_SYSTEMTRAYICON
+#if !defined(QT_NO_DBUS) && !defined(QT_NO_SYSTEMTRAYICON)
 QPlatformSystemTrayIcon * QGnomePlatformTheme::createPlatformSystemTrayIcon() const
 {
-    return nullptr;
+    return m_gnome_theme->createPlatformSystemTrayIcon();
 }
 #endif
 
