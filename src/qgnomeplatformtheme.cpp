@@ -24,6 +24,10 @@
 #include <QApplication>
 #include <QStyleFactory>
 
+#if !defined(QT_NO_DBUS) && !defined(QT_NO_SYSTEMTRAYICON)
+#include <private/qdbustrayicon_p.h>
+#endif
+
 QGnomePlatformTheme::QGnomePlatformTheme()
 {
     loadSettings();
@@ -95,10 +99,26 @@ QPlatformDialogHelper *QGnomePlatformTheme::createPlatformDialogHelper(QPlatform
     }
 }
 
-#ifndef QT_NO_SYSTEMTRAYICON
+#if !defined(QT_NO_DBUS) && !defined(QT_NO_SYSTEMTRAYICON)
+static bool isDBusTrayAvailable() {
+    static bool dbusTrayAvailable = false;
+    static bool dbusTrayAvailableKnown = false;
+    if (!dbusTrayAvailableKnown) {
+        QDBusMenuConnection conn;
+        if (conn.isStatusNotifierHostRegistered())
+            dbusTrayAvailable = true;
+        dbusTrayAvailableKnown = true;
+    }
+    return dbusTrayAvailable;
+}
+#endif
+
+#if !defined(QT_NO_DBUS) && !defined(QT_NO_SYSTEMTRAYICON)
 QPlatformSystemTrayIcon * QGnomePlatformTheme::createPlatformSystemTrayIcon() const
 {
-    return nullptr;
+    if (isDBusTrayAvailable())
+        return new QDBusTrayIcon();
+    return Q_NULLPTR;
 }
 #endif
 
