@@ -259,7 +259,9 @@ void GnomeHintsSettings::loadFonts()
     qDeleteAll(m_fonts);
     m_fonts.clear();
 
-    gdouble scaling = g_settings_get_double(m_settings, "text-scaling-factor");
+    //Do not use font scaling as it is already applied
+    //gdouble scaling = g_settings_get_double(m_settings, "text-scaling-factor");
+    gdouble scaling = 1.0;
     qCDebug(QGnomePlatform) << "Font scaling: " << scaling;
 
     const QStringList fontTypes { "font-name", "monospace-font-name" };
