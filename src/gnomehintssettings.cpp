@@ -32,8 +32,6 @@
 #include <QSettings>
 #include <QStandardPaths>
 
-#include <gtk-3.0/gtk/gtksettings.h>
-
 Q_LOGGING_CATEGORY(QGnomePlatform, "qt.qpa.qgnomeplatform")
 
 void gtkMessageHandler(const gchar *log_domain,
@@ -50,13 +48,18 @@ void gtkMessageHandler(const gchar *log_domain,
     }
 }
 
+static const char* SETTINGS_SCHEME_GNOME = "org.gnome.desktop.interface";
+static const char* SETTINGS_SCHEME_CINNAMON = "org.cinnamon.desktop.interface";
+
 GnomeHintsSettings::GnomeHintsSettings()
     : QObject(0)
     , m_gtkThemeDarkVariant(false)
     , m_palette(nullptr)
-    , m_settings(g_settings_new("org.gnome.desktop.interface"))
+    , m_settingsFallback(g_settings_new(SETTINGS_SCHEME_GNOME))
 {
     gtk_init(nullptr, nullptr);
+
+    configureSettingsSource();
 
     // Set log handler to suppress false GtkDialog warnings
     g_log_set_handler("Gtk", G_LOG_LEVEL_MESSAGE, gtkMessageHandler, NULL);
@@ -73,12 +76,8 @@ GnomeHintsSettings::GnomeHintsSettings()
     m_hints[QPlatformTheme::PasswordMaskCharacter] = QVariant(QChar(0x2022));
 
     // Watch for changes
-    g_signal_connect(m_settings, "changed::gtk-theme", G_CALLBACK(gsettingPropertyChanged), this);
-    g_signal_connect(m_settings, "changed::icon-theme", G_CALLBACK(gsettingPropertyChanged), this);
-    g_signal_connect(m_settings, "changed::cursor-blink-time", G_CALLBACK(gsettingPropertyChanged), this);
-    g_signal_connect(m_settings, "changed::font-name", G_CALLBACK(gsettingPropertyChanged), this);
-    g_signal_connect(m_settings, "changed::monospace-font-name", G_CALLBACK(gsettingPropertyChanged), this);
-    g_signal_connect(m_settings, "changed::text-scaling-factor", G_CALLBACK(gsettingPropertyChanged), this);
+    setupSettingsSignalHandling(m_settings);
+    setupSettingsSignalHandling(m_settingsFallback);
 
     // g_signal_connect(gtk_settings_get_default(), "notify::gtk-theme-name", G_CALLBACK(gtkThemeChanged), this);
 
@@ -127,7 +126,7 @@ void GnomeHintsSettings::gsettingPropertyChanged(GSettings *settings, gchar *key
 
 void GnomeHintsSettings::cursorBlinkTimeChanged()
 {
-    gint cursorBlinkTime = g_settings_get_int(m_settings, "cursor-blink-time");
+    gint cursorBlinkTime = settingsGetInt("cursor-blink-time");
     if (cursorBlinkTime >= 100) {
         qCDebug(QGnomePlatform) << "Cursor blink time changed to: " << cursorBlinkTime;
         m_hints[QPlatformTheme::CursorFlashTime] = cursorBlinkTime;
@@ -170,7 +169,7 @@ void GnomeHintsSettings::fontChanged()
 
 void GnomeHintsSettings::iconsChanged()
 {
-    gchar *systemIconTheme = g_settings_get_string(m_settings, "icon-theme");
+    gchar *systemIconTheme = settingsGetString("icon-theme");
     if (systemIconTheme) {
         qCDebug(QGnomePlatform) << "Icon theme changed to: " << systemIconTheme;
         m_hints[QPlatformTheme::SystemIconThemeName] = systemIconTheme;
@@ -213,7 +212,7 @@ void GnomeHintsSettings::themeChanged()
 void GnomeHintsSettings::loadTheme()
 {
     // g_object_get(gtk_settings_get_default(), "gtk-theme-name", &m_gtkTheme, NULL);
-    m_gtkTheme = g_settings_get_string(m_settings, "gtk-theme");
+    m_gtkTheme = settingsGetString("gtk-theme");
     g_object_get(gtk_settings_get_default(), "gtk-application-prefer-dark-theme", &m_gtkThemeDarkVariant, NULL);
 
     if (!m_gtkTheme) {
@@ -259,13 +258,13 @@ void GnomeHintsSettings::loadFonts()
     qDeleteAll(m_fonts);
     m_fonts.clear();
 
-    gdouble scaling = g_settings_get_double(m_settings, "text-scaling-factor");
+    gdouble scaling = settingsGetDouble("text-scaling-factor");
     qCDebug(QGnomePlatform) << "Font scaling: " << scaling;
 
     const QStringList fontTypes { "font-name", "monospace-font-name" };
 
     Q_FOREACH (const QString fontType, fontTypes) {
-        gchar *fontName = g_settings_get_string(m_settings, fontType.toStdString().c_str());
+        gchar *fontName = settingsGetString(fontType.toStdString().c_str(), nullptr);
         if (!fontName) {
             qCWarning(QGnomePlatform) << "Couldn't get " << fontType;
         } else {
@@ -308,7 +307,7 @@ void GnomeHintsSettings::loadPalette()
 }
 
 void GnomeHintsSettings::loadStaticHints() {
-    gint cursorBlinkTime = g_settings_get_int(m_settings, "cursor-blink-time");
+    gint cursorBlinkTime = settingsGetInt("cursor-blink-time");
 //     g_object_get(gtk_settings_get_default(), "gtk-cursor-blink-time", &cursorBlinkTime, NULL);
     if (cursorBlinkTime >= 100) {
         qCDebug(QGnomePlatform) << "Cursor blink time: " << cursorBlinkTime;
@@ -342,7 +341,7 @@ void GnomeHintsSettings::loadStaticHints() {
     qCDebug(QGnomePlatform) << "Password hint timeout: " << passwordMaskDelay;
     m_hints[QPlatformTheme::PasswordMaskDelay] = passwordMaskDelay;
 
-    gchar *systemIconTheme = g_settings_get_string(m_settings, "icon-theme");
+    gchar *systemIconTheme = settingsGetString("icon-theme");
 //     g_object_get(gtk_settings_get_default(), "gtk-icon-theme-name", &systemIconTheme, NULL);
     if (systemIconTheme) {
         qCDebug(QGnomePlatform) << "Icon theme: " << systemIconTheme;
@@ -424,3 +423,78 @@ void GnomeHintsSettings::configureKvantum(const QString &theme) const
         config.setValue("theme", theme);
     }
 }
+
+void GnomeHintsSettings::configureSettingsSource()
+{
+    auto settingsScheme = SETTINGS_SCHEME_GNOME;
+    auto desktopSession = qgetenv("SETTINGS_SCHEME_GNOME");
+    auto gdmSession = qgetenv("GDMSESSION");
+    auto xdgCurrentDesktop = qgetenv("XDG_CURRENT_DESKTOP");
+    auto xdgSessionDesktop = qgetenv("XDG_SESSION_DESKTOP");
+
+    if (desktopSession == "cinnamon" ||
+        gdmSession == "cinnamon" ||
+        xdgCurrentDesktop == "X-Cinnamon" ||
+        xdgSessionDesktop == "cinnamon") {
+        settingsScheme = SETTINGS_SCHEME_CINNAMON;
+    }
+
+    m_settings = g_settings_new(settingsScheme);
+}
+
+void GnomeHintsSettings::setupSettingsSignalHandling(GSettings *settings)
+{
+    g_signal_connect(settings, "changed::gtk-theme", G_CALLBACK(gsettingPropertyChanged), this);
+    g_signal_connect(settings, "changed::icon-theme", G_CALLBACK(gsettingPropertyChanged), this);
+    g_signal_connect(settings, "changed::cursor-blink-time", G_CALLBACK(gsettingPropertyChanged), this);
+    g_signal_connect(settings, "changed::font-name", G_CALLBACK(gsettingPropertyChanged), this);
+    g_signal_connect(settings, "changed::monospace-font-name", G_CALLBACK(gsettingPropertyChanged), this);
+    g_signal_connect(settings, "changed::text-scaling-factor", G_CALLBACK(gsettingPropertyChanged), this);
+}
+
+bool GnomeHintsSettings::settingsHasKey(GSettings *settings, const gchar *key)
+{
+    GSettingsSchema *schema = nullptr;
+    g_object_get(G_OBJECT(settings), "settings-schema", &schema, NULL);
+    if (!schema)
+        return false;
+    auto result = g_settings_schema_has_key(schema, key);
+    return result;
+}
+
+GSettings* GnomeHintsSettings::selectSettingsSource(const gchar* key)
+{
+    if (settingsHasKey(m_settings, key))
+        return m_settings;
+    if (settingsHasKey(m_settingsFallback, key))
+        return m_settingsFallback;
+    return nullptr;
+}
+
+gdouble GnomeHintsSettings::settingsGetDouble(const gchar* name, gdouble def)
+{
+    auto settings = selectSettingsSource(name);
+    if (settings)
+        return g_settings_get_double(settings, name);
+    return def;
+}
+
+
+gchar* GnomeHintsSettings::settingsGetString(const gchar* name, gchar *def)
+{
+    auto settings = selectSettingsSource(name);
+    if (settings)
+        return g_settings_get_string(settings, name);
+    return def;
+}
+
+
+gint GnomeHintsSettings::settingsGetInt(const gchar* name, gint def)
+{
+    auto settings = selectSettingsSource(name);
+    if (settings)
+        return g_settings_get_int(settings, name);
+    return def;
+
+}
+

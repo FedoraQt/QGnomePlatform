@@ -27,6 +27,7 @@
 #undef signals
 #include <gio/gio.h>
 #include <gtk-3.0/gtk/gtk.h>
+#include <gtk-3.0/gtk/gtksettings.h>
 #define signals Q_SIGNALS
 
 #include <qpa/qplatformtheme.h>
@@ -91,11 +92,21 @@ private:
     QStringList xdgIconThemePaths() const;
     QString kvantumThemeForGtkTheme() const;
     void configureKvantum(const QString &theme) const;
+    void configureSettingsSource();
+    void setupSettingsSignalHandling(GSettings *settings);
+
+    bool settingsHasKey(GSettings *settings, const gchar *key);
+    GSettings* selectSettingsSource(const gchar* key);
+
+    gdouble settingsGetDouble(const gchar* name, gdouble def = 0.0);
+    gchar* settingsGetString(const gchar* name, gchar *def = nullptr);
+    gint settingsGetInt(const gchar* name, gint def = 0);
 
     gboolean m_gtkThemeDarkVariant;
     gchar *m_gtkTheme;
     QPalette *m_palette;
     GSettings *m_settings;
+    GSettings *m_settingsFallback;
     QHash<QPlatformTheme::Font, QFont*> m_fonts;
     QHash<QPlatformTheme::ThemeHint, QVariant> m_hints;
 };
