@@ -258,8 +258,16 @@ void GnomeHintsSettings::loadFonts()
     qDeleteAll(m_fonts);
     m_fonts.clear();
 
+    // Qt 5.6 introduced new HiDPI support. It uses evironment settings to take DPI information
+    // and recalculates font and interface scaling. Adding 'text-scaling-factor' doubling
+    // scaling and fonts will be so huge.
+#if (QT_VERSION < QT_VERSION_CHECK(5, 6, 0))
     gdouble scaling = settingsGetDouble("text-scaling-factor");
     qCDebug(QGnomePlatform) << "Font scaling: " << scaling;
+#else
+    gdouble scaling = 1.0;
+    qCDebug(QGnomePlatform) << "Font scaling: forced to 1.0 (for Qt>=5.6)";
+#endif
 
     const QStringList fontTypes { "font-name", "monospace-font-name" };
 
