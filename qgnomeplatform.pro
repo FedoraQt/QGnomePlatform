@@ -1,3 +1,5 @@
+lessThan(QT_MINOR_VERSION, 6): error("Qt 5.6 and newer is required.")
+
 TEMPLATE = lib
 
 CONFIG += plugin \
