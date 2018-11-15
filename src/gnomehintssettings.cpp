@@ -52,14 +52,17 @@ void gtkMessageHandler(const gchar *log_domain,
 
 GnomeHintsSettings::GnomeHintsSettings()
     : QObject(0)
-    , m_gtkThemeDarkVariant(false)
-    , m_palette(nullptr)
     , m_settings(g_settings_new("org.gnome.desktop.interface"))
 {
     gtk_init(nullptr, nullptr);
 
     // Set log handler to suppress false GtkDialog warnings
     g_log_set_handler("Gtk", G_LOG_LEVEL_MESSAGE, gtkMessageHandler, NULL);
+
+    // Check if this is a Cinnamon session to use additionally a different setting scheme
+    if (qgetenv("XDG_CURRENT_DESKTOP").toLower() == QStringLiteral("x-cinnamon")) {
+        m_cinnamonSettings = g_settings_new("org.cinnamon.desktop.interface");
+    }
 
     // Get current theme and variant
     loadTheme();
@@ -73,12 +76,16 @@ GnomeHintsSettings::GnomeHintsSettings()
     m_hints[QPlatformTheme::PasswordMaskCharacter] = QVariant(QChar(0x2022));
 
     // Watch for changes
-    g_signal_connect(m_settings, "changed::gtk-theme", G_CALLBACK(gsettingPropertyChanged), this);
-    g_signal_connect(m_settings, "changed::icon-theme", G_CALLBACK(gsettingPropertyChanged), this);
-    g_signal_connect(m_settings, "changed::cursor-blink-time", G_CALLBACK(gsettingPropertyChanged), this);
-    g_signal_connect(m_settings, "changed::font-name", G_CALLBACK(gsettingPropertyChanged), this);
-    g_signal_connect(m_settings, "changed::monospace-font-name", G_CALLBACK(gsettingPropertyChanged), this);
-    g_signal_connect(m_settings, "changed::text-scaling-factor", G_CALLBACK(gsettingPropertyChanged), this);
+    QStringList watchList = { "changed::gtk-theme", "changed::icon-theme", "changed::cursor-blink-time", "changed::font-name", "changed::monospace-font-name" };
+
+    for (const QString &watchedProperty : watchList) {
+        g_signal_connect(m_settings, watchedProperty.toStdString().c_str(), G_CALLBACK(gsettingPropertyChanged), this);
+
+        // Additionally watch Cinnamon configuration
+        if (m_cinnamonSettings) {
+            g_signal_connect(m_cinnamonSettings, watchedProperty.toStdString().c_str(), G_CALLBACK(gsettingPropertyChanged), this);
+        }
+    }
 
     // g_signal_connect(gtk_settings_get_default(), "notify::gtk-theme-name", G_CALLBACK(gtkThemeChanged), this);
 
@@ -118,8 +125,6 @@ void GnomeHintsSettings::gsettingPropertyChanged(GSettings *settings, gchar *key
         gnomeHintsSettings->fontChanged();
     } else if (changedProperty == QLatin1String("monospace-font-name")) {
         gnomeHintsSettings->fontChanged();
-    } else if (changedProperty == QLatin1String("text-scaling-factor")) {
-        gnomeHintsSettings->fontChanged();
     } else {
         qCDebug(QGnomePlatform) << "GSetting property change: " << key;
     }
@@ -127,7 +132,7 @@ void GnomeHintsSettings::gsettingPropertyChanged(GSettings *settings, gchar *key
 
 void GnomeHintsSettings::cursorBlinkTimeChanged()
 {
-    gint cursorBlinkTime = g_settings_get_int(m_settings, "cursor-blink-time");
+    int cursorBlinkTime = getSettingsProperty(QStringLiteral("cursor-blink-time"), QVariant::Int).toInt();
     if (cursorBlinkTime >= 100) {
         qCDebug(QGnomePlatform) << "Cursor blink time changed to: " << cursorBlinkTime;
         m_hints[QPlatformTheme::CursorFlashTime] = cursorBlinkTime;
@@ -142,7 +147,7 @@ void GnomeHintsSettings::cursorBlinkTimeChanged()
     }
 
     QWidgetList widgets = QApplication::allWidgets();
-    Q_FOREACH (QWidget *widget, widgets) {
+    for (QWidget *widget : widgets) {
         if (qobject_cast<QToolBar *>(widget) || qobject_cast<QMainWindow *>(widget)) {
             QEvent event(QEvent::StyleChange);
             QApplication::sendEvent(widget, &event);
@@ -158,7 +163,7 @@ void GnomeHintsSettings::fontChanged()
     if (qobject_cast<QApplication *>(QCoreApplication::instance())) {
         QApplication::setFont(*m_fonts[QPlatformTheme::SystemFont]);
         QWidgetList widgets = QApplication::allWidgets();
-        Q_FOREACH (QWidget *widget, widgets) {
+        for (QWidget *widget : widgets) {
             if (widget->font() == oldSysFont) {
                 widget->setFont(*m_fonts[QPlatformTheme::SystemFont]);
             }
@@ -170,11 +175,10 @@ void GnomeHintsSettings::fontChanged()
 
 void GnomeHintsSettings::iconsChanged()
 {
-    gchar *systemIconTheme = g_settings_get_string(m_settings, "icon-theme");
-    if (systemIconTheme) {
+    QString systemIconTheme = getSettingsProperty(QStringLiteral("icon-theme"), QVariant::String).toString();
+    if (!systemIconTheme.isEmpty()) {
         qCDebug(QGnomePlatform) << "Icon theme changed to: " << systemIconTheme;
         m_hints[QPlatformTheme::SystemIconThemeName] = systemIconTheme;
-        free(systemIconTheme);
     } else {
         qCDebug(QGnomePlatform) << "Icon theme changed to: Adwaita";
         m_hints[QPlatformTheme::SystemIconThemeName] = "Adwaita";
@@ -186,7 +190,7 @@ void GnomeHintsSettings::iconsChanged()
     }
 
     QWidgetList widgets = QApplication::allWidgets();
-    Q_FOREACH (QWidget *widget, widgets) {
+    for (QWidget *widget : widgets) {
         if (qobject_cast<QToolBar *>(widget) || qobject_cast<QMainWindow *>(widget)) {
             QEvent event(QEvent::StyleChange);
             QApplication::sendEvent(widget, &event);
@@ -213,10 +217,10 @@ void GnomeHintsSettings::themeChanged()
 void GnomeHintsSettings::loadTheme()
 {
     // g_object_get(gtk_settings_get_default(), "gtk-theme-name", &m_gtkTheme, NULL);
-    m_gtkTheme = g_settings_get_string(m_settings, "gtk-theme");
+    m_gtkTheme = getSettingsProperty(QStringLiteral("gtk-theme"), QVariant::String).toString();
     g_object_get(gtk_settings_get_default(), "gtk-application-prefer-dark-theme", &m_gtkThemeDarkVariant, NULL);
 
-    if (!m_gtkTheme) {
+    if (m_gtkTheme.isEmpty()) {
         qCWarning(QGnomePlatform) << "Couldn't get current gtk theme!";
     } else {
         qCDebug(QGnomePlatform) << "Theme name: " << m_gtkTheme;
@@ -259,16 +263,11 @@ void GnomeHintsSettings::loadFonts()
     qDeleteAll(m_fonts);
     m_fonts.clear();
 
-    //Do not use font scaling as it is already applied
-    //gdouble scaling = g_settings_get_double(m_settings, "text-scaling-factor");
-    gdouble scaling = 1.0;
-    qCDebug(QGnomePlatform) << "Font scaling: " << scaling;
-
     const QStringList fontTypes { "font-name", "monospace-font-name" };
 
-    Q_FOREACH (const QString fontType, fontTypes) {
-        gchar *fontName = g_settings_get_string(m_settings, fontType.toStdString().c_str());
-        if (!fontName) {
+    for (const QString fontType : fontTypes) {
+        QString fontName = getSettingsProperty(fontType, QVariant::String).toString();
+        if (fontName.isEmpty()) {
             qCWarning(QGnomePlatform) << "Couldn't get " << fontType;
         } else {
             QString fontNameString(fontName);
@@ -277,7 +276,7 @@ void GnomeHintsSettings::loadFonts()
             if (re.indexIn(fontNameString) == 0) {
                 fontSize = re.cap(2).toInt();
                 QFont* font = new QFont(re.cap(1));
-                font->setPointSizeF(fontSize * scaling);
+                font->setPointSizeF(fontSize);
                 if (fontType == QLatin1String("font-name")) {
                     m_fonts[QPlatformTheme::SystemFont] = font;
                     qCDebug(QGnomePlatform) << "Font name: " << re.cap(1) << " (size " << fontSize << ")";
@@ -294,7 +293,6 @@ void GnomeHintsSettings::loadFonts()
                     qCDebug(QGnomePlatform) << "Monospace font name: " << fontNameString;
                 }
             }
-            free(fontName);
         }
     }
 }
@@ -310,7 +308,7 @@ void GnomeHintsSettings::loadPalette()
 }
 
 void GnomeHintsSettings::loadStaticHints() {
-    gint cursorBlinkTime = g_settings_get_int(m_settings, "cursor-blink-time");
+    int cursorBlinkTime = getSettingsProperty(QStringLiteral("cursor-blink-time"), QVariant::Int).toInt();
 //     g_object_get(gtk_settings_get_default(), "gtk-cursor-blink-time", &cursorBlinkTime, NULL);
     if (cursorBlinkTime >= 100) {
         qCDebug(QGnomePlatform) << "Cursor blink time: " << cursorBlinkTime;
@@ -344,17 +342,46 @@ void GnomeHintsSettings::loadStaticHints() {
     qCDebug(QGnomePlatform) << "Password hint timeout: " << passwordMaskDelay;
     m_hints[QPlatformTheme::PasswordMaskDelay] = passwordMaskDelay;
 
-    gchar *systemIconTheme = g_settings_get_string(m_settings, "icon-theme");
+    QString systemIconTheme = getSettingsProperty(QStringLiteral("icon-theme"), QVariant::String).toString();
 //     g_object_get(gtk_settings_get_default(), "gtk-icon-theme-name", &systemIconTheme, NULL);
-    if (systemIconTheme) {
+    if (!systemIconTheme.isEmpty()) {
         qCDebug(QGnomePlatform) << "Icon theme: " << systemIconTheme;
         m_hints[QPlatformTheme::SystemIconThemeName] = systemIconTheme;
-        free(systemIconTheme);
     } else {
         m_hints[QPlatformTheme::SystemIconThemeName] = "Adwaita";
     }
     m_hints[QPlatformTheme::SystemIconFallbackThemeName] = "breeze";
     m_hints[QPlatformTheme::IconThemeSearchPaths] = xdgIconThemePaths();
+}
+
+QVariant GnomeHintsSettings::getSettingsProperty(const QString &property, QVariant::Type type)
+{
+    if (type != QVariant::Int || type != QVariant::Double || type != QVariant::String) {
+        return QVariant();
+    }
+
+    GSettings *settings = m_settings;
+
+    // In case of Cinnamon session, we most probably want to return the value from here if possible
+    if (m_cinnamonSettings) {
+        GSettingsSchema *schema;
+        g_object_get(G_OBJECT(settings), "settings-schema", &schema, NULL);
+
+        if (schema) {
+            if (g_settings_schema_has_key(schema, property.toStdString().c_str())) {
+                settings = m_cinnamonSettings;
+            }
+            g_free(schema);
+        }
+    }
+
+    if (type == QVariant::Int) {
+        return QVariant(g_settings_get_int(settings, property.toStdString().c_str()));
+    } else if (type == QVariant::Double) {
+        return QVariant(g_settings_get_double(settings, property.toStdString().c_str()));
+    } else {
+        return QVariant(g_settings_get_string(settings, property.toStdString().c_str()));
+    }
 }
 
 QStringList GnomeHintsSettings::xdgIconThemePaths() const
@@ -372,7 +399,7 @@ QStringList GnomeHintsSettings::xdgIconThemePaths() const
         xdgDirString = QStringLiteral("/usr/local/share:/usr/share");
     }
 
-    Q_FOREACH (const QString &xdgDir, xdgDirString.split(QLatin1Char(':'))) {
+    for (const QString &xdgDir : xdgDirString.split(QLatin1Char(':'))) {
         const QFileInfo xdgIconsDir(xdgDir + QStringLiteral("/icons"));
         if (xdgIconsDir.isDir()) {
             paths << xdgIconsDir.absoluteFilePath();
@@ -384,16 +411,16 @@ QStringList GnomeHintsSettings::xdgIconThemePaths() const
 
 QString GnomeHintsSettings::kvantumThemeForGtkTheme() const
 {
-    if (!m_gtkTheme) {
+    if (m_gtkTheme.isEmpty()) {
         // No Gtk theme? Then can't match to Kvantum!
         return QString();
     }
 
-    QString gtkName(m_gtkTheme);
+    QString gtkName = m_gtkTheme;
     QStringList dirs = QStandardPaths::standardLocations(QStandardPaths::GenericDataLocation);
 
     // Look for a matching KVantum config file in the theme's folder
-    Q_FOREACH(const QString &dir, dirs) {
+    for (const QString &dir : dirs) {
         if (QFile::exists(QStringLiteral("%1/themes/%2/Kvantum/%3.kvconfig").arg(dir).arg(gtkName).arg(gtkName))) {
             return gtkName;
         }
@@ -408,8 +435,8 @@ QString GnomeHintsSettings::kvantumThemeForGtkTheme() const
         names.append("Kv" + gtkName.replace("-", ""));
     }
 
-    Q_FOREACH(const QString &name, names) {
-        Q_FOREACH(const QString &dir, dirs) {
+    for (const QString &name : names) {
+        for (const QString &dir : dirs) {
             if (QFile::exists(QStringLiteral("%1/Kvantum/%2/%3.kvconfig").arg(dir).arg(name).arg(name))) {
                 return name;
             }

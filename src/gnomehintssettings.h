@@ -88,14 +88,16 @@ protected:
     static void gsettingPropertyChanged(GSettings *settings, gchar *key, GnomeHintsSettings *gnomeHintsSettings);
 
 private:
+    QVariant getSettingsProperty(const QString &property, QVariant::Type type);
     QStringList xdgIconThemePaths() const;
     QString kvantumThemeForGtkTheme() const;
     void configureKvantum(const QString &theme) const;
 
-    gboolean m_gtkThemeDarkVariant;
-    gchar *m_gtkTheme;
-    QPalette *m_palette;
-    GSettings *m_settings;
+    bool m_gtkThemeDarkVariant = false;
+    QString m_gtkTheme = nullptr;
+    QPalette *m_palette = nullptr;
+    GSettings *m_cinnamonSettings = nullptr;
+    GSettings *m_settings = nullptr;
     QHash<QPlatformTheme::Font, QFont*> m_fonts;
     QHash<QPlatformTheme::ThemeHint, QVariant> m_hints;
 };
