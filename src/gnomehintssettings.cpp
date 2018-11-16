@@ -80,11 +80,11 @@ GnomeHintsSettings::GnomeHintsSettings()
     QStringList watchList = { "changed::gtk-theme", "changed::icon-theme", "changed::cursor-blink-time", "changed::font-name", "changed::monospace-font-name" };
 
     for (const QString &watchedProperty : watchList) {
-        g_signal_connect(m_settings, watchedProperty.toStdString().c_str(), G_CALLBACK(gsettingPropertyChanged), this);
+        g_signal_connect(m_desktopSettings, watchedProperty.toStdString().c_str(), G_CALLBACK(gsettingPropertyChanged), this);
 
         // Additionally watch Cinnamon configuration
-        if (m_cinnamonSettings) {
-            g_signal_connect(m_cinnamonSettings, watchedProperty.toStdString().c_str(), G_CALLBACK(gsettingPropertyChanged), this);
+        if (m_fallbackSettings) {
+            g_signal_connect(m_fallbackSettings, watchedProperty.toStdString().c_str(), G_CALLBACK(gsettingPropertyChanged), this);
         }
     }
 
@@ -368,6 +368,7 @@ QVariant GnomeHintsSettings::getSettingsProperty(const QString &property, QVaria
                     return m_desktopSettings;
                 }
             }
+            return m_fallbackSettings;
         }
         return m_desktopSettings;
     };
