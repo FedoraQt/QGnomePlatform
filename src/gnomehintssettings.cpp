@@ -356,31 +356,39 @@ void GnomeHintsSettings::loadStaticHints() {
 
 QVariant GnomeHintsSettings::getSettingsProperty(const QString &property, QVariant::Type type)
 {
-    if (type != QVariant::Int || type != QVariant::Double || type != QVariant::String) {
-        return QVariant();
-    }
+    auto settings = [this,&property]() -> GSettings* {
+        // In case of Cinnamon session, we most probably want to return the value from here if possible
+        if (m_cinnamonSettings) {
+            GSettingsSchema *schema = nullptr;
+            g_object_get(G_OBJECT(m_cinnamonSettings), "settings-schema", &schema, NULL);
 
-    GSettings *settings = m_settings;
-
-    // In case of Cinnamon session, we most probably want to return the value from here if possible
-    if (m_cinnamonSettings) {
-        GSettingsSchema *schema;
-        g_object_get(G_OBJECT(settings), "settings-schema", &schema, NULL);
-
-        if (schema) {
-            if (g_settings_schema_has_key(schema, property.toStdString().c_str())) {
-                settings = m_cinnamonSettings;
+            if (schema) {
+                if (g_settings_schema_has_key(schema, property.toStdString().c_str())) {
+                    return m_cinnamonSettings;
+                }
             }
-            g_free(schema);
         }
-    }
+        return m_settings;
+    };
 
-    if (type == QVariant::Int) {
-        return QVariant(g_settings_get_int(settings, property.toStdString().c_str()));
-    } else if (type == QVariant::Double) {
-        return QVariant(g_settings_get_double(settings, property.toStdString().c_str()));
-    } else {
-        return QVariant(g_settings_get_string(settings, property.toStdString().c_str()));
+    switch (type) {
+        case QVariant::Int:
+            return g_settings_get_int(settings(), property.toStdString().c_str());
+        case QVariant::Double:
+            return g_settings_get_double(settings(), property.toStdString().c_str());
+        case QVariant::String:
+        {
+            auto raw = g_settings_get_string(settings(), property.toStdString().c_str());
+            if (raw) {
+                QString result = raw;
+                g_free(raw);
+                return result;
+            }
+            return QString();
+
+        }
+        default:
+            return QVariant();
     }
 }
 
