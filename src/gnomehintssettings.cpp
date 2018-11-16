@@ -52,7 +52,7 @@ void gtkMessageHandler(const gchar *log_domain,
 
 GnomeHintsSettings::GnomeHintsSettings()
     : QObject(0)
-    , m_settings(g_settings_new("org.gnome.desktop.interface"))
+    , m_desktopSettings(g_settings_new("org.gnome.desktop.interface"))
 {
     gtk_init(nullptr, nullptr);
 
@@ -61,7 +61,8 @@ GnomeHintsSettings::GnomeHintsSettings()
 
     // Check if this is a Cinnamon session to use additionally a different setting scheme
     if (qgetenv("XDG_CURRENT_DESKTOP").toLower() == QStringLiteral("x-cinnamon")) {
-        m_cinnamonSettings = g_settings_new("org.cinnamon.desktop.interface");
+        m_fallbackSettings = m_desktopSettings;
+        m_desktopSettings = g_settings_new("org.cinnamon.desktop.interface");
     }
 
     // Get current theme and variant
@@ -357,18 +358,18 @@ void GnomeHintsSettings::loadStaticHints() {
 QVariant GnomeHintsSettings::getSettingsProperty(const QString &property, QVariant::Type type)
 {
     auto settings = [this,&property]() -> GSettings* {
-        // In case of Cinnamon session, we most probably want to return the value from here if possible
-        if (m_cinnamonSettings) {
+        // Check fallback settings, if defined check desktop settings before
+        if (m_fallbackSettings) {
             GSettingsSchema *schema = nullptr;
-            g_object_get(G_OBJECT(m_cinnamonSettings), "settings-schema", &schema, NULL);
+            g_object_get(G_OBJECT(m_desktopSettings), "settings-schema", &schema, NULL);
 
             if (schema) {
                 if (g_settings_schema_has_key(schema, property.toStdString().c_str())) {
-                    return m_cinnamonSettings;
+                    return m_desktopSettings;
                 }
             }
         }
-        return m_settings;
+        return m_desktopSettings;
     };
 
     switch (type) {

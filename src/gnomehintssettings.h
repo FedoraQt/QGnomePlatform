@@ -96,8 +96,8 @@ private:
     bool m_gtkThemeDarkVariant = false;
     QString m_gtkTheme = nullptr;
     QPalette *m_palette = nullptr;
-    GSettings *m_cinnamonSettings = nullptr;
-    GSettings *m_settings = nullptr;
+    GSettings *m_desktopSettings = nullptr;
+    GSettings *m_fallbackSettings = nullptr;
     QHash<QPlatformTheme::Font, QFont*> m_fonts;
     QHash<QPlatformTheme::ThemeHint, QVariant> m_hints;
 };
