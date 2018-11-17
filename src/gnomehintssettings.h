@@ -27,6 +27,7 @@
 #undef signals
 #include <gio/gio.h>
 #include <gtk-3.0/gtk/gtk.h>
+#include <gtk-3.0/gtk/gtksettings.h>
 #define signals Q_SIGNALS
 
 #include <qpa/qplatformtheme.h>
@@ -88,7 +89,29 @@ protected:
     static void gsettingPropertyChanged(GSettings *settings, gchar *key, GnomeHintsSettings *gnomeHintsSettings);
 
 private:
-    QVariant getSettingsProperty(const QString &property, QVariant::Type type);
+    template <typename T> T getSettingsProperty(GSettings *settings, const QString &property, bool *ok = nullptr) {
+        Q_UNUSED(settings); Q_UNUSED(property); Q_UNUSED(ok);
+        return {};
+    }
+    template <typename T>
+    T getSettingsProperty(const QString &property, bool *ok = nullptr) {
+        GSettings *settings = m_settings;
+
+        // In case of Cinnamon session, we most probably want to return the value from here if possible
+        if (m_cinnamonSettings) {
+            GSettingsSchema *schema;
+            g_object_get(G_OBJECT(settings), "settings-schema", &schema, NULL);
+
+            if (schema) {
+                if (g_settings_schema_has_key(schema, property.toStdString().c_str())) {
+                    settings = m_cinnamonSettings;
+                }
+                g_free(schema);
+            }
+        }
+
+        return getSettingsProperty<T>(settings, property, ok);
+    }
     QStringList xdgIconThemePaths() const;
     QString kvantumThemeForGtkTheme() const;
     void configureKvantum(const QString &theme) const;
@@ -101,5 +124,23 @@ private:
     QHash<QPlatformTheme::Font, QFont*> m_fonts;
     QHash<QPlatformTheme::ThemeHint, QVariant> m_hints;
 };
+
+template <> inline int GnomeHintsSettings::getSettingsProperty(GSettings *settings, const QString &property, bool *ok) {
+    if (ok)
+        *ok = true;
+    return g_settings_get_int(settings, property.toStdString().c_str());
+}
+
+template <> inline QString GnomeHintsSettings::getSettingsProperty(GSettings *settings, const QString &property, bool *ok) {
+    if (ok)
+        *ok = true;
+    return QString(g_settings_get_string(settings, property.toStdString().c_str()));
+}
+
+template <> inline qreal GnomeHintsSettings::getSettingsProperty(GSettings *settings, const QString &property, bool *ok) {
+    if (ok)
+        *ok = true;
+    return g_settings_get_double(settings, property.toStdString().c_str());
+}
 
 #endif // GNOME_HINTS_SETTINGS_H

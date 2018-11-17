@@ -32,8 +32,6 @@
 #include <QSettings>
 #include <QStandardPaths>
 
-#include <gtk-3.0/gtk/gtksettings.h>
-
 Q_LOGGING_CATEGORY(QGnomePlatform, "qt.qpa.qgnomeplatform")
 
 void gtkMessageHandler(const gchar *log_domain,
@@ -132,7 +130,7 @@ void GnomeHintsSettings::gsettingPropertyChanged(GSettings *settings, gchar *key
 
 void GnomeHintsSettings::cursorBlinkTimeChanged()
 {
-    int cursorBlinkTime = getSettingsProperty(QStringLiteral("cursor-blink-time"), QVariant::Int).toInt();
+    int cursorBlinkTime = getSettingsProperty<int>(QStringLiteral("cursor-blink-time"));
     if (cursorBlinkTime >= 100) {
         qCDebug(QGnomePlatform) << "Cursor blink time changed to: " << cursorBlinkTime;
         m_hints[QPlatformTheme::CursorFlashTime] = cursorBlinkTime;
@@ -175,7 +173,7 @@ void GnomeHintsSettings::fontChanged()
 
 void GnomeHintsSettings::iconsChanged()
 {
-    QString systemIconTheme = getSettingsProperty(QStringLiteral("icon-theme"), QVariant::String).toString();
+    QString systemIconTheme = getSettingsProperty<QString>(QStringLiteral("icon-theme"));
     if (!systemIconTheme.isEmpty()) {
         qCDebug(QGnomePlatform) << "Icon theme changed to: " << systemIconTheme;
         m_hints[QPlatformTheme::SystemIconThemeName] = systemIconTheme;
@@ -217,7 +215,7 @@ void GnomeHintsSettings::themeChanged()
 void GnomeHintsSettings::loadTheme()
 {
     // g_object_get(gtk_settings_get_default(), "gtk-theme-name", &m_gtkTheme, NULL);
-    m_gtkTheme = getSettingsProperty(QStringLiteral("gtk-theme"), QVariant::String).toString();
+    m_gtkTheme = getSettingsProperty<QString>(QStringLiteral("gtk-theme"));
     g_object_get(gtk_settings_get_default(), "gtk-application-prefer-dark-theme", &m_gtkThemeDarkVariant, NULL);
 
     if (m_gtkTheme.isEmpty()) {
@@ -266,7 +264,7 @@ void GnomeHintsSettings::loadFonts()
     const QStringList fontTypes { "font-name", "monospace-font-name" };
 
     for (const QString fontType : fontTypes) {
-        QString fontName = getSettingsProperty(fontType, QVariant::String).toString();
+        QString fontName = getSettingsProperty<QString>(fontType);
         if (fontName.isEmpty()) {
             qCWarning(QGnomePlatform) << "Couldn't get " << fontType;
         } else {
@@ -308,7 +306,7 @@ void GnomeHintsSettings::loadPalette()
 }
 
 void GnomeHintsSettings::loadStaticHints() {
-    int cursorBlinkTime = getSettingsProperty(QStringLiteral("cursor-blink-time"), QVariant::Int).toInt();
+    int cursorBlinkTime = getSettingsProperty<int>(QStringLiteral("cursor-blink-time"));
 //     g_object_get(gtk_settings_get_default(), "gtk-cursor-blink-time", &cursorBlinkTime, NULL);
     if (cursorBlinkTime >= 100) {
         qCDebug(QGnomePlatform) << "Cursor blink time: " << cursorBlinkTime;
@@ -342,7 +340,7 @@ void GnomeHintsSettings::loadStaticHints() {
     qCDebug(QGnomePlatform) << "Password hint timeout: " << passwordMaskDelay;
     m_hints[QPlatformTheme::PasswordMaskDelay] = passwordMaskDelay;
 
-    QString systemIconTheme = getSettingsProperty(QStringLiteral("icon-theme"), QVariant::String).toString();
+    QString systemIconTheme = getSettingsProperty<QString>(QStringLiteral("icon-theme"));
 //     g_object_get(gtk_settings_get_default(), "gtk-icon-theme-name", &systemIconTheme, NULL);
     if (!systemIconTheme.isEmpty()) {
         qCDebug(QGnomePlatform) << "Icon theme: " << systemIconTheme;
@@ -352,44 +350,6 @@ void GnomeHintsSettings::loadStaticHints() {
     }
     m_hints[QPlatformTheme::SystemIconFallbackThemeName] = "breeze";
     m_hints[QPlatformTheme::IconThemeSearchPaths] = xdgIconThemePaths();
-}
-
-QVariant GnomeHintsSettings::getSettingsProperty(const QString &property, QVariant::Type type)
-{
-    auto settings = [this,&property]() -> GSettings* {
-        // In case of Cinnamon session, we most probably want to return the value from here if possible
-        if (m_cinnamonSettings) {
-            GSettingsSchema *schema = nullptr;
-            g_object_get(G_OBJECT(m_cinnamonSettings), "settings-schema", &schema, NULL);
-
-            if (schema) {
-                if (g_settings_schema_has_key(schema, property.toStdString().c_str())) {
-                    return m_cinnamonSettings;
-                }
-            }
-        }
-        return m_settings;
-    };
-
-    switch (type) {
-        case QVariant::Int:
-            return g_settings_get_int(settings(), property.toStdString().c_str());
-        case QVariant::Double:
-            return g_settings_get_double(settings(), property.toStdString().c_str());
-        case QVariant::String:
-        {
-            auto raw = g_settings_get_string(settings(), property.toStdString().c_str());
-            if (raw) {
-                QString result = raw;
-                g_free(raw);
-                return result;
-            }
-            return QString();
-
-        }
-        default:
-            return QVariant();
-    }
 }
 
 QStringList GnomeHintsSettings::xdgIconThemePaths() const
