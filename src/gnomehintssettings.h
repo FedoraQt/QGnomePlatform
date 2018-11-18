@@ -24,6 +24,8 @@
 #include <QObject>
 #include <QVariant>
 
+#include <memory>
+
 #undef signals
 #include <gio/gio.h>
 #include <gtk-3.0/gtk/gtk.h>
@@ -100,13 +102,12 @@ private:
         // In case of Cinnamon session, we most probably want to return the value from here if possible
         if (m_cinnamonSettings) {
             GSettingsSchema *schema;
-            g_object_get(G_OBJECT(settings), "settings-schema", &schema, NULL);
+            g_object_get(G_OBJECT(m_cinnamonSettings), "settings-schema", &schema, NULL);
 
             if (schema) {
                 if (g_settings_schema_has_key(schema, property.toStdString().c_str())) {
                     settings = m_cinnamonSettings;
                 }
-                g_free(schema);
             }
         }
 
@@ -132,9 +133,11 @@ template <> inline int GnomeHintsSettings::getSettingsProperty(GSettings *settin
 }
 
 template <> inline QString GnomeHintsSettings::getSettingsProperty(GSettings *settings, const QString &property, bool *ok) {
+    // be exception and resources safe
+    std::unique_ptr<gchar, void(*)(gpointer)> raw {g_settings_get_string(settings, property.toStdString().c_str()), g_free};
     if (ok)
-        *ok = true;
-    return QString(g_settings_get_string(settings, property.toStdString().c_str()));
+        *ok = !!raw;
+    return QString{raw.get()};
 }
 
 template <> inline qreal GnomeHintsSettings::getSettingsProperty(GSettings *settings, const QString &property, bool *ok) {
