@@ -7,6 +7,7 @@ CONFIG += plugin \
           link_pkgconfig
 
 QT += core-private \
+      dbus \
       gui-private \
       widgets
 

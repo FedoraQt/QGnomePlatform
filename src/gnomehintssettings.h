@@ -20,6 +20,7 @@
 #ifndef GNOME_HINTS_SETTINGS_H
 #define GNOME_HINTS_SETTINGS_H
 
+#include <QDBusVariant>
 #include <QFont>
 #include <QObject>
 #include <QVariant>
@@ -86,6 +87,7 @@ private Q_SLOTS:
     void loadFonts();
     void loadPalette();
     void loadStaticHints();
+    void portalSettingChanged(const QString &group, const QString &key, const QDBusVariant &value);
 
 protected:
     static void gsettingPropertyChanged(GSettings *settings, gchar *key, GnomeHintsSettings *gnomeHintsSettings);
@@ -111,12 +113,19 @@ private:
             }
         }
 
+        if (m_usePortal) {
+            QVariant value = m_portalSettings.value(QStringLiteral("org.gnome.desktop.interface")).value(property);
+            if (!value.isNull() && value.canConvert<T>())
+                return value.value<T>();
+        }
+
         return getSettingsProperty<T>(settings, property, ok);
     }
     QStringList xdgIconThemePaths() const;
     QString kvantumThemeForGtkTheme() const;
     void configureKvantum(const QString &theme) const;
 
+    bool m_usePortal;
     bool m_gtkThemeDarkVariant = false;
     QString m_gtkTheme = nullptr;
     QPalette *m_palette = nullptr;
@@ -124,6 +133,7 @@ private:
     GSettings *m_settings = nullptr;
     QHash<QPlatformTheme::Font, QFont*> m_fonts;
     QHash<QPlatformTheme::ThemeHint, QVariant> m_hints;
+    QMap<QString, QVariantMap> m_portalSettings;
 };
 
 template <> inline int GnomeHintsSettings::getSettingsProperty(GSettings *settings, const QString &property, bool *ok) {

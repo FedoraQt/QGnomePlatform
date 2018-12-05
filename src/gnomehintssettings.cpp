@@ -32,7 +32,34 @@
 #include <QSettings>
 #include <QStandardPaths>
 
+#include <QDBusArgument>
+#include <QDBusConnection>
+#include <QDBusMessage>
+
 Q_LOGGING_CATEGORY(QGnomePlatform, "qt.qpa.qgnomeplatform")
+
+const QDBusArgument &operator>>(const QDBusArgument &argument, QMap<QString, QVariantMap> &map)
+{
+    argument.beginMap();
+    map.clear();
+
+    while (!argument.atEnd()) {
+        QString key;
+        QVariantMap value;
+        argument.beginMapEntry();
+        argument >> key >> value;
+        argument.endMapEntry();
+        map.insert(key, value);
+    }
+
+    argument.endMap();
+    return argument;
+}
+
+static inline bool checkUsePortalSupport()
+{
+    return !QStandardPaths::locate(QStandardPaths::RuntimeLocation, QStringLiteral("flatpak-info")).isEmpty() || qEnvironmentVariableIsSet("SNAP");
+}
 
 void gtkMessageHandler(const gchar *log_domain,
                        GLogLevelFlags log_level,
@@ -50,6 +77,7 @@ void gtkMessageHandler(const gchar *log_domain,
 
 GnomeHintsSettings::GnomeHintsSettings()
     : QObject(0)
+    , m_usePortal(checkUsePortalSupport())
     , m_settings(g_settings_new("org.gnome.desktop.interface"))
 {
     gtk_init(nullptr, nullptr);
@@ -60,6 +88,21 @@ GnomeHintsSettings::GnomeHintsSettings()
     // Check if this is a Cinnamon session to use additionally a different setting scheme
     if (qgetenv("XDG_CURRENT_DESKTOP").toLower() == QStringLiteral("x-cinnamon")) {
         m_cinnamonSettings = g_settings_new("org.cinnamon.desktop.interface");
+    }
+
+    if (m_usePortal) {
+        QDBusMessage message = QDBusMessage::createMethodCall(QStringLiteral("org.freedesktop.portal.Desktop"),
+                                                            QStringLiteral("/org/freedesktop/portal/desktop"),
+                                                            QStringLiteral("org.freedesktop.portal.Settings"),
+                                                            QStringLiteral("ReadAll"));
+        message << QStringList{QStringLiteral("org.gnome.desktop.interface")};
+
+        // FIXME: async?
+        QDBusMessage resultMessage = QDBusConnection::sessionBus().call(message);
+        if (resultMessage.type() == QDBusMessage::ReplyMessage) {
+            QDBusArgument dbusArgument = resultMessage.arguments().at(0).value<QDBusArgument>();
+            dbusArgument >> m_portalSettings;
+        }
     }
 
     // Get current theme and variant
@@ -83,6 +126,11 @@ GnomeHintsSettings::GnomeHintsSettings()
         if (m_cinnamonSettings) {
             g_signal_connect(m_cinnamonSettings, watchedProperty.toStdString().c_str(), G_CALLBACK(gsettingPropertyChanged), this);
         }
+    }
+
+    if (m_usePortal) {
+        QDBusConnection::sessionBus().connect(QString(), QStringLiteral("/org/freedesktop/portal/desktop"), QStringLiteral("org.freedesktop.portal.Settings"),
+                                              QStringLiteral("SettingChanged"), this, SLOT(portalSettingChanged(QString,QString,QDBusVariant)));
     }
 
     // g_signal_connect(gtk_settings_get_default(), "notify::gtk-theme-name", G_CALLBACK(gtkThemeChanged), this);
@@ -350,6 +398,14 @@ void GnomeHintsSettings::loadStaticHints() {
     }
     m_hints[QPlatformTheme::SystemIconFallbackThemeName] = "breeze";
     m_hints[QPlatformTheme::IconThemeSearchPaths] = xdgIconThemePaths();
+}
+
+void GnomeHintsSettings::portalSettingChanged(const QString &group, const QString &key, const QDBusVariant &value)
+{
+    if (group == QStringLiteral("org.gnome.desktop.interface")) {
+        m_portalSettings[group][key] = value.variant();
+        gsettingPropertyChanged(nullptr, (gchar*)(key.toStdString().c_str()), this);
+    }
 }
 
 QStringList GnomeHintsSettings::xdgIconThemePaths() const
