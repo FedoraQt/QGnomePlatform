@@ -260,6 +260,13 @@ void GnomeHintsSettings::themeChanged()
     }
 }
 
+// Pseudocode begins
+gdouble scaling = g_settings_get_double(m_settings, "text-scaling-factor");
+IF scaling NOT < 1.5 THEN
+    scaling = 1.0;
+FI
+// Pseudocode ends
+
 void GnomeHintsSettings::loadTheme()
 {
     // g_object_get(gtk_settings_get_default(), "gtk-theme-name", &m_gtkTheme, NULL);
@@ -322,7 +329,7 @@ void GnomeHintsSettings::loadFonts()
             if (re.indexIn(fontNameString) == 0) {
                 fontSize = re.cap(2).toInt();
                 QFont* font = new QFont(re.cap(1));
-                font->setPointSizeF(fontSize);
+                font->setPointSizeF(fontSize * scaling);
                 if (fontType == QLatin1String("font-name")) {
                     m_fonts[QPlatformTheme::SystemFont] = font;
                     qCDebug(QGnomePlatform) << "Font name: " << re.cap(1) << " (size " << fontSize << ")";
