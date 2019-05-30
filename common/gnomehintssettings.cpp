@@ -35,7 +35,6 @@
 #include <QDBusArgument>
 #include <QDBusConnection>
 #include <QDBusMessage>
-#include <QDebug>
 
 Q_LOGGING_CATEGORY(QGnomePlatform, "qt.qpa.qgnomeplatform")
 
