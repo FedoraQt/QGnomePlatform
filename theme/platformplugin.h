@@ -27,7 +27,7 @@
 
 class QGnomePlatformThemePlugin : public QPlatformThemePlugin {
     Q_OBJECT
-    Q_PLUGIN_METADATA(IID "org.qt-project.Qt.QPA.QPlatformThemeFactoryInterface.5.1" FILE "qgnomeplatform.json")
+    Q_PLUGIN_METADATA(IID "org.qt-project.Qt.QPA.QPlatformThemeFactoryInterface.5.1" FILE "qgnomeplatformtheme.json")
 public:
     QGnomePlatformThemePlugin(QObject *parent = 0);
 

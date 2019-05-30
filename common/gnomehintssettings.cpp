@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016 Jan Grulich
+ * Copyright (C) 2016-2019 Jan Grulich
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -35,6 +35,7 @@
 #include <QDBusArgument>
 #include <QDBusConnection>
 #include <QDBusMessage>
+#include <QDebug>
 
 Q_LOGGING_CATEGORY(QGnomePlatform, "qt.qpa.qgnomeplatform")
 
@@ -270,6 +271,11 @@ void GnomeHintsSettings::loadTheme()
         qCWarning(QGnomePlatform) << "Couldn't get current gtk theme!";
     } else {
         qCDebug(QGnomePlatform) << "Theme name: " << m_gtkTheme;
+
+        if (m_gtkTheme.toLower() == QStringLiteral("adwaita-dark")) {
+            m_gtkThemeDarkVariant = true;
+        }
+
         qCDebug(QGnomePlatform) << "Dark version: " << (m_gtkThemeDarkVariant ? "yes" : "no");
     }
 
