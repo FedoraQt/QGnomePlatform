@@ -22,6 +22,7 @@
 
 #include <QDBusVariant>
 #include <QFont>
+#include <QFlags>
 #include <QObject>
 #include <QVariant>
 
@@ -41,6 +42,19 @@ class GnomeHintsSettings : public QObject
 {
     Q_OBJECT
 public:
+    enum TitlebarButtonsPlacement {
+        LeftPlacement = 0,
+        RightPlacement = 1
+    };
+
+    enum TitlebarButton {
+        CloseButton = 0x1,
+        MinimizeButton = 0x02,
+        MaximizeButton = 0x04,
+        AllButtons = 0x8
+    };
+    Q_DECLARE_FLAGS(TitlebarButtons, TitlebarButton);
+
     explicit GnomeHintsSettings();
     virtual ~GnomeHintsSettings();
 
@@ -76,6 +90,16 @@ public:
         return m_palette;
     }
 
+    inline TitlebarButtons titlebarButtons() const
+    {
+        return m_titlebarButtons;
+    }
+
+    inline TitlebarButtonsPlacement titlebarButtonPlacement() const
+    {
+        return m_titlebarButtonPlacement;
+    }
+
 public Q_SLOTS:
     void cursorBlinkTimeChanged();
     void fontChanged();
@@ -83,8 +107,9 @@ public Q_SLOTS:
     void themeChanged();
 
 private Q_SLOTS:
-    void loadTheme();
     void loadFonts();
+    void loadTheme();
+    void loadTitlebar();
     void loadPalette();
     void loadStaticHints();
     void portalSettingChanged(const QString &group, const QString &key, const QDBusVariant &value);
@@ -127,9 +152,12 @@ private:
 
     bool m_usePortal;
     bool m_gtkThemeDarkVariant = false;
+    TitlebarButtons m_titlebarButtons = TitlebarButton::CloseButton;
+    TitlebarButtonsPlacement m_titlebarButtonPlacement = TitlebarButtonsPlacement::RightPlacement;
     QString m_gtkTheme = nullptr;
     QPalette *m_palette = nullptr;
     GSettings *m_cinnamonSettings = nullptr;
+    GSettings *m_gnomeDesktopSettings = nullptr;
     GSettings *m_settings = nullptr;
     QHash<QPlatformTheme::Font, QFont*> m_fonts;
     QHash<QPlatformTheme::ThemeHint, QVariant> m_hints;
@@ -155,5 +183,7 @@ template <> inline qreal GnomeHintsSettings::getSettingsProperty(GSettings *sett
         *ok = true;
     return g_settings_get_double(settings, property.toStdString().c_str());
 }
+
+Q_DECLARE_OPERATORS_FOR_FLAGS(GnomeHintsSettings::TitlebarButtons)
 
 #endif // GNOME_HINTS_SETTINGS_H

@@ -23,6 +23,7 @@
 #include <QtWaylandClient/private/qwaylandabstractdecoration_p.h>
 
 class GnomeHintsSettings;
+class QPixmap;
 
 using namespace QtWaylandClient;
 
@@ -31,7 +32,8 @@ enum Button
     None,
     Close,
     Maximize,
-    Minimize
+    Minimize,
+    Restore
 };
 
 class QGnomePlatformDecoration : public QWaylandAbstractDecoration
@@ -45,6 +47,10 @@ protected:
     bool handleMouse(QWaylandInputDevice *inputDevice, const QPointF &local, const QPointF &global,Qt::MouseButtons b,Qt::KeyboardModifiers mods) override;
     bool handleTouch(QWaylandInputDevice *inputDevice, const QPointF &local, const QPointF &global, Qt::TouchPointState state, Qt::KeyboardModifiers mods) override;
 private:
+    void initializeButtonPixmaps();
+    void initializeColors();
+    QPixmap pixmapDarkVariant(const QPixmap &pixmap);
+
     void processMouseTop(QWaylandInputDevice *inputDevice, const QPointF &local, Qt::MouseButtons b,Qt::KeyboardModifiers mods);
     void processMouseBottom(QWaylandInputDevice *inputDevice, const QPointF &local, Qt::MouseButtons b,Qt::KeyboardModifiers mods);
     void processMouseLeft(QWaylandInputDevice *inputDevice, const QPointF &local, Qt::MouseButtons b,Qt::KeyboardModifiers mods);
@@ -55,6 +61,7 @@ private:
     QRectF maximizeButtonRect() const;
     QRectF minimizeButtonRect() const;
 
+    // Colors
     QColor m_backgroundColorStart;
     QColor m_backgroundColorEnd;
     QColor m_backgroundInactiveColor;
@@ -62,6 +69,10 @@ private:
     QColor m_borderInactiveColor;
     QColor m_foregroundColor;
     QColor m_foregroundInactiveColor;
+
+    // Buttons
+    QHash<Button, QPixmap> m_buttonPixmaps;
+
     QStaticText m_windowTitle;
     Button m_clicking = None;
 

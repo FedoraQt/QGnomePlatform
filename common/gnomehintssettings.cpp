@@ -78,6 +78,7 @@ void gtkMessageHandler(const gchar *log_domain,
 GnomeHintsSettings::GnomeHintsSettings()
     : QObject(0)
     , m_usePortal(checkUsePortalSupport())
+    , m_gnomeDesktopSettings(g_settings_new("org.gnome.desktop.wm.preferences"))
     , m_settings(g_settings_new("org.gnome.desktop.interface"))
 {
     gtk_init(nullptr, nullptr);
@@ -107,6 +108,8 @@ GnomeHintsSettings::GnomeHintsSettings()
 
     // Get current theme and variant
     loadTheme();
+
+    loadTitlebar();
 
     loadStaticHints();
 
@@ -257,6 +260,39 @@ void GnomeHintsSettings::themeChanged()
             QApplication::setStyle(m_gtkTheme);
     } else if (qobject_cast<QGuiApplication *>(QCoreApplication::instance())) {
         QGuiApplication::setPalette(*m_palette);
+    }
+}
+
+void GnomeHintsSettings::loadTitlebar()
+{
+    const QString buttonLayout = getSettingsProperty<QString>(m_gnomeDesktopSettings, "button-layout");
+
+    if (buttonLayout.isEmpty()) {
+        return;
+    }
+
+    const QStringList btnList = buttonLayout.split(QLatin1Char(':'));
+    if (btnList.count() == 2) {
+        const QString leftButtons = btnList.first();
+        const QString rightButtons = btnList.last();
+
+        m_titlebarButtonPlacement = leftButtons.contains(QStringLiteral("close")) ? GnomeHintsSettings::LeftPlacement : GnomeHintsSettings::RightPlacement;
+
+        // TODO support button order
+        TitlebarButtons buttons;
+        if (leftButtons.contains(QStringLiteral("close")) || rightButtons.contains("close")) {
+            buttons = buttons | GnomeHintsSettings::CloseButton;
+        }
+
+        if (leftButtons.contains(QStringLiteral("maximize")) || rightButtons.contains("maximize")) {
+            buttons = buttons | GnomeHintsSettings::MaximizeButton;
+        }
+
+        if (leftButtons.contains(QStringLiteral("minimize")) || rightButtons.contains("minimize")) {
+            buttons = buttons | GnomeHintsSettings::MinimizeButton;
+        }
+
+        m_titlebarButtons = buttons;
     }
 }
 
