@@ -56,8 +56,9 @@
 
 #define BUTTON_SPACING 8
 #define BUTTON_WIDTH 26
-#define BUTTONS_RIGHT_MARGIN 4
+#define BUTTONS_RIGHT_MARGIN 6
 
+// Copied from adwaita-qt
 static QColor transparentize(const QColor &color, qreal amount = 0.1)
 {
     qreal h, s, l, a;
@@ -69,8 +70,34 @@ static QColor transparentize(const QColor &color, qreal amount = 0.1)
     return QColor::fromHslF(h, s, l, alpha);
 }
 
+static QColor darken(const QColor &color, qreal amount = 0.1)
+{
+    qreal h, s, l, a;
+    color.getHslF(&h, &s, &l, &a);
+
+    qreal lightness = l - amount;
+    if (lightness < 0)
+        lightness = 0;
+
+    return QColor::fromHslF(h, s, lightness, a);
+}
+
+static QColor desaturate(const QColor &color, qreal amount = 0.1)
+{
+    qreal h, s, l, a;
+    color.getHslF(&h, &s, &l, &a);
+
+    qreal saturation = s - amount;
+    if (saturation < 0)
+        saturation = 0;
+    return QColor::fromHslF(h, saturation, l, a);
+}
+
 QGnomePlatformDecoration::QGnomePlatformDecoration()
-    : m_hints(new GnomeHintsSettings)
+    : m_closeButtonHovered(false)
+    , m_maximizeButtonHovered(false)
+    , m_minimizeButtonHovered(false)
+    , m_hints(new GnomeHintsSettings)
 {
     initializeButtonPixmaps();
     initializeColors();
@@ -161,7 +188,7 @@ QRectF QGnomePlatformDecoration::minimizeButtonRect() const
 
 QMargins QGnomePlatformDecoration::margins() const
 {
-    return QMargins(1, 36, 1, 1);
+    return QMargins(1, 38, 1, 1);
 }
 
 void QGnomePlatformDecoration::paint(QPaintDevice *device)
@@ -190,7 +217,6 @@ void QGnomePlatformDecoration::paint(QPaintDevice *device)
     borderPath.addRect(0, surfaceRect.height() - margins().bottom(), surfaceRect.width(), margins().bottom());
     borderPath.addRect(surfaceRect.width() - margins().right(), margins().top(), margins().right(), surfaceRect.height() - margins().bottom());
     p.fillPath(borderPath, active ? m_borderColor : m_borderInactiveColor);
-
 
     QRect top = QRect(0, 0, surfaceRect.width(), margins().top());
 
@@ -231,13 +257,35 @@ void QGnomePlatformDecoration::paint(QPaintDevice *device)
 
     QRectF rect;
 
+    // From adwaita-qt
+    QColor windowColor;
+    QColor buttonHoverBorderColor;
+    // QColor buttonHoverFrameColor;
+    if (m_hints->gtkThemeDarkVariant()) {
+        windowColor = darken(desaturate(QColor("#3d3846"), 1.0), 0.04);
+        buttonHoverBorderColor = darken(windowColor, 0.1);
+        // buttonHoverFrameColor = darken(windowColor, 0.01);
+    } else {
+        windowColor = QColor("#f6f5f4");
+        buttonHoverBorderColor = darken(windowColor, 0.18);
+        // buttonHoverFrameColor = darken(windowColor, 0.04);
+    }
+
     // Close button
     p.save();
     rect = closeButtonRect();
-//     QPainterPath path;
-//     path.addRoundedRect(rect.x(), rect.y(), 26, 26, 4, 4);
-//     p.fillPath(path.simplified(), QColor("red"));
-    p.drawPixmap(QPoint(rect.x() + 5, rect.y() + 5), m_buttonPixmaps[Button::Close]);
+    if (m_closeButtonHovered) {
+        QRectF buttonRect(rect.x() - 0.5, rect.y() - 0.5, 28, 28);
+        // QLinearGradient buttonGradient(buttonRect.bottomLeft(), buttonRect.topLeft());
+        // buttonGradient.setColorAt(0, buttonHoverFrameColor);
+        // buttonGradient.setColorAt(1, windowColor);
+        QPainterPath path;
+        path.addRoundedRect(buttonRect, 4, 4);
+        p.setPen(QPen(buttonHoverBorderColor, 1.0));
+        p.fillPath(path, windowColor);
+        p.drawPath(path);
+    }
+    p.drawPixmap(QPoint(rect.x() + 6, rect.y() + 6), m_buttonPixmaps[Button::Close]);
 
     p.restore();
 
@@ -245,9 +293,17 @@ void QGnomePlatformDecoration::paint(QPaintDevice *device)
     if (m_hints->titlebarButtons().testFlag(GnomeHintsSettings::MaximizeButton)) {
         p.save();
         rect = maximizeButtonRect();
-        // QPainterPath path2;
-        // path2.addRoundedRect(rect.x(), rect.y(), 26, 26, 4, 4);
-        // p.fillPath(path2.simplified(), QColor("green"));
+        if (m_maximizeButtonHovered) {
+            QRectF buttonRect(rect.x() - 0.5, rect.y() - 0.5, 28, 28);
+            // QLinearGradient buttonGradient(buttonRect.bottomLeft(), buttonRect.topLeft());
+            // buttonGradient.setColorAt(0, buttonHoverFrameColor);
+            // buttonGradient.setColorAt(1, windowColor);
+            QPainterPath path;
+            path.addRoundedRect(buttonRect, 4, 4);
+            p.setPen(QPen(buttonHoverBorderColor, 1.0));
+            p.fillPath(path, windowColor);
+            p.drawPath(path);
+        }
         if ((window()->windowStates() & Qt::WindowMaximized)) {
             p.drawPixmap(QPoint(rect.x() + 5, rect.y() + 5), m_buttonPixmaps[Button::Restore]);
         } else {
@@ -260,9 +316,17 @@ void QGnomePlatformDecoration::paint(QPaintDevice *device)
     if (m_hints->titlebarButtons().testFlag(GnomeHintsSettings::MinimizeButton)) {
         p.save();
         rect = minimizeButtonRect();
-    //     QPainterPath path3;
-    //     path3.addRoundedRect(rect.x(), rect.y(), 26, 26, 4, 4);
-    //     p.fillPath(path3.simplified(), QColor("blue"));
+        if (m_minimizeButtonHovered) {
+            QRectF buttonRect(rect.x() - 0.5, rect.y() - 0.5, 28, 28);
+            // QLinearGradient buttonGradient(buttonRect.bottomLeft(), buttonRect.topLeft());
+            // buttonGradient.setColorAt(0, buttonHoverFrameColor);
+            // buttonGradient.setColorAt(1, windowColor);
+            QPainterPath path;
+            path.addRoundedRect(buttonRect, 4, 4);
+            p.setPen(QPen(buttonHoverBorderColor, 1.0));
+            p.fillPath(path, windowColor);
+            p.drawPath(path);
+        }
         p.drawPixmap(QPoint(rect.x() + 5, rect.y() + 5), m_buttonPixmaps[Button::Minimize]);
         p.restore();
     }
@@ -285,9 +349,12 @@ bool QGnomePlatformDecoration::clickButton(Qt::MouseButtons b, Button btn)
 }
 
 bool QGnomePlatformDecoration::handleMouse(QWaylandInputDevice *inputDevice, const QPointF &local, const QPointF &global, Qt::MouseButtons b, Qt::KeyboardModifiers mods)
-
 {
     Q_UNUSED(global);
+
+    if (local.y() > margins().top()) {
+        updateButtonHoverState(Button::None);
+    }
 
     // Figure out what area mouse is in
     if (local.y() <= margins().top()) {
@@ -335,6 +402,11 @@ bool QGnomePlatformDecoration::handleTouch(QWaylandInputDevice *inputDevice, con
 void QGnomePlatformDecoration::processMouseTop(QWaylandInputDevice *inputDevice, const QPointF &local, Qt::MouseButtons b, Qt::KeyboardModifiers mods)
 {
     Q_UNUSED(mods);
+
+    if (!closeButtonRect().contains(local) && !maximizeButtonRect().contains(local) && !minimizeButtonRect().contains(local)) {
+        updateButtonHoverState(Button::None);
+    }
+
     if (local.y() <= margins().bottom()) {
         if (local.x() <= margins().left()) {
             //top left bit
@@ -360,12 +432,15 @@ void QGnomePlatformDecoration::processMouseTop(QWaylandInputDevice *inputDevice,
     } else if (local.x() > window()->width() + margins().left()) {
         processMouseRight(inputDevice, local, b, mods);
     } else if (closeButtonRect().contains(local)) {
+        updateButtonHoverState(Button::Close);
         if (clickButton(b, Close))
             QWindowSystemInterface::handleCloseEvent(window());
     }  else if (m_hints->titlebarButtons().testFlag(GnomeHintsSettings::MaximizeButton) && maximizeButtonRect().contains(local)) {
+        updateButtonHoverState(Button::Maximize);
         if (clickButton(b, Maximize))
             window()->setWindowStates(window()->windowStates() ^ Qt::WindowMaximized);
     } else if (m_hints->titlebarButtons().testFlag(GnomeHintsSettings::MinimizeButton) && minimizeButtonRect().contains(local)) {
+        updateButtonHoverState(Button::Minimize);
         if (clickButton(b, Minimize))
             window()->setWindowState(Qt::WindowMinimized);
     } else {
@@ -420,3 +495,22 @@ void QGnomePlatformDecoration::processMouseRight(QWaylandInputDevice *inputDevic
     startResize(inputDevice, WL_SHELL_SURFACE_RESIZE_RIGHT,b);
 }
 
+bool QGnomePlatformDecoration::updateButtonHoverState(Button hoveredButton)
+{
+    bool currentCloseButtonState = m_closeButtonHovered;
+    bool currentMaximizeButtonState = m_maximizeButtonHovered;
+    bool currentMinimizeButtonState = m_maximizeButtonHovered;
+
+    m_closeButtonHovered = hoveredButton == Button::Close;
+    m_maximizeButtonHovered = hoveredButton == Button::Maximize;
+    m_minimizeButtonHovered = hoveredButton == Button::Minimize;
+
+    if (m_closeButtonHovered != currentCloseButtonState
+        || m_maximizeButtonHovered != currentMaximizeButtonState
+        || m_minimizeButtonHovered != currentMinimizeButtonState) {
+        waylandWindow()->requestUpdate();
+        return true;
+    }
+
+    return false;
+}

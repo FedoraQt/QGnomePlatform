@@ -56,6 +56,7 @@ private:
     void processMouseLeft(QWaylandInputDevice *inputDevice, const QPointF &local, Qt::MouseButtons b,Qt::KeyboardModifiers mods);
     void processMouseRight(QWaylandInputDevice *inputDevice, const QPointF &local, Qt::MouseButtons b,Qt::KeyboardModifiers mods);
     bool clickButton(Qt::MouseButtons b, Button btn);
+    bool updateButtonHoverState(Button hoveredButton);
 
     QRectF closeButtonRect() const;
     QRectF maximizeButtonRect() const;
@@ -72,6 +73,10 @@ private:
 
     // Buttons
     QHash<Button, QPixmap> m_buttonPixmaps;
+    bool m_closeButtonHovered;
+    bool m_maximizeButtonHovered;
+    bool m_minimizeButtonHovered;
+
 
     QStaticText m_windowTitle;
     Button m_clicking = None;
