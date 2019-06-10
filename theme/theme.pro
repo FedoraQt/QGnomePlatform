@@ -1,4 +1,4 @@
-lessThan(QT_MINOR_VERSION, 6): error("Qt 5.6 and newer is required.")
+lessThan(QT_MINOR_VERSION, 9): error("Qt 5.9 and newer is required.")
 
 TEMPLATE = lib
 
