@@ -12,12 +12,10 @@ CONFIG += plugin \
 QT += core-private \
       dbus \
       gui-private \
+      theme_support-private \
       widgets
 
 LIBS += -lcommon
-
-equals(QT_MAJOR_VERSION, 5): greaterThan(QT_MINOR_VERSION, 7): QT += theme_support-private
-equals(QT_MAJOR_VERSION, 5): lessThan(QT_MINOR_VERSION, 8): QT += platformsupport-private
 
 PKGCONFIG += gtk+-3.0 \
              gtk+-x11-3.0
