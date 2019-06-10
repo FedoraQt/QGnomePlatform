@@ -31,6 +31,9 @@
 
 QGnomePlatformTheme::QGnomePlatformTheme()
 {
+    if (!qEnvironmentVariableIsSet("QT_WAYLAND_DECORATION"))
+        qputenv("QT_WAYLAND_DECORATION", "gnome");
+
     loadSettings();
 
     /* Initialize some types here so that Gtk+ does not crash when reading
