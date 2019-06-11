@@ -24,6 +24,7 @@
 
 #include <QApplication>
 #include <QStyleFactory>
+#include <QX11Info>
 
 #if !defined(QT_NO_DBUS) && !defined(QT_NO_SYSTEMTRAYICON)
 #include <private/qdbustrayicon_p.h>
@@ -31,8 +32,10 @@
 
 QGnomePlatformTheme::QGnomePlatformTheme()
 {
-    if (!qEnvironmentVariableIsSet("QT_WAYLAND_DECORATION"))
-        qputenv("QT_WAYLAND_DECORATION", "gnome");
+    if (!QX11Info::isPlatformX11()) {
+        if (!qEnvironmentVariableIsSet("QT_WAYLAND_DECORATION"))
+            qputenv("QT_WAYLAND_DECORATION", "gnome");
+    }
 
     loadSettings();
 
