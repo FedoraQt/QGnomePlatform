@@ -231,9 +231,9 @@ void QGnomePlatformDecoration::paint(QPaintDevice *device)
         QRect titleBar = top;
         if (m_hints->titlebarButtonPlacement() == GnomeHintsSettings::RightPlacement) {
             titleBar.setLeft(margins().left());
-            titleBar.setRight(closeButtonRect().left() - 8);
+            titleBar.setRight(minimizeButtonRect().left() - 8);
         } else {
-            titleBar.setLeft(closeButtonRect().right() + 8);
+            titleBar.setLeft(minimizeButtonRect().right() + 8);
             titleBar.setRight(surfaceRect.width() - margins().right());
         }
 
