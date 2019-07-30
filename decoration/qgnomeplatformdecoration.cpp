@@ -201,12 +201,20 @@ void QGnomePlatformDecoration::paint(QPaintDevice *device)
 
     // Title bar (border)
     QPainterPath borderRect;
-    borderRect.addRoundedRect(0, 0, surfaceRect.width(), margins().top() + 8, 10, 10);
+    if ((window()->windowStates() & Qt::WindowMaximized))
+        borderRect.addRect(0, 0, surfaceRect.width(), margins().top() + 8);
+    else
+        borderRect.addRoundedRect(0, 0, surfaceRect.width(), margins().top() + 8, 10, 10);
+
     p.fillPath(borderRect.simplified(), active ? m_borderColor : m_borderInactiveColor);
 
     // Title bar
     QPainterPath roundedRect;
-    roundedRect.addRoundedRect(1, 1, surfaceRect.width() - margins().left() - margins().right(), margins().top() + 8, 8, 8);
+    if ((window()->windowStates() & Qt::WindowMaximized))
+        roundedRect.addRect(1, 1, surfaceRect.width() - margins().left() - margins().right(), margins().top() + 8);
+    else
+        roundedRect.addRoundedRect(1, 1, surfaceRect.width() - margins().left() - margins().right(), margins().top() + 8, 8, 8);
+
     QLinearGradient gradient(margins().left(), margins().top() + 6, margins().left(), 1);
     gradient.setColorAt(0, active ? m_backgroundColorStart : m_backgroundInactiveColor);
     gradient.setColorAt(1, active ? m_backgroundColorEnd : m_backgroundInactiveColor);
