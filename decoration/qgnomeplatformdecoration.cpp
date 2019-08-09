@@ -505,6 +505,7 @@ void QGnomePlatformDecoration::processMouseRight(QWaylandInputDevice *inputDevic
 
 bool QGnomePlatformDecoration::updateButtonHoverState(Button hoveredButton)
 {
+#if 0
     bool currentCloseButtonState = m_closeButtonHovered;
     bool currentMaximizeButtonState = m_maximizeButtonHovered;
     bool currentMinimizeButtonState = m_maximizeButtonHovered;
@@ -519,6 +520,6 @@ bool QGnomePlatformDecoration::updateButtonHoverState(Button hoveredButton)
         waylandWindow()->requestUpdate();
         return true;
     }
-
+#endif
     return false;
 }
