@@ -367,11 +367,11 @@ bool QGnomePlatformDecoration::handleMouse(QWaylandInputDevice *inputDevice, con
     // Figure out what area mouse is in
     if (local.y() <= margins().top()) {
         processMouseTop(inputDevice,local,b,mods);
-    } else if (local.y() > window()->height() + margins().top()) {
+    } else if (local.y() >= window()->height() + margins().top()) {
         processMouseBottom(inputDevice,local,b,mods);
     } else if (local.x() <= margins().left()) {
         processMouseLeft(inputDevice,local,b,mods);
-    } else if (local.x() > window()->width() + margins().left()) {
+    } else if (local.x() >= window()->width() + margins().left()) {
         processMouseRight(inputDevice,local,b,mods);
     } else {
 #if QT_CONFIG(cursor)
@@ -468,7 +468,7 @@ void QGnomePlatformDecoration::processMouseBottom(QWaylandInputDevice *inputDevi
         waylandWindow()->setMouseCursor(inputDevice, Qt::SizeBDiagCursor);
 #endif
         startResize(inputDevice, WL_SHELL_SURFACE_RESIZE_BOTTOM_LEFT,b);
-    } else if (local.x() > window()->width() + margins().left()) {
+    } else if (local.x() > window()->width() + margins().right()) {
         //bottom right bit
 #if QT_CONFIG(cursor)
         waylandWindow()->setMouseCursor(inputDevice, Qt::SizeFDiagCursor);
