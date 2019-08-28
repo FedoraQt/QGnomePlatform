@@ -119,8 +119,10 @@ GnomeHintsSettings::GnomeHintsSettings()
     m_hints[QPlatformTheme::IconPixmapSizes] = QVariant::fromValue(QList<int>() << 512 << 256 << 128 << 64 << 32 << 22 << 16 << 8);
     m_hints[QPlatformTheme::PasswordMaskCharacter] = QVariant(QChar(0x2022));
 
+    cursorSizeChanged();
+
     // Watch for changes
-    QStringList watchList = { "changed::gtk-theme", "changed::icon-theme", "changed::cursor-blink-time", "changed::font-name", "changed::monospace-font-name" };
+    QStringList watchList = { "changed::gtk-theme", "changed::icon-theme", "changed::cursor-blink-time", "changed::font-name", "changed::monospace-font-name", "changed::cursor-size" };
 
     for (const QString &watchedProperty : watchList) {
         g_signal_connect(m_settings, watchedProperty.toStdString().c_str(), G_CALLBACK(gsettingPropertyChanged), this);
@@ -174,6 +176,8 @@ void GnomeHintsSettings::gsettingPropertyChanged(GSettings *settings, gchar *key
         gnomeHintsSettings->fontChanged();
     } else if (changedProperty == QLatin1String("monospace-font-name")) {
         gnomeHintsSettings->fontChanged();
+    } else if (changedProperty == QLatin1String("cursor-size")) {
+        gnomeHintsSettings->cursorSizeChanged();
     } else {
         qCDebug(QGnomePlatform) << "GSetting property change: " << key;
     }
@@ -202,6 +206,12 @@ void GnomeHintsSettings::cursorBlinkTimeChanged()
             QApplication::sendEvent(widget, &event);
         }
     }
+}
+
+void GnomeHintsSettings::cursorSizeChanged()
+{
+    int cursorSize = getSettingsProperty<int>(QStringLiteral("cursor-size"));
+    qputenv("XCURSOR_SIZE", QString::number(cursorSize).toUtf8());
 }
 
 void GnomeHintsSettings::fontChanged()

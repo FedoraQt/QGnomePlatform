@@ -102,6 +102,7 @@ public:
 
 public Q_SLOTS:
     void cursorBlinkTimeChanged();
+    void cursorSizeChanged();
     void fontChanged();
     void iconsChanged();
     void themeChanged();
