@@ -22,6 +22,8 @@
 
 #include <QtWaylandClient/private/qwaylandabstractdecoration_p.h>
 
+#include <QtGlobal>
+
 class GnomeHintsSettings;
 class QPixmap;
 
@@ -42,7 +44,11 @@ public:
     QGnomePlatformDecoration();
     ~QGnomePlatformDecoration();
 protected:
+#if QT_VERSION > QT_VERSION_CHECK(5, 12, 0)
+    QMargins margins(bool excludeShadows = false) const override;
+#else
     QMargins margins() const override;
+#endif
     void paint(QPaintDevice *device) override;
     bool handleMouse(QWaylandInputDevice *inputDevice, const QPointF &local, const QPointF &global,Qt::MouseButtons b,Qt::KeyboardModifiers mods) override;
     bool handleTouch(QWaylandInputDevice *inputDevice, const QPointF &local, const QPointF &global, Qt::TouchPointState state, Qt::KeyboardModifiers mods) override;
