@@ -8,6 +8,7 @@ CONFIG += c++11 \
 QT += core \
       dbus \
       theme_support-private \
+      x11extras \
       widgets
 
 PKGCONFIG += gtk+-3.0 \

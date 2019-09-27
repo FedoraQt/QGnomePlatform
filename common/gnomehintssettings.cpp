@@ -36,6 +36,8 @@
 #include <QDBusConnection>
 #include <QDBusMessage>
 
+#include <QX11Info>
+
 Q_LOGGING_CATEGORY(QGnomePlatform, "qt.qpa.qgnomeplatform")
 
 const QDBusArgument &operator>>(const QDBusArgument &argument, QMap<QString, QVariantMap> &map)
@@ -119,7 +121,8 @@ GnomeHintsSettings::GnomeHintsSettings()
     m_hints[QPlatformTheme::IconPixmapSizes] = QVariant::fromValue(QList<int>() << 512 << 256 << 128 << 64 << 32 << 22 << 16 << 8);
     m_hints[QPlatformTheme::PasswordMaskCharacter] = QVariant(QChar(0x2022));
 
-    cursorSizeChanged();
+    if (!QX11Info::isPlatformX11())
+        cursorSizeChanged();
 
     // Watch for changes
     QStringList watchList = { "changed::gtk-theme", "changed::icon-theme", "changed::cursor-blink-time", "changed::font-name", "changed::monospace-font-name", "changed::cursor-size" };
@@ -177,7 +180,8 @@ void GnomeHintsSettings::gsettingPropertyChanged(GSettings *settings, gchar *key
     } else if (changedProperty == QLatin1String("monospace-font-name")) {
         gnomeHintsSettings->fontChanged();
     } else if (changedProperty == QLatin1String("cursor-size")) {
-        gnomeHintsSettings->cursorSizeChanged();
+        if (!QX11Info::isPlatformX11())
+            gnomeHintsSettings->cursorSizeChanged();
     } else {
         qCDebug(QGnomePlatform) << "GSetting property change: " << key;
     }
