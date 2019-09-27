@@ -24,6 +24,8 @@
 
 #include <QtGlobal>
 
+#include <QDateTime>
+
 class GnomeHintsSettings;
 class QPixmap;
 
@@ -83,6 +85,9 @@ private:
     bool m_maximizeButtonHovered;
     bool m_minimizeButtonHovered;
 
+    // For double-click support
+    QDateTime m_lastButtonClick;
+    QPointF m_lastButtonClickPosition;
 
     QStaticText m_windowTitle;
     Button m_clicking = None;

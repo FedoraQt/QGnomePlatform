@@ -109,6 +109,8 @@ QGnomePlatformDecoration::QGnomePlatformDecoration()
     initializeButtonPixmaps();
     initializeColors();
 
+    m_lastButtonClick = QDateTime::currentDateTime();
+
     QTextOption option(Qt::AlignHCenter | Qt::AlignVCenter);
     option.setWrapMode(QTextOption::NoWrap);
     m_windowTitle.setTextOption(option);
@@ -546,6 +548,8 @@ void QGnomePlatformDecoration::processMouseTop(QWaylandInputDevice *inputDevice,
 {
     Q_UNUSED(mods);
 
+    QDateTime currentDateTime = QDateTime::currentDateTime();
+
     if (!closeButtonRect().contains(local) && !maximizeButtonRect().contains(local) && !minimizeButtonRect().contains(local)) {
         updateButtonHoverState(Button::None);
     }
@@ -587,10 +591,20 @@ void QGnomePlatformDecoration::processMouseTop(QWaylandInputDevice *inputDevice,
         if (clickButton(b, Minimize))
             window()->setWindowState(Qt::WindowMinimized);
     } else {
+        if (clickButton(b, Maximize)) {
+            const int doubleClickDistance = m_hints->hint(QPlatformTheme::MouseDoubleClickDistance).toInt();
+            QPointF posDiff = m_lastButtonClickPosition - local;
+            if ((m_lastButtonClick.msecsTo(currentDateTime) <= m_hints->hint(QPlatformTheme::MouseDoubleClickInterval).toInt()) &&
+                ((posDiff.x() <= doubleClickDistance && posDiff.x() >= -doubleClickDistance) && ((posDiff.y() <= doubleClickDistance && posDiff.y() >= -doubleClickDistance))))
+                window()->setWindowStates(window()->windowStates() ^ Qt::WindowMaximized);
+            m_lastButtonClick = currentDateTime;
+            m_lastButtonClickPosition = local;
+        } else {
 #if QT_CONFIG(cursor)
-        waylandWindow()->restoreMouseCursor(inputDevice);
+            waylandWindow()->restoreMouseCursor(inputDevice);
 #endif
-        startMove(inputDevice,b);
+            startMove(inputDevice,b);
+        }
     }
 }
 
