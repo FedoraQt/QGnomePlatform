@@ -54,16 +54,9 @@
 #include <QtWaylandClient/private/qwaylandwindow_p.h>
 #include <QtWaylandClient/private/qwaylandshellsurface_p.h>
 
-static const int buttonSpacing  = 8;
-static const int buttonWidth = 26;
-static const int buttonsRightMargin = 6;
-
-static const int bordersWidth = 1;
-#if QT_VERSION > QT_VERSION_CHECK(5, 12, 0)
-static const int shadowsWidth = 10;
-#else
-static const int shadowsWidth = 0;
-#endif
+#define BUTTON_SPACING 8
+#define BUTTON_WIDTH 26
+#define BUTTONS_RIGHT_MARGIN 6
 
 // Copied from adwaita-qt
 static QColor transparentize(const QColor &color, qreal amount = 0.1)
@@ -163,22 +156,22 @@ QPixmap QGnomePlatformDecoration::pixmapDarkVariant(const QPixmap &pixmap)
 QRectF QGnomePlatformDecoration::closeButtonRect() const
 {
     if (m_hints->titlebarButtonPlacement() == GnomeHintsSettings::RightPlacement) {
-        return QRectF(window()->frameGeometry().width() - buttonWidth - buttonSpacing * 0 - buttonsRightMargin - shadowsWidth,
-                      (margins().top() - buttonWidth + shadowsWidth) / 2, buttonWidth, buttonWidth);
+        return QRectF(window()->frameGeometry().width() - BUTTON_WIDTH - BUTTON_SPACING * 0 - BUTTONS_RIGHT_MARGIN,
+                      (margins().top() - BUTTON_WIDTH) / 2, BUTTON_WIDTH, BUTTON_WIDTH);
     } else {
-        return QRectF(buttonSpacing * 0 + buttonsRightMargin + shadowsWidth,
-                      (margins().top() - buttonWidth + shadowsWidth) / 2, buttonWidth, buttonWidth);
+        return QRectF(BUTTON_SPACING * 0 + BUTTONS_RIGHT_MARGIN,
+                      (margins().top() - BUTTON_WIDTH) / 2, BUTTON_WIDTH, BUTTON_WIDTH);
     }
 }
 
 QRectF QGnomePlatformDecoration::maximizeButtonRect() const
 {
     if (m_hints->titlebarButtonPlacement() == GnomeHintsSettings::RightPlacement) {
-        return QRectF(window()->frameGeometry().width() - buttonWidth * 2 - buttonSpacing * 1 - buttonsRightMargin - shadowsWidth,
-                      (margins().top() - buttonWidth + shadowsWidth) / 2, buttonWidth, buttonWidth);
+        return QRectF(window()->frameGeometry().width() - BUTTON_WIDTH * 2 - BUTTON_SPACING * 1 - BUTTONS_RIGHT_MARGIN,
+                      (margins().top() - BUTTON_WIDTH) / 2, BUTTON_WIDTH, BUTTON_WIDTH);
     } else {
-        return QRectF(buttonWidth * 1 + buttonSpacing * 1 + buttonsRightMargin + shadowsWidth,
-                      (margins().top() - buttonWidth + shadowsWidth) / 2, buttonWidth, buttonWidth);
+        return QRectF(BUTTON_WIDTH * 1 + BUTTON_SPACING * 1 + BUTTONS_RIGHT_MARGIN,
+                      (margins().top() - BUTTON_WIDTH) / 2, BUTTON_WIDTH, BUTTON_WIDTH);
     }
 }
 
@@ -187,53 +180,17 @@ QRectF QGnomePlatformDecoration::minimizeButtonRect() const
     const bool maximizeEnabled = m_hints->titlebarButtons().testFlag(GnomeHintsSettings::MaximizeButton);
 
     if (m_hints->titlebarButtonPlacement() == GnomeHintsSettings::RightPlacement) {
-        return QRectF(window()->frameGeometry().width() - buttonWidth * (maximizeEnabled ? 3 : 2) - buttonSpacing * (maximizeEnabled ? 2 : 1) - buttonsRightMargin - shadowsWidth,
-                      (margins().top() - buttonWidth + shadowsWidth) / 2, buttonWidth, buttonWidth);
+        return QRectF(window()->frameGeometry().width() - BUTTON_WIDTH * (maximizeEnabled ? 3 : 2) - BUTTON_SPACING * (maximizeEnabled ? 2 : 1) - BUTTONS_RIGHT_MARGIN,
+                      (margins().top() - BUTTON_WIDTH) / 2, BUTTON_WIDTH, BUTTON_WIDTH);
     } else {
-        return QRectF(buttonWidth * (maximizeEnabled ? 2 : 1) + buttonSpacing * (maximizeEnabled ? 2 : 1) + buttonsRightMargin + shadowsWidth,
-                      (margins().top() - buttonWidth + shadowsWidth) / 2, buttonWidth, buttonWidth);
+        return QRectF(BUTTON_WIDTH * (maximizeEnabled ? 2 : 1) + BUTTON_SPACING * (maximizeEnabled ? 2 : 1) + BUTTONS_RIGHT_MARGIN,
+                      (margins().top() - BUTTON_WIDTH) / 2, BUTTON_WIDTH, BUTTON_WIDTH);
     }
 }
 
-#if QT_VERSION > QT_VERSION_CHECK(5, 12, 0)
-QMargins QGnomePlatformDecoration::margins(bool excludeShadows) const
-#else
 QMargins QGnomePlatformDecoration::margins() const
-#endif
 {
-    QMargins margins(1, 38, 1, 1);
-#if QT_VERSION > QT_VERSION_CHECK(5, 12, 0)
-
-    if (excludeShadows)
-        return margins;
-
-    return margins + shadowsWidth;
-#else
-    return margins;
-#endif
-}
-
-/* Border region
-*  -----------
-*  |         |
-*  |         |
-*  |         |
-*  |         |
-*  |         |
-*  -----------
-*/
-static QRegion borderRegion(const QSize &size, const QMargins &margins)
-{
-    QRegion r;
-    // Top
-    r += QRect(shadowsWidth, margins.top() - bordersWidth, size.width() - (2 * shadowsWidth), bordersWidth);
-    // Left
-    r += QRect(shadowsWidth, margins.top(), bordersWidth, size.height() - margins.top() - shadowsWidth - bordersWidth);
-    // Bottom
-    r += QRect(shadowsWidth, size.height() - margins.bottom(), size.width() - (2 * shadowsWidth), bordersWidth);
-    // Right
-    r += QRect(size.width() - margins.right(), margins.top(), bordersWidth, size.height() - margins.top() - shadowsWidth - bordersWidth);
-    return r;
+    return QMargins(1, 38, 1, 1);
 }
 
 void QGnomePlatformDecoration::paint(QPaintDevice *device)
@@ -244,125 +201,36 @@ void QGnomePlatformDecoration::paint(QPaintDevice *device)
     QPainter p(device);
     p.setRenderHint(QPainter::Antialiasing);
 
-    /*       Draw shadows   */
-    /*************************/
-    p.save();
-    p.setPen(Qt::NoPen);
-    p.setCompositionMode(QPainter::CompositionMode_Source);
-
-    QColor beginShadowColor = active ? transparentize(QColor("black"), 0.85) : transparentize(QColor("black"), 0.90);
-    QColor endShadowColor = active ? transparentize(QColor("black"), 1) : transparentize(QColor("black"), 1);
-
-    QLinearGradient gradient;
-
-    gradient.setColorAt(0.0, beginShadowColor);
-    gradient.setColorAt(1.0, endShadowColor);
-
-    // Right
-    QPointF right0(surfaceRect.width() - shadowsWidth, surfaceRect.height() / 2);
-    QPointF right1(surfaceRect.width(), surfaceRect.height() / 2);
-    gradient.setStart(right0);
-    gradient.setFinalStop(right1);
-    p.setBrush(QBrush(gradient));
-    p.drawRoundRect(QRectF(QPointF(surfaceRect.width() - (2 * shadowsWidth), shadowsWidth), QPointF(surfaceRect.width(), surfaceRect.height() - shadowsWidth)), 0.0, 0.0);
-
-    // Left
-    QPointF left0(shadowsWidth, surfaceRect.height() / 2);
-    QPointF left1(0, surfaceRect.height() / 2);
-    gradient.setStart(left0);
-    gradient.setFinalStop(left1);
-    p.setBrush(QBrush(gradient));
-    p.drawRoundRect(QRectF(QPointF(2 * shadowsWidth, shadowsWidth), QPointF(0, surfaceRect.height() - shadowsWidth)), 0.0, 0.0);
-
-    // Top
-    QPointF top0(surfaceRect.width() / 2, shadowsWidth);
-    QPointF top1(surfaceRect.width() / 2, 0);
-    gradient.setStart(top0);
-    gradient.setFinalStop(top1);
-    p.setBrush(QBrush(gradient));
-    p.drawRoundRect(QRectF(QPointF(surfaceRect.width() - shadowsWidth, 0), QPointF(shadowsWidth, 2 * shadowsWidth)), 0.0, 0.0);
-
-    // Bottom
-    QPointF bottom0(surfaceRect.width() / 2, surfaceRect.height() - shadowsWidth);
-    QPointF bottom1(surfaceRect.width() / 2, surfaceRect.height());
-    gradient.setStart(bottom0);
-    gradient.setFinalStop(bottom1);
-    p.setBrush(QBrush(gradient));
-    p.drawRoundRect(QRectF(QPointF(shadowsWidth, surfaceRect.height() - (2 * shadowsWidth)), QPointF(surfaceRect.width() - shadowsWidth, surfaceRect.height())), 0.0, 0.0);
-
-    // BottomRight
-    QPointF bottomright0(surfaceRect.width() - shadowsWidth, surfaceRect.height() - shadowsWidth);
-    QPointF bottomright1(surfaceRect.width(), surfaceRect.height());
-    gradient.setStart(bottomright0);
-    gradient.setFinalStop(bottomright1);
-    gradient.setColorAt(0.55, transparentize(endShadowColor, 0.9));
-    p.setBrush(QBrush(gradient));
-    p.drawRoundRect(QRectF(bottomright0, bottomright1), 0.0, 0.0);
-
-    // BottomLeft
-    QPointF bottomleft0(shadowsWidth, surfaceRect.height() - shadowsWidth);
-    QPointF bottomleft1(0, surfaceRect.height());
-    gradient.setStart(bottomleft0);
-    gradient.setFinalStop(bottomleft1);
-    gradient.setColorAt(0.55, transparentize(endShadowColor, 0.9));
-    p.setBrush(QBrush(gradient));
-    p.drawRoundRect(QRectF(bottomleft0, bottomleft1), 0.0, 0.0);
-
-    // TopLeft
-    QPointF topleft0(shadowsWidth, shadowsWidth);
-    QPointF topleft1(0, 0);
-    gradient.setStart(topleft0);
-    gradient.setFinalStop(topleft1);
-    gradient.setColorAt(0.55, transparentize(endShadowColor, 0.9));
-    p.setBrush(QBrush(gradient));
-    p.drawRoundRect(QRectF(topleft0, topleft1), 0.0, 0.0);
-
-    // TopRight
-    QPointF topright0(surfaceRect.width() - shadowsWidth, shadowsWidth);
-    QPointF topright1(surfaceRect.width(), 0);
-    gradient.setStart(topright0);
-    gradient.setFinalStop(topright1);
-    gradient.setColorAt(0.55, transparentize(endShadowColor, 0.9));
-    p.setBrush(QBrush(gradient));
-    p.drawRoundRect(QRectF(topright0, topright1), 0.0, 0.0);
-
-    p.restore();
-
-    /*    Draw borders   */
-    /*********************/
-
     // Title bar (border)
     QPainterPath borderRect;
     if ((window()->windowStates() & Qt::WindowMaximized))
-        borderRect.addRect(shadowsWidth, shadowsWidth, surfaceRect.width() - (2 * shadowsWidth), margins().top() + 8);
+        borderRect.addRect(0, 0, surfaceRect.width(), margins().top() + 8);
     else
-        borderRect.addRoundedRect(shadowsWidth, shadowsWidth, surfaceRect.width() - (2 * shadowsWidth), margins().top() + 8, 10, 10);
+        borderRect.addRoundedRect(0, 0, surfaceRect.width(), margins().top() + 8, 10, 10);
 
     p.fillPath(borderRect.simplified(), active ? m_borderColor : m_borderInactiveColor);
-
-    // Left/Bottom/Right border
-    QPainterPath borderPath;
-    borderPath.addRegion(borderRegion(QSize(surfaceRect.width(), surfaceRect.height()), margins()));
-    p.fillPath(borderPath, active ? m_borderColor : m_borderInactiveColor);
 
     // Title bar
     QPainterPath roundedRect;
     if ((window()->windowStates() & Qt::WindowMaximized))
-        roundedRect.addRect(shadowsWidth + bordersWidth, shadowsWidth + bordersWidth, surfaceRect.width() - margins().left() - margins().right(), margins().top());
+        roundedRect.addRect(1, 1, surfaceRect.width() - margins().left() - margins().right(), margins().top() + 8);
     else
-        roundedRect.addRoundedRect(shadowsWidth + bordersWidth, shadowsWidth + bordersWidth, surfaceRect.width() - margins().left() - margins().right(), margins().top(), 8, 8);
-    QLinearGradient titleBarGradient(margins().left(), margins().top() + 6, margins().left(), 1);
-    titleBarGradient.setColorAt(0, active ? m_backgroundColorStart : m_backgroundInactiveColor);
-    titleBarGradient.setColorAt(1, active ? m_backgroundColorEnd : m_backgroundInactiveColor);
-    p.fillPath(roundedRect.simplified(), titleBarGradient);
+        roundedRect.addRoundedRect(1, 1, surfaceRect.width() - margins().left() - margins().right(), margins().top() + 8, 8, 8);
 
-    // *********************************************************************************************** //
+    QLinearGradient gradient(margins().left(), margins().top() + 6, margins().left(), 1);
+    gradient.setColorAt(0, active ? m_backgroundColorStart : m_backgroundInactiveColor);
+    gradient.setColorAt(1, active ? m_backgroundColorEnd : m_backgroundInactiveColor);
+    p.fillPath(roundedRect.simplified(), gradient);
+
+    QPainterPath borderPath;
+    borderPath.addRect(0, margins().top(), margins().left(), surfaceRect.height() - margins().top());
+    borderPath.addRect(0, surfaceRect.height() - margins().bottom(), surfaceRect.width(), margins().bottom());
+    borderPath.addRect(surfaceRect.width() - margins().right(), margins().top(), margins().right(), surfaceRect.height() - margins().bottom());
+    p.fillPath(borderPath, active ? m_borderColor : m_borderInactiveColor);
 
     QRect top = QRect(0, 0, surfaceRect.width(), margins().top());
 
-    /*    Window title   */
-    /*********************/
-
+    // Window title
     QString windowTitleText = window()->title();
     if (!windowTitleText.isEmpty()) {
         if (m_windowTitle.text() != windowTitleText) {
@@ -383,8 +251,8 @@ void QGnomePlatformDecoration::paint(QPaintDevice *device)
         p.setClipRect(titleBar);
         p.setPen(active ? m_foregroundColor : m_foregroundInactiveColor);
         QSizeF size = m_windowTitle.size();
-        int dx = (top.width() - size.width() + (2 * shadowsWidth)) / 2;
-        int dy = (top.height() - size.height() + shadowsWidth) / 2;
+        int dx = (top.width() - size.width()) /2;
+        int dy = (top.height()- size.height()) /2;
         QFont font;
         const QFont *themeFont = m_hints->font(QPlatformTheme::SystemFont);
         font.setPointSizeF(themeFont->pointSizeF());
@@ -396,9 +264,6 @@ void QGnomePlatformDecoration::paint(QPaintDevice *device)
         p.drawStaticText(windowTitlePoint, m_windowTitle);
         p.restore();
     }
-
-    /*    Buttons   */
-    /*********************/
 
     QRectF rect;
 
@@ -554,7 +419,7 @@ void QGnomePlatformDecoration::processMouseTop(QWaylandInputDevice *inputDevice,
         updateButtonHoverState(Button::None);
     }
 
-    if (local.y() <= margins().bottom() && !(window()->windowStates() & Qt::WindowMaximized)) {
+    if (local.y() <= margins().bottom()) {
         if (local.x() <= margins().left()) {
             //top left bit
 #if QT_CONFIG(cursor)
@@ -611,11 +476,7 @@ void QGnomePlatformDecoration::processMouseTop(QWaylandInputDevice *inputDevice,
 void QGnomePlatformDecoration::processMouseBottom(QWaylandInputDevice *inputDevice, const QPointF &local, Qt::MouseButtons b, Qt::KeyboardModifiers mods)
 {
     Q_UNUSED(mods);
-
-    if ((window()->windowStates() & Qt::WindowMaximized))
-        return;
-
-    if (local.x() <= margins().left() ) {
+    if (local.x() <= margins().left()) {
         //bottom left bit
 #if QT_CONFIG(cursor)
         waylandWindow()->setMouseCursor(inputDevice, Qt::SizeBDiagCursor);
@@ -640,10 +501,6 @@ void QGnomePlatformDecoration::processMouseLeft(QWaylandInputDevice *inputDevice
 {
     Q_UNUSED(local);
     Q_UNUSED(mods);
-
-    if ((window()->windowStates() & Qt::WindowMaximized))
-        return;
-
 #if QT_CONFIG(cursor)
     waylandWindow()->setMouseCursor(inputDevice, Qt::SplitHCursor);
 #endif
@@ -654,10 +511,6 @@ void QGnomePlatformDecoration::processMouseRight(QWaylandInputDevice *inputDevic
 {
     Q_UNUSED(local);
     Q_UNUSED(mods);
-
-    if ((window()->windowStates() & Qt::WindowMaximized))
-        return;
-
 #if QT_CONFIG(cursor)
     waylandWindow()->setMouseCursor(inputDevice, Qt::SplitHCursor);
 #endif
