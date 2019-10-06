@@ -409,6 +409,26 @@ bool QGnomePlatformDecoration::handleTouch(QWaylandInputDevice *inputDevice, con
     return handled;
 }
 
+#if (QT_VERSION < QT_VERSION_CHECK(5, 13, 0))
+void QGnomePlatformDecoration::startResize(QWaylandInputDevice *inputDevice, Qt::Edges edges, Qt::MouseButtons buttons)
+{
+    unsigned resize_flag = 0;
+    if (edges & Qt::TopEdge) {
+        resize_flag |= WL_SHELL_SURFACE_RESIZE_TOP;
+    }
+    if (edges & Qt::BottomEdge) {
+        resize_flag |= WL_SHELL_SURFACE_RESIZE_BOTTOM;
+    }
+    if (edges & Qt::LeftEdge) {
+        resize_flag |= WL_SHELL_SURFACE_RESIZE_LEFT;
+    }
+    if (edges & Qt::RightEdge) {
+        resize_flag |= WL_SHELL_SURFACE_RESIZE_RIGHT;
+    }
+    startResize(inputDevice, wl_shell_surface_resize(resize_flag), buttons);
+}
+#endif
+
 void QGnomePlatformDecoration::processMouseTop(QWaylandInputDevice *inputDevice, const QPointF &local, Qt::MouseButtons b, Qt::KeyboardModifiers mods)
 {
     Q_UNUSED(mods);
@@ -425,19 +445,19 @@ void QGnomePlatformDecoration::processMouseTop(QWaylandInputDevice *inputDevice,
 #if QT_CONFIG(cursor)
             waylandWindow()->setMouseCursor(inputDevice, Qt::SizeFDiagCursor);
 #endif
-            startResize(inputDevice,WL_SHELL_SURFACE_RESIZE_TOP_LEFT,b);
+            startResize(inputDevice, Qt::TopEdge | Qt::LeftEdge, b);
         } else if (local.x() > window()->width() + margins().left()) {
             //top right bit
 #if QT_CONFIG(cursor)
             waylandWindow()->setMouseCursor(inputDevice, Qt::SizeBDiagCursor);
 #endif
-            startResize(inputDevice,WL_SHELL_SURFACE_RESIZE_TOP_RIGHT,b);
+            startResize(inputDevice, Qt::TopEdge | Qt::RightEdge, b);
         } else {
             //top resize bit
 #if QT_CONFIG(cursor)
             waylandWindow()->setMouseCursor(inputDevice, Qt::SplitVCursor);
 #endif
-            startResize(inputDevice,WL_SHELL_SURFACE_RESIZE_TOP,b);
+            startResize(inputDevice, Qt::TopEdge, b);
         }
     } else if (local.x() <= margins().left()) {
         processMouseLeft(inputDevice, local, b, mods);
@@ -481,19 +501,19 @@ void QGnomePlatformDecoration::processMouseBottom(QWaylandInputDevice *inputDevi
 #if QT_CONFIG(cursor)
         waylandWindow()->setMouseCursor(inputDevice, Qt::SizeBDiagCursor);
 #endif
-        startResize(inputDevice, WL_SHELL_SURFACE_RESIZE_BOTTOM_LEFT,b);
+        startResize(inputDevice, Qt::BottomEdge | Qt::LeftEdge, b);
     } else if (local.x() > window()->width() + margins().right()) {
         //bottom right bit
 #if QT_CONFIG(cursor)
         waylandWindow()->setMouseCursor(inputDevice, Qt::SizeFDiagCursor);
 #endif
-        startResize(inputDevice, WL_SHELL_SURFACE_RESIZE_BOTTOM_RIGHT,b);
+        startResize(inputDevice, Qt::BottomEdge | Qt::RightEdge, b);
     } else {
         //bottom bit
 #if QT_CONFIG(cursor)
         waylandWindow()->setMouseCursor(inputDevice, Qt::SplitVCursor);
 #endif
-        startResize(inputDevice,WL_SHELL_SURFACE_RESIZE_BOTTOM,b);
+        startResize(inputDevice, Qt::BottomEdge, b);
     }
 }
 
@@ -504,7 +524,7 @@ void QGnomePlatformDecoration::processMouseLeft(QWaylandInputDevice *inputDevice
 #if QT_CONFIG(cursor)
     waylandWindow()->setMouseCursor(inputDevice, Qt::SplitHCursor);
 #endif
-    startResize(inputDevice,WL_SHELL_SURFACE_RESIZE_LEFT,b);
+    startResize(inputDevice, Qt::LeftEdge, b);
 }
 
 void QGnomePlatformDecoration::processMouseRight(QWaylandInputDevice *inputDevice, const QPointF &local, Qt::MouseButtons b, Qt::KeyboardModifiers mods)
@@ -514,7 +534,7 @@ void QGnomePlatformDecoration::processMouseRight(QWaylandInputDevice *inputDevic
 #if QT_CONFIG(cursor)
     waylandWindow()->setMouseCursor(inputDevice, Qt::SplitHCursor);
 #endif
-    startResize(inputDevice, WL_SHELL_SURFACE_RESIZE_RIGHT,b);
+    startResize(inputDevice, Qt::RightEdge, b);
 }
 
 bool QGnomePlatformDecoration::updateButtonHoverState(Button hoveredButton)
