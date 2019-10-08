@@ -287,8 +287,8 @@ void GnomeHintsSettings::loadTitlebar()
 
     const QStringList btnList = buttonLayout.split(QLatin1Char(':'));
     if (btnList.count() == 2) {
-        const QString leftButtons = btnList.first();
-        const QString rightButtons = btnList.last();
+        const QString &leftButtons = btnList.first();
+        const QString &rightButtons = btnList.last();
 
         m_titlebarButtonPlacement = leftButtons.contains(QStringLiteral("close")) ? GnomeHintsSettings::LeftPlacement : GnomeHintsSettings::RightPlacement;
 
@@ -366,15 +366,14 @@ void GnomeHintsSettings::loadFonts()
 
     const QStringList fontTypes { "font-name", "monospace-font-name" };
 
-    for (const QString fontType : fontTypes) {
-        QString fontName = getSettingsProperty<QString>(fontType);
+    for (const QString &fontType : fontTypes) {
+        const QString fontName = getSettingsProperty<QString>(fontType);
         if (fontName.isEmpty()) {
             qCWarning(QGnomePlatform) << "Couldn't get " << fontType;
         } else {
-            QString fontNameString(fontName);
             QRegExp re("(.+)[ \t]+([0-9]+)");
             int fontSize;
-            if (re.indexIn(fontNameString) == 0) {
+            if (re.indexIn(fontName) == 0) {
                 fontSize = re.cap(2).toInt();
                 QFont* font = new QFont(re.cap(1));
                 font->setPointSizeF(fontSize);
@@ -387,11 +386,11 @@ void GnomeHintsSettings::loadFonts()
                 }
             } else {
                 if (fontType == QLatin1String("font-name")) {
-                    m_fonts[QPlatformTheme::SystemFont] = new QFont(fontNameString);
-                    qCDebug(QGnomePlatform) << "Font name: " << fontNameString;
+                    m_fonts[QPlatformTheme::SystemFont] = new QFont(fontName);
+                    qCDebug(QGnomePlatform) << "Font name: " << fontName;
                 } else if (fontType == QLatin1String("monospace-font-name")) {
-                    m_fonts[QPlatformTheme::FixedFont] = new QFont(fontNameString);
-                    qCDebug(QGnomePlatform) << "Monospace font name: " << fontNameString;
+                    m_fonts[QPlatformTheme::FixedFont] = new QFont(fontName);
+                    qCDebug(QGnomePlatform) << "Monospace font name: " << fontName;
                 }
             }
         }
