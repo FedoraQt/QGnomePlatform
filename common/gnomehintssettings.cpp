@@ -95,9 +95,9 @@ GnomeHintsSettings::GnomeHintsSettings()
 
     if (m_usePortal) {
         QDBusMessage message = QDBusMessage::createMethodCall(QStringLiteral("org.freedesktop.portal.Desktop"),
-                                                            QStringLiteral("/org/freedesktop/portal/desktop"),
-                                                            QStringLiteral("org.freedesktop.portal.Settings"),
-                                                            QStringLiteral("ReadAll"));
+                                                              QStringLiteral("/org/freedesktop/portal/desktop"),
+                                                              QStringLiteral("org.freedesktop.portal.Settings"),
+                                                              QStringLiteral("ReadAll"));
         message << QStringList{{QStringLiteral("org.gnome.desktop.interface")}, {QStringLiteral("org.gnome.desktop.wm.preferences")}};
 
         // FIXME: async?
@@ -108,21 +108,11 @@ GnomeHintsSettings::GnomeHintsSettings()
         }
     }
 
-    // Get current theme and variant
-    loadTheme();
-
-    loadTitlebar();
-
-    loadStaticHints();
-
     m_hints[QPlatformTheme::DialogButtonBoxLayout] = QDialogButtonBox::GnomeLayout;
     m_hints[QPlatformTheme::DialogButtonBoxButtonsHaveIcons] = true;
     m_hints[QPlatformTheme::KeyboardScheme] = QPlatformTheme::GnomeKeyboardScheme;
     m_hints[QPlatformTheme::IconPixmapSizes] = QVariant::fromValue(QList<int>() << 512 << 256 << 128 << 64 << 32 << 22 << 16 << 8);
     m_hints[QPlatformTheme::PasswordMaskCharacter] = QVariant(QChar(0x2022));
-
-    if (!QX11Info::isPlatformX11())
-        cursorSizeChanged();
 
     // Watch for changes
     QStringList watchListDesktopInterface = { "changed::gtk-theme", "changed::icon-theme", "changed::cursor-blink-time", "changed::font-name", "changed::monospace-font-name", "changed::cursor-size" };
@@ -145,20 +135,14 @@ GnomeHintsSettings::GnomeHintsSettings()
                                               QStringLiteral("SettingChanged"), this, SLOT(portalSettingChanged(QString,QString,QDBusVariant)));
     }
 
-    // g_signal_connect(gtk_settings_get_default(), "notify::gtk-theme-name", G_CALLBACK(gtkThemeChanged), this);
+    if (!QX11Info::isPlatformX11())
+        cursorSizeChanged();
 
-                                        /* Other theme hints */
-    // KeyboardInputInterval, StartDragTime, KeyboardAutoRepeatRate, StartDragVelocity, DropShadow,
-    // MaximumScrollBarDragDistance, ItemViewActivateItemOnSingleClick, WindowAutoPlacement, DialogButtonBoxButtonsHaveIcons
-    // UseFullScreenForPopupMenu, UiEffects, SpellCheckUnderlineStyle, TabFocusBehavior, TabAllWidgets, PasswordMaskCharacter
-    // DialogSnapToDefaultButton, ContextMenuOnMouseRelease, WheelScrollLines
-    //  TODO TextCursorWidth, ToolButtonStyle, ToolBarIconSize
-
-    // Load fonts
     loadFonts();
-
-    // Load palette
     loadPalette();
+    loadStaticHints();
+    loadTheme();
+    loadTitlebar();
 }
 
 GnomeHintsSettings::~GnomeHintsSettings()
@@ -174,23 +158,23 @@ void GnomeHintsSettings::gsettingPropertyChanged(GSettings *settings, gchar *key
     const QString changedProperty = key;
 
     // Org.gnome.desktop.interface
-    if (changedProperty == QLatin1String("gtk-theme")) {
+    if (changedProperty == QStringLiteral("gtk-theme")) {
         gnomeHintsSettings->themeChanged();
-    } else if (changedProperty == QLatin1String("icon-theme")) {
+    } else if (changedProperty == QStringLiteral("icon-theme")) {
         gnomeHintsSettings->iconsChanged();
-    } else if (changedProperty == QLatin1String("cursor-blink-time")) {
+    } else if (changedProperty == QStringLiteral("cursor-blink-time")) {
         gnomeHintsSettings->cursorBlinkTimeChanged();
-    } else if (changedProperty == QLatin1String("font-name")) {
+    } else if (changedProperty == QStringLiteral("font-name")) {
         gnomeHintsSettings->fontChanged();
-    } else if (changedProperty == QLatin1String("monospace-font-name")) {
+    } else if (changedProperty == QStringLiteral("monospace-font-name")) {
         gnomeHintsSettings->fontChanged();
-    } else if (changedProperty == QLatin1String("cursor-size")) {
+    } else if (changedProperty == QStringLiteral("cursor-size")) {
         if (!QX11Info::isPlatformX11())
             gnomeHintsSettings->cursorSizeChanged();
     // Org.gnome.wm.preferences
-    } else if (changedProperty == QLatin1String("titlebar-font")) {
+    } else if (changedProperty == QStringLiteral("titlebar-font")) {
         gnomeHintsSettings->fontChanged();
-    } else if (changedProperty == QLatin1String("button-layout")) {
+    } else if (changedProperty == QStringLiteral("button-layout")) {
         gnomeHintsSettings->loadTitlebar();
     // Fallback
     } else {
@@ -363,8 +347,6 @@ void GnomeHintsSettings::loadTheme()
     }
 
     styleNames << QStringLiteral("adwaita")
-               // Avoid using gtk+ style as it uses gtk2 and we use gtk3 which is causing a crash
-               // << QStringLiteral("gtk+")
                << QStringLiteral("fusion")
                << QStringLiteral("windows");
     m_hints[QPlatformTheme::StyleNames] = styleNames;
@@ -390,30 +372,30 @@ void GnomeHintsSettings::loadFonts()
                 fontSize = re.cap(2).toInt();
                 name = re.cap(1);
                 // Bold is most likely not part of the name
-                if (name.endsWith(QLatin1String(" Bold"))) {
+                if (name.endsWith(QStringLiteral(" Bold"))) {
                     bold = true;
-                    name = name.remove(QLatin1String(" Bold"));
+                    name = name.remove(QStringLiteral(" Bold"));
                 }
 
-                QFont* font = new QFont(name, fontSize, bold ? QFont::Bold : QFont::Normal);
-                if (fontType == QLatin1String("font-name")) {
+                QFont *font = new QFont(name, fontSize, bold ? QFont::Bold : QFont::Normal);
+                if (fontType == QStringLiteral("font-name")) {
                     m_fonts[QPlatformTheme::SystemFont] = font;
                     qCDebug(QGnomePlatform) << "Font name: " << name << " (size " << fontSize << ")";
-                } else if (fontType == QLatin1String("monospace-font-name")) {
+                } else if (fontType == QStringLiteral("monospace-font-name")) {
                     m_fonts[QPlatformTheme::FixedFont] = font;
                     qCDebug(QGnomePlatform) << "Monospace font name: " << name << " (size " << fontSize << ")";
-                } else if (fontType == QLatin1String("titlebar-font")) {
+                } else if (fontType == QStringLiteral("titlebar-font")) {
                     m_fonts[QPlatformTheme::TitleBarFont] = font;
                     qCDebug(QGnomePlatform) << "TitleBar font name: " << name << " (size " << fontSize << ")";
                 }
             } else {
-                if (fontType == QLatin1String("font-name")) {
+                if (fontType == QStringLiteral("font-name")) {
                     m_fonts[QPlatformTheme::SystemFont] = new QFont(fontName);
                     qCDebug(QGnomePlatform) << "Font name: " << fontName;
-                } else if (fontType == QLatin1String("monospace-font-name")) {
+                } else if (fontType == QStringLiteral("monospace-font-name")) {
                     m_fonts[QPlatformTheme::FixedFont] = new QFont(fontName);
                     qCDebug(QGnomePlatform) << "Monospace font name: " << fontName;
-                } else if (fontType == QLatin1String("titlebar-font")) {
+                } else if (fontType == QStringLiteral("titlebar-font")) {
                     m_fonts[QPlatformTheme::TitleBarFont] = new QFont(fontName);
                     qCDebug(QGnomePlatform) << "TitleBar font name: " << fontName;
                 }
@@ -434,7 +416,6 @@ void GnomeHintsSettings::loadPalette()
 
 void GnomeHintsSettings::loadStaticHints() {
     int cursorBlinkTime = getSettingsProperty<int>(QStringLiteral("cursor-blink-time"));
-//     g_object_get(gtk_settings_get_default(), "gtk-cursor-blink-time", &cursorBlinkTime, NULL);
     if (cursorBlinkTime >= 100) {
         qCDebug(QGnomePlatform) << "Cursor blink time: " << cursorBlinkTime;
         m_hints[QPlatformTheme::CursorFlashTime] = cursorBlinkTime;
@@ -468,7 +449,6 @@ void GnomeHintsSettings::loadStaticHints() {
     m_hints[QPlatformTheme::PasswordMaskDelay] = passwordMaskDelay;
 
     QString systemIconTheme = getSettingsProperty<QString>(QStringLiteral("icon-theme"));
-//     g_object_get(gtk_settings_get_default(), "gtk-icon-theme-name", &systemIconTheme, NULL);
     if (!systemIconTheme.isEmpty()) {
         qCDebug(QGnomePlatform) << "Icon theme: " << systemIconTheme;
         m_hints[QPlatformTheme::SystemIconThemeName] = systemIconTheme;
@@ -481,7 +461,7 @@ void GnomeHintsSettings::loadStaticHints() {
 
 void GnomeHintsSettings::portalSettingChanged(const QString &group, const QString &key, const QDBusVariant &value)
 {
-    if (group == QStringLiteral("org.gnome.desktop.interface")) {
+    if (group == QStringLiteral("org.gnome.desktop.interface") || group == QStringLiteral("org.gnome.desktop.wm.preferences")) {
         m_portalSettings[group][key] = value.variant();
         gsettingPropertyChanged(nullptr, (gchar*)(key.toStdString().c_str()), this);
     }

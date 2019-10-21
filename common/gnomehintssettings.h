@@ -50,8 +50,7 @@ public:
     enum TitlebarButton {
         CloseButton = 0x1,
         MinimizeButton = 0x02,
-        MaximizeButton = 0x04,
-        AllButtons = 0x8
+        MaximizeButton = 0x04
     };
     Q_DECLARE_FLAGS(TitlebarButtons, TitlebarButton);
 
