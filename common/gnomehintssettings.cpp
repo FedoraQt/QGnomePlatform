@@ -98,7 +98,7 @@ GnomeHintsSettings::GnomeHintsSettings()
                                                             QStringLiteral("/org/freedesktop/portal/desktop"),
                                                             QStringLiteral("org.freedesktop.portal.Settings"),
                                                             QStringLiteral("ReadAll"));
-        message << QStringList{QStringLiteral("org.gnome.desktop.interface")};
+        message << QStringList{{QStringLiteral("org.gnome.desktop.interface")}, {QStringLiteral("org.gnome.desktop.wm.preferences")}};
 
         // FIXME: async?
         QDBusMessage resultMessage = QDBusConnection::sessionBus().call(message);
@@ -125,15 +125,19 @@ GnomeHintsSettings::GnomeHintsSettings()
         cursorSizeChanged();
 
     // Watch for changes
-    QStringList watchList = { "changed::gtk-theme", "changed::icon-theme", "changed::cursor-blink-time", "changed::font-name", "changed::monospace-font-name", "changed::cursor-size" };
-
-    for (const QString &watchedProperty : watchList) {
+    QStringList watchListDesktopInterface = { "changed::gtk-theme", "changed::icon-theme", "changed::cursor-blink-time", "changed::font-name", "changed::monospace-font-name", "changed::cursor-size" };
+    for (const QString &watchedProperty : watchListDesktopInterface) {
         g_signal_connect(m_settings, watchedProperty.toStdString().c_str(), G_CALLBACK(gsettingPropertyChanged), this);
 
         // Additionally watch Cinnamon configuration
         if (m_cinnamonSettings) {
             g_signal_connect(m_cinnamonSettings, watchedProperty.toStdString().c_str(), G_CALLBACK(gsettingPropertyChanged), this);
         }
+    }
+
+    QStringList watchListWmPreferences = { "changed::titlebar-font", "changed::button-layout" };
+    for (const QString &watchedProperty : watchListWmPreferences) {
+        g_signal_connect(m_gnomeDesktopSettings, watchedProperty.toStdString().c_str(), G_CALLBACK(gsettingPropertyChanged), this);
     }
 
     if (m_usePortal) {
@@ -169,6 +173,7 @@ void GnomeHintsSettings::gsettingPropertyChanged(GSettings *settings, gchar *key
 
     const QString changedProperty = key;
 
+    // Org.gnome.desktop.interface
     if (changedProperty == QLatin1String("gtk-theme")) {
         gnomeHintsSettings->themeChanged();
     } else if (changedProperty == QLatin1String("icon-theme")) {
@@ -182,6 +187,12 @@ void GnomeHintsSettings::gsettingPropertyChanged(GSettings *settings, gchar *key
     } else if (changedProperty == QLatin1String("cursor-size")) {
         if (!QX11Info::isPlatformX11())
             gnomeHintsSettings->cursorSizeChanged();
+    // Org.gnome.wm.preferences
+    } else if (changedProperty == QLatin1String("titlebar-font")) {
+        gnomeHintsSettings->fontChanged();
+    } else if (changedProperty == QLatin1String("button-layout")) {
+        gnomeHintsSettings->loadTitlebar();
+    // Fallback
     } else {
         qCDebug(QGnomePlatform) << "GSetting property change: " << key;
     }
@@ -279,7 +290,7 @@ void GnomeHintsSettings::themeChanged()
 
 void GnomeHintsSettings::loadTitlebar()
 {
-    const QString buttonLayout = getSettingsProperty<QString>(m_gnomeDesktopSettings, "button-layout");
+    const QString buttonLayout = getSettingsProperty<QString>("button-layout");
 
     if (buttonLayout.isEmpty()) {
         return;
@@ -364,25 +375,36 @@ void GnomeHintsSettings::loadFonts()
     qDeleteAll(m_fonts);
     m_fonts.clear();
 
-    const QStringList fontTypes { "font-name", "monospace-font-name" };
+    const QStringList fontTypes { "font-name", "monospace-font-name", "titlebar-font" };
 
     for (const QString &fontType : fontTypes) {
         const QString fontName = getSettingsProperty<QString>(fontType);
         if (fontName.isEmpty()) {
             qCWarning(QGnomePlatform) << "Couldn't get " << fontType;
         } else {
-            QRegExp re("(.+)[ \t]+([0-9]+)");
+            bool bold = false;
             int fontSize;
+            QString name;
+            QRegExp re("(.+)[ \t]+([0-9]+)");
             if (re.indexIn(fontName) == 0) {
                 fontSize = re.cap(2).toInt();
-                QFont* font = new QFont(re.cap(1));
-                font->setPointSizeF(fontSize);
+                name = re.cap(1);
+                // Bold is most likely not part of the name
+                if (name.endsWith(QLatin1String(" Bold"))) {
+                    bold = true;
+                    name = name.remove(QLatin1String(" Bold"));
+                }
+
+                QFont* font = new QFont(name, fontSize, bold ? QFont::Bold : QFont::Normal);
                 if (fontType == QLatin1String("font-name")) {
                     m_fonts[QPlatformTheme::SystemFont] = font;
-                    qCDebug(QGnomePlatform) << "Font name: " << re.cap(1) << " (size " << fontSize << ")";
+                    qCDebug(QGnomePlatform) << "Font name: " << name << " (size " << fontSize << ")";
                 } else if (fontType == QLatin1String("monospace-font-name")) {
                     m_fonts[QPlatformTheme::FixedFont] = font;
-                    qCDebug(QGnomePlatform) << "Monospace font name: " << re.cap(1) << " (size " << fontSize << ")";
+                    qCDebug(QGnomePlatform) << "Monospace font name: " << name << " (size " << fontSize << ")";
+                } else if (fontType == QLatin1String("titlebar-font")) {
+                    m_fonts[QPlatformTheme::TitleBarFont] = font;
+                    qCDebug(QGnomePlatform) << "TitleBar font name: " << name << " (size " << fontSize << ")";
                 }
             } else {
                 if (fontType == QLatin1String("font-name")) {
@@ -391,6 +413,9 @@ void GnomeHintsSettings::loadFonts()
                 } else if (fontType == QLatin1String("monospace-font-name")) {
                     m_fonts[QPlatformTheme::FixedFont] = new QFont(fontName);
                     qCDebug(QGnomePlatform) << "Monospace font name: " << fontName;
+                } else if (fontType == QLatin1String("titlebar-font")) {
+                    m_fonts[QPlatformTheme::TitleBarFont] = new QFont(fontName);
+                    qCDebug(QGnomePlatform) << "TitleBar font name: " << fontName;
                 }
             }
         }

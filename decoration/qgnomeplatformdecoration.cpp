@@ -255,10 +255,10 @@ void QGnomePlatformDecoration::paint(QPaintDevice *device)
         int dx = (top.width() - size.width()) /2;
         int dy = (top.height()- size.height()) /2;
         QFont font;
-        const QFont *themeFont = m_hints->font(QPlatformTheme::SystemFont);
+        const QFont *themeFont = m_hints->font(QPlatformTheme::TitleBarFont);
         font.setPointSizeF(themeFont->pointSizeF());
         font.setFamily(themeFont->family());
-        font.setBold(true);
+        font.setBold(themeFont->bold());
         p.setFont(font);
         QPoint windowTitlePoint(top.topLeft().x() + dx,
                  top.topLeft().y() + dy);

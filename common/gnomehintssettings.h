@@ -139,8 +139,22 @@ private:
             }
         }
 
+        // Use org.gnome.desktop.wm.preferences if the property is there, otherwise it would bail on
+        // non-existent property
+        GSettingsSchema *schema;
+        g_object_get(G_OBJECT(m_gnomeDesktopSettings), "settings-schema", &schema, NULL);
+
+        if (schema) {
+            if (g_settings_schema_has_key(schema, property.toStdString().c_str())) {
+                settings = m_gnomeDesktopSettings;
+            }
+        }
+
         if (m_usePortal) {
             QVariant value = m_portalSettings.value(QStringLiteral("org.gnome.desktop.interface")).value(property);
+            if (!value.isNull() && value.canConvert<T>())
+                return value.value<T>();
+            value = m_portalSettings.value(QStringLiteral("org.gnome.desktop.wm.preferences")).value(property);
             if (!value.isNull() && value.canConvert<T>())
                 return value.value<T>();
         }
