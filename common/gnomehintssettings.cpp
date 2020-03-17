@@ -455,7 +455,7 @@ void GnomeHintsSettings::loadStaticHints() {
     } else {
         m_hints[QPlatformTheme::SystemIconThemeName] = "Adwaita";
     }
-    m_hints[QPlatformTheme::SystemIconFallbackThemeName] = "breeze";
+    m_hints[QPlatformTheme::SystemIconFallbackThemeName] = "hicolor";
     m_hints[QPlatformTheme::IconThemeSearchPaths] = xdgIconThemePaths();
 }
 
