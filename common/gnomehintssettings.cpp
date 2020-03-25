@@ -149,6 +149,11 @@ GnomeHintsSettings::~GnomeHintsSettings()
 {
     qDeleteAll(m_fonts);
     delete m_palette;
+    if (m_cinnamonSettings) {
+        g_object_unref(m_cinnamonSettings);
+    }
+    g_object_unref(m_gnomeDesktopSettings);
+    g_object_unref(m_settings);
 }
 
 void GnomeHintsSettings::gsettingPropertyChanged(GSettings *settings, gchar *key, GnomeHintsSettings *gnomeHintsSettings)
