@@ -36,7 +36,6 @@
 
 #include <qpa/qplatformtheme.h>
 
-class QPalette;
 
 class GnomeHintsSettings : public QObject
 {
@@ -84,11 +83,6 @@ public:
         return m_hints[hint];
     }
 
-    inline QPalette *palette() const
-    {
-        return m_palette;
-    }
-
     inline TitlebarButtons titlebarButtons() const
     {
         return m_titlebarButtons;
@@ -110,7 +104,6 @@ private Q_SLOTS:
     void loadFonts();
     void loadTheme();
     void loadTitlebar();
-    void loadPalette();
     void loadStaticHints();
     void portalSettingChanged(const QString &group, const QString &key, const QDBusVariant &value);
 
@@ -169,7 +162,6 @@ private:
     TitlebarButtons m_titlebarButtons = TitlebarButton::CloseButton;
     TitlebarButtonsPlacement m_titlebarButtonPlacement = TitlebarButtonsPlacement::RightPlacement;
     QString m_gtkTheme = nullptr;
-    QPalette *m_palette = nullptr;
     GSettings *m_cinnamonSettings = nullptr;
     GSettings *m_gnomeDesktopSettings = nullptr;
     GSettings *m_settings = nullptr;

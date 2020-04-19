@@ -139,7 +139,6 @@ GnomeHintsSettings::GnomeHintsSettings()
         cursorSizeChanged();
 
     loadFonts();
-    loadPalette();
     loadStaticHints();
     loadTheme();
     loadTitlebar();
@@ -148,7 +147,6 @@ GnomeHintsSettings::GnomeHintsSettings()
 GnomeHintsSettings::~GnomeHintsSettings()
 {
     qDeleteAll(m_fonts);
-    delete m_palette;
     if (m_cinnamonSettings) {
         g_object_unref(m_cinnamonSettings);
     }
@@ -263,18 +261,7 @@ void GnomeHintsSettings::iconsChanged()
 
 void GnomeHintsSettings::themeChanged()
 {
-    loadPalette();
     loadTheme();
-
-    // QApplication::setPalette and QGuiApplication::setPalette are different functions
-    // and non virtual. Call the correct one
-    if (qobject_cast<QApplication *>(QCoreApplication::instance())) {
-        QApplication::setPalette(*m_palette);
-        if (QStyleFactory::keys().contains(m_gtkTheme, Qt::CaseInsensitive))
-            QApplication::setStyle(m_gtkTheme);
-    } else if (qobject_cast<QGuiApplication *>(QCoreApplication::instance())) {
-        QGuiApplication::setPalette(*m_palette);
-    }
 }
 
 void GnomeHintsSettings::loadTitlebar()
@@ -407,16 +394,6 @@ void GnomeHintsSettings::loadFonts()
             }
         }
     }
-}
-
-void GnomeHintsSettings::loadPalette()
-{
-    if (m_palette) {
-        delete m_palette;
-        m_palette = nullptr;
-    }
-
-    m_palette = new QPalette();
 }
 
 void GnomeHintsSettings::loadStaticHints() {
