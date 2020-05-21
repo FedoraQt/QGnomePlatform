@@ -102,9 +102,11 @@ QGtk3Dialog::QGtk3Dialog(GtkWidget *gtkWidget) : gtkWidget(gtkWidget)
     g_signal_connect_swapped(G_OBJECT(gtkWidget), "response", G_CALLBACK(onResponse), this);
     g_signal_connect(G_OBJECT(gtkWidget), "delete-event", G_CALLBACK(gtk_widget_hide_on_delete), NULL);
 
-    previewWidget = gtk_image_new();
-    g_signal_connect_swapped(G_OBJECT(gtkWidget), "update-preview", G_CALLBACK(onUpdatePreview), this);
-    gtk_file_chooser_set_preview_widget(GTK_FILE_CHOOSER(gtkWidget), previewWidget);
+    if (GTK_IS_FILE_CHOOSER_DIALOG(gtkWidget)) {
+        previewWidget = gtk_image_new();
+        g_signal_connect_swapped(G_OBJECT(gtkWidget), "update-preview", G_CALLBACK(onUpdatePreview), this);
+        gtk_file_chooser_set_preview_widget(GTK_FILE_CHOOSER(gtkWidget), previewWidget);
+    }
 }
 
 QGtk3Dialog::~QGtk3Dialog()
