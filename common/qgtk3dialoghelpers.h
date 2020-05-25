@@ -47,6 +47,8 @@
 #include <QtCore/qstring.h>
 #include <qpa/qplatformdialoghelper.h>
 
+typedef struct _GtkWidget GtkWidget;
+typedef struct _GtkImage GtkImage;
 typedef struct _GtkDialog GtkDialog;
 typedef struct _GtkFileFilter GtkFileFilter;
 
@@ -88,6 +90,8 @@ public:
     QGtk3FileDialogHelper();
     ~QGtk3FileDialogHelper();
 
+    GtkImage *previewImage() const;
+
     bool show(Qt::WindowFlags flags, Qt::WindowModality modality, QWindow *parent) Q_DECL_OVERRIDE;
     void exec() Q_DECL_OVERRIDE;
     void hide() Q_DECL_OVERRIDE;
@@ -107,6 +111,7 @@ private Q_SLOTS:
 private:
     static void onSelectionChanged(GtkDialog *dialog, QGtk3FileDialogHelper *helper);
     static void onCurrentFolderChanged(QGtk3FileDialogHelper *helper);
+    static void onUpdatePreview(GtkDialog *dialog, QGtk3FileDialogHelper *helper);
     void applyOptions();
     void setNameFilters(const QStringList &filters);
 
@@ -115,6 +120,7 @@ private:
     QHash<QString, GtkFileFilter*> _filters;
     QHash<GtkFileFilter*, QString> _filterNames;
     QScopedPointer<QGtk3Dialog> d;
+    GtkWidget *previewWidget;
 };
 
 class QGtk3FontDialogHelper : public QPlatformFontDialogHelper
