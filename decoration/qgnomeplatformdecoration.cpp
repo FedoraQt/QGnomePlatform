@@ -46,6 +46,7 @@
 #include <QtGui/QCursor>
 #include <QtGui/QLinearGradient>
 #include <QtGui/QPainter>
+#include <QtGui/QPainterPath>
 #include <QtGui/QPalette>
 #include <QtGui/QPixmap>
 
