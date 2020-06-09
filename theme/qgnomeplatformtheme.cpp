@@ -68,7 +68,9 @@ const QFont *QGnomePlatformTheme::font(Font type) const
 
 const QPalette *QGnomePlatformTheme::palette(Palette type) const
 {
-    return QPlatformTheme::palette(type);
+    Q_UNUSED(type);
+
+    return m_hints->palette();
 }
 
 bool QGnomePlatformTheme::usePlatformNativeDialog(QPlatformTheme::DialogType type) const
