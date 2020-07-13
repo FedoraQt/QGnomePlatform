@@ -13,7 +13,6 @@ QT += core-private \
       dbus \
       gui-private \
       theme_support-private \
-      x11extras \
       widgets
 
 LIBS += -lcommon

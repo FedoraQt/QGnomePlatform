@@ -23,8 +23,8 @@
 #include "qgtk3dialoghelpers.h"
 
 #include <QApplication>
+#include <QGuiApplication>
 #include <QStyleFactory>
-#include <QX11Info>
 
 #if !defined(QT_NO_DBUS) && !defined(QT_NO_SYSTEMTRAYICON)
 #include <private/qdbustrayicon_p.h>
@@ -32,7 +32,7 @@
 
 QGnomePlatformTheme::QGnomePlatformTheme()
 {
-    if (!QX11Info::isPlatformX11()) {
+    if (QGuiApplication::platformName() != QStringLiteral("xcb")) {
         if (!qEnvironmentVariableIsSet("QT_WAYLAND_DECORATION"))
             qputenv("QT_WAYLAND_DECORATION", "gnome");
     }

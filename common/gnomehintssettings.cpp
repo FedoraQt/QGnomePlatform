@@ -36,8 +36,6 @@
 #include <QDBusConnection>
 #include <QDBusMessage>
 
-#include <QX11Info>
-
 Q_LOGGING_CATEGORY(QGnomePlatform, "qt.qpa.qgnomeplatform")
 
 const QDBusArgument &operator>>(const QDBusArgument &argument, QMap<QString, QVariantMap> &map)
@@ -135,7 +133,7 @@ GnomeHintsSettings::GnomeHintsSettings()
                                               QStringLiteral("SettingChanged"), this, SLOT(portalSettingChanged(QString,QString,QDBusVariant)));
     }
 
-    if (!QX11Info::isPlatformX11())
+    if (QGuiApplication::platformName() != QStringLiteral("xcb"))
         cursorSizeChanged();
 
     loadFonts();
@@ -172,7 +170,7 @@ void GnomeHintsSettings::gsettingPropertyChanged(GSettings *settings, gchar *key
     } else if (changedProperty == QStringLiteral("monospace-font-name")) {
         gnomeHintsSettings->fontChanged();
     } else if (changedProperty == QStringLiteral("cursor-size")) {
-        if (!QX11Info::isPlatformX11())
+        if (QGuiApplication::platformName() != QStringLiteral("xcb"))
             gnomeHintsSettings->cursorSizeChanged();
     // Org.gnome.wm.preferences
     } else if (changedProperty == QStringLiteral("titlebar-font")) {
