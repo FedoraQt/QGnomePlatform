@@ -12,8 +12,7 @@ CONFIG += plugin \
 QT += core \
       gui \
       waylandclient-private \
-      widgets \
-      x11extras
+      widgets
 
 LIBS += -lcommon
 
