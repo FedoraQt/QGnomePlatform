@@ -357,7 +357,7 @@ void GnomeHintsSettings::loadFonts()
             bool bold = false;
             int fontSize;
             QString name;
-            QRegExp re("^(.+)[ \t]+([0-9]+)$");
+            QRegExp re("^([^,]+)[, \t]+([0-9]+)$");
             if (re.indexIn(fontName) == 0) {
                 fontSize = re.cap(2).toInt();
                 name = re.cap(1);
