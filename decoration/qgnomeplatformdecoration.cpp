@@ -59,6 +59,8 @@
 #define BUTTON_SPACING 8
 #define BUTTON_WIDTH 26
 #define BUTTONS_RIGHT_MARGIN 6
+#define TITLE_BAR_HEIGHT 36
+#define BORDER_SIZE 1
 
 // Copied from adwaita-qt
 static QColor transparentize(const QColor &color, qreal amount = 0.1)
@@ -192,7 +194,10 @@ QRectF QGnomePlatformDecoration::minimizeButtonRect() const
 
 QMargins QGnomePlatformDecoration::margins() const
 {
-    return QMargins(1, 38, 1, 1);
+    if ((window()->windowStates() & Qt::WindowMaximized)) {
+        return QMargins(0, TITLE_BAR_HEIGHT + BORDER_SIZE, 0, 0);
+    }
+    return QMargins(BORDER_SIZE, TITLE_BAR_HEIGHT + 2 * BORDER_SIZE, BORDER_SIZE, BORDER_SIZE);
 }
 
 void QGnomePlatformDecoration::paint(QPaintDevice *device)
@@ -215,9 +220,11 @@ void QGnomePlatformDecoration::paint(QPaintDevice *device)
     // Title bar
     QPainterPath roundedRect;
     if ((window()->windowStates() & Qt::WindowMaximized))
-        roundedRect.addRect(1, 1, surfaceRect.width() - margins().left() - margins().right(), margins().top() + 8);
+        roundedRect.addRect(margins().left(), margins().top() - TITLE_BAR_HEIGHT - BORDER_SIZE,
+                            surfaceRect.width() - margins().left() - margins().right(), margins().top() + 8);
     else
-        roundedRect.addRoundedRect(1, 1, surfaceRect.width() - margins().left() - margins().right(), margins().top() + 8, 8, 8);
+        roundedRect.addRoundedRect(margins().left(), margins().top() - TITLE_BAR_HEIGHT - BORDER_SIZE,
+                                   surfaceRect.width() - margins().left() - margins().right(), margins().top() + 8, 8, 8);
 
     QLinearGradient gradient(margins().left(), margins().top() + 6, margins().left(), 1);
     gradient.setColorAt(0, active ? m_backgroundColorStart : m_backgroundInactiveColor);
@@ -228,6 +235,7 @@ void QGnomePlatformDecoration::paint(QPaintDevice *device)
     borderPath.addRect(0, margins().top(), margins().left(), surfaceRect.height() - margins().top());
     borderPath.addRect(0, surfaceRect.height() - margins().bottom(), surfaceRect.width(), margins().bottom());
     borderPath.addRect(surfaceRect.width() - margins().right(), margins().top(), margins().right(), surfaceRect.height() - margins().bottom());
+    borderPath.addRect(margins().left(), margins().top() - BORDER_SIZE, surfaceRect.width() - margins().left() - margins().right(), BORDER_SIZE);
     p.fillPath(borderPath, active ? m_borderColor : m_borderInactiveColor);
 
     QRect top = QRect(0, 0, surfaceRect.width(), margins().top());
