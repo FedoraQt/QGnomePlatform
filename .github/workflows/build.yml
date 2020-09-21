@@ -1,0 +1,55 @@
+name: Automatic build
+on:
+  push:
+    branches:
+      - '**'
+  pull_request:
+    branches:
+      - '**'
+  release:
+    types: [ created ]
+env:
+  BUILD_TYPE: Release
+
+jobs:
+  build:
+    runs-on: ubuntu-20.04
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Install dependencies
+      run: |
+        sudo apt update
+        sudo apt install qt5-default libqt5gui5 libqt5x11extras5 cmake pkg-config qtbase5-dev libqt5x11extras5-dev qtbase5-private-dev libqt5waylandclient5-dev libx11-dev xcb libx11-xcb-dev libgtk-3-dev
+        git clone https://github.com/FedoraQt/adwaita-qt.git adwaita-qt
+        cd adwaita-qt
+        mkdir build
+        cd build
+        cmake .. -DCMAKE_INSTALL_PREFIX=/usr
+        make -j2
+        sudo make install
+        
+    # Enable decorations once we can update to newer Ubuntu, the current one doesn't ship
+    # private headers for QtWayland
+    - name: Disable decorations
+      shell: bash
+      run: sed -i 's@SUBDIRS += common decoration theme@SUBDIRS += common theme@' qgnomeplatform.pro
+
+    - name: Create Build Environment
+      run: mkdir ${{runner.workspace}}/build 
+
+    - name: Configure QMake
+      shell: bash
+      working-directory: ${{runner.workspace}}/build
+      run: qmake $GITHUB_WORKSPACE
+      
+      
+    - name: Build
+      working-directory: ${{runner.workspace}}/build
+      shell: bash
+      run: make -j2
+
+    - name: Install
+      working-directory: ${{runner.workspace}}/build
+      shell: bash
+      run: sudo make install
