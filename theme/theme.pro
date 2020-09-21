@@ -17,7 +17,8 @@ QT += core-private \
 
 LIBS += -lcommon
 
-PKGCONFIG += gtk+-3.0 \
+PKGCONFIG += adwaita-qt \
+             gtk+-3.0 \
              gtk+-x11-3.0
 
 TARGET = qgnomeplatform

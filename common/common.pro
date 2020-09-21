@@ -10,7 +10,8 @@ QT += core \
       theme_support-private \
       widgets
 
-PKGCONFIG += gtk+-3.0 \
+PKGCONFIG += adwaita-qt \
+             gtk+-3.0 \
              gtk+-x11-3.0
 
 SOURCES += gnomehintssettings.cpp \

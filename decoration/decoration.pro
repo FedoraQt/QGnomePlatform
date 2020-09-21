@@ -18,7 +18,7 @@ LIBS += -lcommon
 
 QMAKE_USE += wayland-client
 
-PKGCONFIG += gtk+-3.0
+PKGCONFIG += adwaita-qt gtk+-3.0
 
 TARGET = qgnomeplatformdecoration
 target.path += $$[QT_INSTALL_PLUGINS]/wayland-decoration-client
