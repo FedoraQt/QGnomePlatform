@@ -15,7 +15,10 @@ PKGCONFIG += adwaita-qt \
              gtk+-x11-3.0
 
 SOURCES += gnomehintssettings.cpp \
-           qgtk3dialoghelpers.cpp
+           qgtk3dialoghelpers.cpp \
+           qxdgdesktopportalfiledialog.cpp
+
 
 HEADERS += gnomehintssettings.h \
-           qgtk3dialoghelpers.h
+           qgtk3dialoghelpers.h \
+           qxdgdesktopportalfiledialog_p.h

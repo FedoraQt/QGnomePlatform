@@ -21,10 +21,17 @@
 #include "qgnomeplatformtheme.h"
 #include "gnomehintssettings.h"
 #include "qgtk3dialoghelpers.h"
+#include "qxdgdesktopportalfiledialog_p.h"
 
 #include <QApplication>
 #include <QGuiApplication>
 #include <QStyleFactory>
+
+#include <QDBusConnection>
+#include <QDBusMessage>
+#include <QDBusPendingCall>
+#include <QDBusPendingCallWatcher>
+#include <QDBusPendingReply>
 
 #if !defined(QT_NO_DBUS) && !defined(QT_NO_SYSTEMTRAYICON)
 #include <private/qdbustrayicon_p.h>
@@ -44,6 +51,22 @@ QGnomePlatformTheme::QGnomePlatformTheme()
      */
     g_type_ensure(PANGO_TYPE_FONT_FAMILY);
     g_type_ensure(PANGO_TYPE_FONT_FACE);
+
+
+    // Get information about portal version
+    QDBusMessage message = QDBusMessage::createMethodCall(QLatin1String("org.freedesktop.portal.Desktop"),
+                                                          QLatin1String("/org/freedesktop/portal/desktop"),
+                                                          QLatin1String("org.freedesktop.DBus.Properties"),
+                                                          QLatin1String("Get"));
+    message << QLatin1String("org.freedesktop.portal.FileChooser") << QLatin1String("version");
+    QDBusPendingCall pendingCall = QDBusConnection::sessionBus().asyncCall(message);
+    QDBusPendingCallWatcher *watcher = new QDBusPendingCallWatcher(pendingCall);
+    QObject::connect(watcher, &QDBusPendingCallWatcher::finished, [this] (QDBusPendingCallWatcher *watcher) {
+        QDBusPendingReply<QVariant> reply = *watcher;
+        if (reply.isValid()) {
+            fileChooserPortalVersion = reply.value().toUInt();
+        }
+    });
 }
 
 QGnomePlatformTheme::~QGnomePlatformTheme()
@@ -91,8 +114,13 @@ bool QGnomePlatformTheme::usePlatformNativeDialog(QPlatformTheme::DialogType typ
 QPlatformDialogHelper *QGnomePlatformTheme::createPlatformDialogHelper(QPlatformTheme::DialogType type) const
 {
     switch (type) {
-    case QPlatformTheme::FileDialog:
-        return new QGtk3FileDialogHelper();
+    case QPlatformTheme::FileDialog: {
+        if (fileChooserPortalVersion < 3) {
+            return new QGtk3FileDialogHelper;
+        } else {
+            return new QXdgDesktopPortalFileDialog;
+        }
+    }
     case QPlatformTheme::FontDialog:
         return new QGtk3FontDialogHelper();
     case QPlatformTheme::ColorDialog:
