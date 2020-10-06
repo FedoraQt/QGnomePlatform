@@ -306,7 +306,7 @@ void GnomeHintsSettings::loadTheme()
     } else {
         qCDebug(QGnomePlatform) << "Theme name: " << m_gtkTheme;
 
-        if (m_gtkTheme.toLower().endsWith("-dark")) {
+        if (m_gtkTheme.toLower().contains("-dark")) {
             m_gtkThemeDarkVariant = true;
         }
 
