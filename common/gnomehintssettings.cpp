@@ -31,10 +31,19 @@
 #include <QStyleFactory>
 #include <QSettings>
 #include <QStandardPaths>
+#include <QTimer>
 
 #include <QDBusArgument>
 #include <QDBusConnection>
 #include <QDBusMessage>
+#include <QDBusPendingCall>
+#include <QDBusPendingCallWatcher>
+#include <QDBusPendingReply>
+
+#include <fcntl.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
 Q_LOGGING_CATEGORY(QGnomePlatform, "qt.qpa.qgnomeplatform")
 
@@ -78,6 +87,7 @@ void gtkMessageHandler(const gchar *log_domain,
 GnomeHintsSettings::GnomeHintsSettings()
     : QObject(0)
     , m_usePortal(checkUsePortalSupport())
+    , m_canUseFileChooserPortal(!m_usePortal)
     , m_gnomeDesktopSettings(g_settings_new("org.gnome.desktop.wm.preferences"))
     , m_settings(g_settings_new("org.gnome.desktop.interface"))
 {
@@ -140,6 +150,42 @@ GnomeHintsSettings::GnomeHintsSettings()
     loadStaticHints();
     loadTheme();
     loadTitlebar();
+
+    if (m_canUseFileChooserPortal) {
+        QTimer::singleShot(0, this, [this] () {
+            const QString filePath = QStringLiteral("/proc/%1/root").arg(QCoreApplication::applicationPid());
+            qWarning() << filePath;
+            struct stat info;
+            if (lstat(filePath.toStdString().c_str(), &info) == 0) {
+                if (!static_cast<int>(info.st_uid)) {
+                    m_canUseFileChooserPortal = false;
+                }
+            } else {
+                // Do not use FileChooser portal if we fail to get information about the file
+                m_canUseFileChooserPortal = false;
+            }
+        });
+
+        if (m_canUseFileChooserPortal) {
+            // Get information about portal version
+            QDBusMessage message = QDBusMessage::createMethodCall(QLatin1String("org.freedesktop.portal.Desktop"),
+                                                                  QLatin1String("/org/freedesktop/portal/desktop"),
+                                                                  QLatin1String("org.freedesktop.DBus.Properties"),
+                                                                  QLatin1String("Get"));
+            message << QLatin1String("org.freedesktop.portal.FileChooser") << QLatin1String("version");
+            QDBusPendingCall pendingCall = QDBusConnection::sessionBus().asyncCall(message);
+            QDBusPendingCallWatcher *watcher = new QDBusPendingCallWatcher(pendingCall);
+            QObject::connect(watcher, &QDBusPendingCallWatcher::finished, [this] (QDBusPendingCallWatcher *watcher) {
+                QDBusPendingReply<QVariant> reply = *watcher;
+                if (reply.isValid()) {
+                    uint fileChooserPortalVersion = reply.value().toUInt();
+                    if (fileChooserPortalVersion < 3) {
+                        m_canUseFileChooserPortal = false;
+                    }
+                }
+            });
+        }
+    }
 }
 
 GnomeHintsSettings::~GnomeHintsSettings()
