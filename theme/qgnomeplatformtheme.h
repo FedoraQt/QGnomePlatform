@@ -46,7 +46,6 @@ private:
     void loadSettings();
 
     GnomeHintsSettings *m_hints;
-    uint fileChooserPortalVersion = 0;
 };
 
 #endif // QGNOME_PLATFORM_THEME_HH

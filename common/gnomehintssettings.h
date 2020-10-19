@@ -77,6 +77,11 @@ public:
         return palette;
     }
 
+    inline bool canUseFileChooserPortal() const
+    {
+        return m_canUseFileChooserPortal;
+    }
+
     inline bool gtkThemeDarkVariant() const
     {
         return m_gtkThemeDarkVariant;
@@ -167,6 +172,7 @@ private:
     void configureKvantum(const QString &theme) const;
 
     bool m_usePortal;
+    bool m_canUseFileChooserPortal = false;
     bool m_gtkThemeDarkVariant = false;
     TitlebarButtons m_titlebarButtons = TitlebarButton::CloseButton;
     TitlebarButtonsPlacement m_titlebarButtonPlacement = TitlebarButtonsPlacement::RightPlacement;
