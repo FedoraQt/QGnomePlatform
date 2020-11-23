@@ -182,6 +182,8 @@ GnomeHintsSettings::GnomeHintsSettings()
                     if (fileChooserPortalVersion < 3) {
                         m_canUseFileChooserPortal = false;
                     }
+                } else {
+                    m_canUseFileChooserPortal = false;
                 }
             });
         }
