@@ -154,7 +154,6 @@ GnomeHintsSettings::GnomeHintsSettings()
     if (m_canUseFileChooserPortal) {
         QTimer::singleShot(0, this, [this] () {
             const QString filePath = QStringLiteral("/proc/%1/root").arg(QCoreApplication::applicationPid());
-            qWarning() << filePath;
             struct stat info;
             if (lstat(filePath.toStdString().c_str(), &info) == 0) {
                 if (!static_cast<int>(info.st_uid)) {
