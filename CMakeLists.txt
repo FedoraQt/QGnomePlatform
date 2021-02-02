@@ -1,0 +1,52 @@
+project(QGnomePlatform)
+
+cmake_minimum_required(VERSION 3.0)
+
+set(QGNOMEPLATFORM_VERSION "0.7.50")
+
+set(QT_MIN_VERSION "5.12.0")
+set(CMAKE_AUTOMOC ON)
+
+set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules" ${CMAKE_MODULE_PATH})
+
+include(GNUInstallDirs)
+include(FeatureSummary)
+
+add_definitions(-std=c++11)
+
+find_package(Qt5 ${QT_MIN_VERSION} CONFIG REQUIRED Core DBus Gui Widgets)
+find_package(Qt5Gui ${QT_MIN_VERSION} CONFIG REQUIRED Private)
+
+find_package(Qt5ThemeSupport REQUIRED)
+
+find_package(GSettingSchemas REQUIRED)
+find_package(AdwaitaQt "1.2.50" REQUIRED)
+
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(GTK+3 REQUIRED IMPORTED_TARGET gtk+-3.0)
+
+# NOTE: there is no reason to disable any of the following options, but
+# it is useful when building Flatpak extensions
+if (DISABLE_DECORATION_SUPPORT)
+    message(STATUS "Disabling Qt Wayland decoration support")
+else()
+    find_package(Qt5WaylandClient ${QT_MIN_VERSION} CONFIG REQUIRED)
+    set_package_properties(Qt5WaylandClient PROPERTIES
+        DESCRIPTION "Qt Wayland decoration support"
+        PURPOSE "Required for QGnomePlatform decoration plugin"
+        TYPE REQUIRED
+    )
+    # NOTE: I don't know how to do this only in case of qt_config(xkbcommon).
+    # We would miss an include in QWaylandDisplay header file.
+    find_package(Qt5XkbCommonSupport ${QT_MIN_VERSION})
+endif()
+
+if (DISABLE_THEME_SUPPORT)
+    message(STATUS "Disabling platform theme support")
+endif()
+
+
+add_subdirectory(src)
+
+feature_summary(WHAT ALL INCLUDE_QUIET_PACKAGES FATAL_ON_MISSING_REQUIRED_PACKAGES)
+
