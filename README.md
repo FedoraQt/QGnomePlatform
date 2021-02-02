@@ -10,7 +10,7 @@ This library uses private Qt headers and will likely not be forward nor backward
 ```
 mkdir build
 cd build
-qmake-qt5 ..
+cmake [OPTIONS] ..
 make && make install
 ```
 
