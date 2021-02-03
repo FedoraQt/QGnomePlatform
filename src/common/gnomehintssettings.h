@@ -20,7 +20,6 @@
 #ifndef GNOME_HINTS_SETTINGS_H
 #define GNOME_HINTS_SETTINGS_H
 
-#include <QDBusVariant>
 #include <QFont>
 #include <QFlags>
 #include <QObject>
@@ -39,6 +38,8 @@
 #include <AdwaitaQt/adwaitacolors.h>
 
 #include <qpa/qplatformtheme.h>
+
+class QDBusVariant;
 
 class GnomeHintsSettings : public QObject
 {

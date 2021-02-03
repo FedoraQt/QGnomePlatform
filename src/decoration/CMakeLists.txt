@@ -10,7 +10,7 @@ set(decoration_SRCS
 
 add_library(qgnomeplatformdecoration MODULE ${decoration_SRCS})
 target_link_libraries(qgnomeplatformdecoration
-    qgnomeplatform-common
+    qgnomeplatform
     Qt::Gui
     Qt::GuiPrivate
     Qt::WaylandClientPrivate

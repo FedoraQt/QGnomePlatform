@@ -39,6 +39,7 @@
 #include <QDBusPendingCall>
 #include <QDBusPendingCallWatcher>
 #include <QDBusPendingReply>
+#include <QDBusVariant>
 
 #include <fcntl.h>
 #include <sys/types.h>

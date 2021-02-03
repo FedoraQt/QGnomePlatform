@@ -6,16 +6,20 @@ include_directories(
 set(theme_SRCS
     platformplugin.cpp
     qgnomeplatformtheme.cpp
+    qgtk3dialoghelpers.cpp
+    qxdgdesktopportalfiledialog.cpp
 )
 
-add_library(qgnomeplatform MODULE ${theme_SRCS})
-target_link_libraries(qgnomeplatform
-    qgnomeplatform-common
+add_library(qgnomeplatformtheme MODULE ${theme_SRCS})
+target_link_libraries(qgnomeplatformtheme
+    qgnomeplatform
+    Qt::DBus
     Qt::Gui
     Qt::ThemeSupportPrivate
     ${ADWAITAQT_LIBRARIES}
+    PkgConfig::GTK+3
 )
 
-install(TARGETS qgnomeplatform DESTINATION ${KDE_INSTALL_QTPLUGINDIR}/platformthemes)
+install(TARGETS qgnomeplatformtheme RENAME qgnomeplatform DESTINATION ${KDE_INSTALL_QTPLUGINDIR}/platformthemes)
 
 
