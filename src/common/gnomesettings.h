@@ -20,26 +20,15 @@
 #ifndef GNOME_SETTINGS_H
 #define GNOME_SETTINGS_H
 
-#include <QFont>
-#include <QFlags>
-#include <QObject>
-#include <QPalette>
-#include <QVariant>
-
-#include <cmath>
-#include <memory>
-
-#undef signals
-#include <gio/gio.h>
-#include <gtk-3.0/gtk/gtk.h>
-#include <gtk-3.0/gtk/gtksettings.h>
-#define signals Q_SIGNALS
-
-#include <AdwaitaQt/adwaitacolors.h>
+#include <QtCore/QFlags>
+#include <QtCore/QObject>
 
 #include <qpa/qplatformtheme.h>
 
-class QDBusVariant;
+class QFont;
+class QString;
+class QVariant;
+class QPalette;
 
 class GnomeSettings : public QObject
 {
@@ -57,155 +46,20 @@ public:
     };
     Q_DECLARE_FLAGS(TitlebarButtons, TitlebarButton);
 
-    explicit GnomeSettings();
-    virtual ~GnomeSettings();
+    explicit GnomeSettings(QObject *parent = nullptr);
+    virtual ~GnomeSettings() = default;
 
-    inline QFont * font(QPlatformTheme::Font type) const
-    {
-        if (m_fonts.contains(type)) {
-            return m_fonts[type];
-        } else if (m_fonts.contains(QPlatformTheme::SystemFont)) {
-            return m_fonts[QPlatformTheme::SystemFont];
-        } else {
-            // GTK default font
-            return new QFont(QLatin1String("Sans"), 10);
-        }
-    }
-
-    inline QPalette * palette() const
-    {
-        QPalette *palette = new QPalette(Adwaita::Colors::palette(m_gtkThemeDarkVariant ? Adwaita::ColorVariant::AdwaitaDark : Adwaita::ColorVariant::Adwaita));
-        return palette;
-    }
-
-    inline bool canUseFileChooserPortal() const
-    {
-        return m_canUseFileChooserPortal;
-    }
-
-    inline bool gtkThemeDarkVariant() const
-    {
-        return m_gtkThemeDarkVariant;
-    }
-
-    inline QString gtkTheme() const
-    {
-        return QString(m_gtkTheme);
-    }
-
-    inline QVariant hint(QPlatformTheme::ThemeHint hint) const
-    {
-        return m_hints[hint];
-    }
-
-    inline TitlebarButtons titlebarButtons() const
-    {
-        return m_titlebarButtons;
-    }
-
-    inline TitlebarButtonsPlacement titlebarButtonPlacement() const
-    {
-        return m_titlebarButtonPlacement;
-    }
-
-public Q_SLOTS:
-    void cursorBlinkTimeChanged();
-    void cursorSizeChanged();
-    void fontChanged();
-    void iconsChanged();
-    void themeChanged();
-
-private Q_SLOTS:
-    void loadFonts();
-    void loadTheme();
-    void loadTitlebar();
-    void loadStaticHints();
-    void portalSettingChanged(const QString &group, const QString &key, const QDBusVariant &value);
-
-protected:
-    static void gsettingPropertyChanged(GSettings *settings, gchar *key, GnomeSettings *gnomeHintsSettings);
-
-private:
-    template <typename T> T getSettingsProperty(GSettings *settings, const QString &property, bool *ok = nullptr) {
-        Q_UNUSED(settings); Q_UNUSED(property); Q_UNUSED(ok);
-        return {};
-    }
-    template <typename T>
-    T getSettingsProperty(const QString &property, bool *ok = nullptr) {
-        GSettings *settings = m_settings;
-
-        // In case of Cinnamon session, we most probably want to return the value from here if possible
-        if (m_cinnamonSettings) {
-            GSettingsSchema *schema;
-            g_object_get(G_OBJECT(m_cinnamonSettings), "settings-schema", &schema, NULL);
-
-            if (schema) {
-                if (g_settings_schema_has_key(schema, property.toStdString().c_str())) {
-                    settings = m_cinnamonSettings;
-                }
-            }
-        }
-
-        // Use org.gnome.desktop.wm.preferences if the property is there, otherwise it would bail on
-        // non-existent property
-        GSettingsSchema *schema;
-        g_object_get(G_OBJECT(m_gnomeDesktopSettings), "settings-schema", &schema, NULL);
-
-        if (schema) {
-            if (g_settings_schema_has_key(schema, property.toStdString().c_str())) {
-                settings = m_gnomeDesktopSettings;
-            }
-        }
-
-        if (m_usePortal) {
-            QVariant value = m_portalSettings.value(QStringLiteral("org.gnome.desktop.interface")).value(property);
-            if (!value.isNull() && value.canConvert<T>())
-                return value.value<T>();
-            value = m_portalSettings.value(QStringLiteral("org.gnome.desktop.wm.preferences")).value(property);
-            if (!value.isNull() && value.canConvert<T>())
-                return value.value<T>();
-        }
-
-        return getSettingsProperty<T>(settings, property, ok);
-    }
-    QStringList xdgIconThemePaths() const;
-    QString kvantumThemeForGtkTheme() const;
-    void configureKvantum(const QString &theme) const;
-
-    bool m_usePortal;
-    bool m_canUseFileChooserPortal = false;
-    bool m_gtkThemeDarkVariant = false;
-    TitlebarButtons m_titlebarButtons = TitlebarButton::CloseButton;
-    TitlebarButtonsPlacement m_titlebarButtonPlacement = TitlebarButtonsPlacement::RightPlacement;
-    QString m_gtkTheme = nullptr;
-    GSettings *m_cinnamonSettings = nullptr;
-    GSettings *m_gnomeDesktopSettings = nullptr;
-    GSettings *m_settings = nullptr;
-    QHash<QPlatformTheme::Font, QFont*> m_fonts;
-    QHash<QPlatformTheme::ThemeHint, QVariant> m_hints;
-    QMap<QString, QVariantMap> m_portalSettings;
+    static QFont * font(QPlatformTheme::Font type);
+    static QPalette * palette();
+    static QVariant hint(QPlatformTheme::ThemeHint hint);
+    static bool canUseFileChooserPortal();
+    static bool isGtkThemeDarkVariant();
+    static QString gtkTheme();
+    static TitlebarButtons titlebarButtons();
+    static TitlebarButtonsPlacement titlebarButtonPlacement();
 };
 
-template <> inline int GnomeSettings::getSettingsProperty(GSettings *settings, const QString &property, bool *ok) {
-    if (ok)
-        *ok = true;
-    return g_settings_get_int(settings, property.toStdString().c_str());
-}
-
-template <> inline QString GnomeSettings::getSettingsProperty(GSettings *settings, const QString &property, bool *ok) {
-    // be exception and resources safe
-    std::unique_ptr<gchar, void(*)(gpointer)> raw {g_settings_get_string(settings, property.toStdString().c_str()), g_free};
-    if (ok)
-        *ok = !!raw;
-    return QString{raw.get()};
-}
-
-template <> inline qreal GnomeSettings::getSettingsProperty(GSettings *settings, const QString &property, bool *ok) {
-    if (ok)
-        *ok = true;
-    return g_settings_get_double(settings, property.toStdString().c_str());
-}
 
 Q_DECLARE_OPERATORS_FOR_FLAGS(GnomeSettings::TitlebarButtons)
 
-#endif // GNOME_HINTS_SETTINGS_H
+#endif // GNOME_SETTINGS_H

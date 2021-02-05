@@ -25,8 +25,6 @@
 #include <QPalette>
 #include <qpa/qplatformtheme.h>
 
-class GnomeSettings;
-
 class QGnomePlatformTheme : public QPlatformTheme
 {
 public:
@@ -41,11 +39,6 @@ public:
 #if !defined(QT_NO_DBUS) && !defined(QT_NO_SYSTEMTRAYICON)
     virtual QPlatformSystemTrayIcon *createPlatformSystemTrayIcon() const;
 #endif
-
-private:
-    void loadSettings();
-
-    GnomeSettings *m_settings;
 };
 
 #endif // QGNOME_PLATFORM_THEME_HH

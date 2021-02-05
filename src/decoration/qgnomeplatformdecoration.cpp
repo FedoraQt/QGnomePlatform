@@ -99,7 +99,6 @@ QGnomePlatformDecoration::QGnomePlatformDecoration()
     : m_closeButtonHovered(false)
     , m_maximizeButtonHovered(false)
     , m_minimizeButtonHovered(false)
-    , m_settings(new GnomeSettings)
 {
     initializeButtonPixmaps();
     initializeColors();
@@ -113,16 +112,15 @@ QGnomePlatformDecoration::QGnomePlatformDecoration()
 
 QGnomePlatformDecoration::~QGnomePlatformDecoration()
 {
-    delete m_settings;
 }
 
 void QGnomePlatformDecoration::initializeButtonPixmaps()
 {
-    const QString iconTheme = m_settings->hint(QPlatformTheme::SystemIconThemeName).toString();
+    const QString iconTheme = GnomeSettings::hint(QPlatformTheme::SystemIconThemeName).toString();
     const bool isAdwaitaIconTheme = iconTheme.toLower() == QStringLiteral("adwaita");
-    const bool isDarkVariant = m_settings->gtkThemeDarkVariant();
+    const bool isDarkVariant = GnomeSettings::isGtkThemeDarkVariant();
 
-    QIcon::setThemeName(m_settings->hint(QPlatformTheme::SystemIconThemeName).toString());
+    QIcon::setThemeName(GnomeSettings::hint(QPlatformTheme::SystemIconThemeName).toString());
 
     QPixmap closeIcon = QIcon::fromTheme(QStringLiteral("window-close-symbolic"), QIcon::fromTheme(QStringLiteral("window-close"))).pixmap(QSize(16, 16));
     QPixmap maximizeIcon = QIcon::fromTheme(QStringLiteral("window-maximize-symbolic"), QIcon::fromTheme(QStringLiteral("window-maximize"))).pixmap(QSize(16, 16));
@@ -137,7 +135,7 @@ void QGnomePlatformDecoration::initializeButtonPixmaps()
 
 void QGnomePlatformDecoration::initializeColors()
 {
-    const bool darkVariant = m_settings->gtkThemeDarkVariant();
+    const bool darkVariant = GnomeSettings::isGtkThemeDarkVariant();
     m_foregroundColor         = darkVariant ? QColor("#eeeeec") : QColor("#2e3436"); // Adwaita fg_color
     m_backgroundColorStart    = darkVariant ? QColor("#262626") : QColor("#dad6d2"); // Adwaita GtkHeaderBar color
     m_backgroundColorEnd      = darkVariant ? QColor("#2b2b2b") : QColor("#e1dedb"); // Adwaita GtkHeaderBar color
@@ -157,7 +155,7 @@ QPixmap QGnomePlatformDecoration::pixmapDarkVariant(const QPixmap &pixmap)
 
 QRectF QGnomePlatformDecoration::closeButtonRect() const
 {
-    if (m_settings->titlebarButtonPlacement() == GnomeSettings::RightPlacement) {
+    if (GnomeSettings::titlebarButtonPlacement() == GnomeSettings::RightPlacement) {
         return QRectF(window()->frameGeometry().width() - BUTTON_WIDTH - BUTTON_SPACING * 0 - BUTTONS_RIGHT_MARGIN,
                       (margins().top() - BUTTON_WIDTH) / 2, BUTTON_WIDTH, BUTTON_WIDTH);
     } else {
@@ -168,7 +166,7 @@ QRectF QGnomePlatformDecoration::closeButtonRect() const
 
 QRectF QGnomePlatformDecoration::maximizeButtonRect() const
 {
-    if (m_settings->titlebarButtonPlacement() == GnomeSettings::RightPlacement) {
+    if (GnomeSettings::titlebarButtonPlacement() == GnomeSettings::RightPlacement) {
         return QRectF(window()->frameGeometry().width() - BUTTON_WIDTH * 2 - BUTTON_SPACING * 1 - BUTTONS_RIGHT_MARGIN,
                       (margins().top() - BUTTON_WIDTH) / 2, BUTTON_WIDTH, BUTTON_WIDTH);
     } else {
@@ -179,9 +177,9 @@ QRectF QGnomePlatformDecoration::maximizeButtonRect() const
 
 QRectF QGnomePlatformDecoration::minimizeButtonRect() const
 {
-    const bool maximizeEnabled = m_settings->titlebarButtons().testFlag(GnomeSettings::MaximizeButton);
+    const bool maximizeEnabled = GnomeSettings::titlebarButtons().testFlag(GnomeSettings::MaximizeButton);
 
-    if (m_settings->titlebarButtonPlacement() == GnomeSettings::RightPlacement) {
+    if (GnomeSettings::titlebarButtonPlacement() == GnomeSettings::RightPlacement) {
         return QRectF(window()->frameGeometry().width() - BUTTON_WIDTH * (maximizeEnabled ? 3 : 2) - BUTTON_SPACING * (maximizeEnabled ? 2 : 1) - BUTTONS_RIGHT_MARGIN,
                       (margins().top() - BUTTON_WIDTH) / 2, BUTTON_WIDTH, BUTTON_WIDTH);
     } else {
@@ -241,7 +239,7 @@ void QGnomePlatformDecoration::paint(QPaintDevice *device)
         }
 
         QRect titleBar = top;
-        if (m_settings->titlebarButtonPlacement() == GnomeSettings::RightPlacement) {
+        if (GnomeSettings::titlebarButtonPlacement() == GnomeSettings::RightPlacement) {
             titleBar.setLeft(margins().left());
             titleBar.setRight(minimizeButtonRect().left() - 8);
         } else {
@@ -256,7 +254,7 @@ void QGnomePlatformDecoration::paint(QPaintDevice *device)
         int dx = (top.width() - size.width()) /2;
         int dy = (top.height()- size.height()) /2;
         QFont font;
-        const QFont *themeFont = m_settings->font(QPlatformTheme::TitleBarFont);
+        const QFont *themeFont = GnomeSettings::font(QPlatformTheme::TitleBarFont);
         font.setPointSizeF(themeFont->pointSizeF());
         font.setFamily(themeFont->family());
         font.setBold(themeFont->bold());
@@ -273,7 +271,7 @@ void QGnomePlatformDecoration::paint(QPaintDevice *device)
     QColor windowColor;
     QColor buttonHoverBorderColor;
     // QColor buttonHoverFrameColor;
-    if (m_settings->gtkThemeDarkVariant()) {
+    if (GnomeSettings::isGtkThemeDarkVariant()) {
         windowColor = darken(desaturate(QColor("#3d3846"), 1.0), 0.04);
         buttonHoverBorderColor = darken(windowColor, 0.1);
         // buttonHoverFrameColor = darken(windowColor, 0.01);
@@ -302,7 +300,7 @@ void QGnomePlatformDecoration::paint(QPaintDevice *device)
     p.restore();
 
     // Maximize button
-    if (m_settings->titlebarButtons().testFlag(GnomeSettings::MaximizeButton)) {
+    if (GnomeSettings::titlebarButtons().testFlag(GnomeSettings::MaximizeButton)) {
         p.save();
         rect = maximizeButtonRect();
         if (m_maximizeButtonHovered) {
@@ -325,7 +323,7 @@ void QGnomePlatformDecoration::paint(QPaintDevice *device)
     }
 
     // Minimize button
-    if (m_settings->titlebarButtons().testFlag(GnomeSettings::MinimizeButton)) {
+    if (GnomeSettings::titlebarButtons().testFlag(GnomeSettings::MinimizeButton)) {
         p.save();
         rect = minimizeButtonRect();
         if (m_minimizeButtonHovered) {
@@ -398,9 +396,9 @@ bool QGnomePlatformDecoration::handleTouch(QWaylandInputDevice *inputDevice, con
     if (handled) {
         if (closeButtonRect().contains(local))
             QWindowSystemInterface::handleCloseEvent(window());
-        else if (m_settings->titlebarButtons().testFlag(GnomeSettings::MaximizeButton) && maximizeButtonRect().contains(local))
+        else if (GnomeSettings::titlebarButtons().testFlag(GnomeSettings::MaximizeButton) && maximizeButtonRect().contains(local))
             window()->setWindowStates(window()->windowStates() ^ Qt::WindowMaximized);
-        else if (m_settings->titlebarButtons().testFlag(GnomeSettings::MinimizeButton) && minimizeButtonRect().contains(local))
+        else if (GnomeSettings::titlebarButtons().testFlag(GnomeSettings::MinimizeButton) && minimizeButtonRect().contains(local))
             window()->setWindowState(Qt::WindowMinimized);
         else if (local.y() <= margins().top())
             waylandWindow()->shellSurface()->move(inputDevice);
@@ -461,19 +459,19 @@ void QGnomePlatformDecoration::processMouseTop(QWaylandInputDevice *inputDevice,
         updateButtonHoverState(Button::Close);
         if (clickButton(b, Close))
             QWindowSystemInterface::handleCloseEvent(window());
-    }  else if (m_settings->titlebarButtons().testFlag(GnomeSettings::MaximizeButton) && maximizeButtonRect().contains(local)) {
+    }  else if (GnomeSettings::titlebarButtons().testFlag(GnomeSettings::MaximizeButton) && maximizeButtonRect().contains(local)) {
         updateButtonHoverState(Button::Maximize);
         if (clickButton(b, Maximize))
             window()->setWindowStates(window()->windowStates() ^ Qt::WindowMaximized);
-    } else if (m_settings->titlebarButtons().testFlag(GnomeSettings::MinimizeButton) && minimizeButtonRect().contains(local)) {
+    } else if (GnomeSettings::titlebarButtons().testFlag(GnomeSettings::MinimizeButton) && minimizeButtonRect().contains(local)) {
         updateButtonHoverState(Button::Minimize);
         if (clickButton(b, Minimize))
             window()->setWindowState(Qt::WindowMinimized);
     } else {
         if (clickButton(b, Maximize)) {
-            const int doubleClickDistance = m_settings->hint(QPlatformTheme::MouseDoubleClickDistance).toInt();
+            const int doubleClickDistance = GnomeSettings::hint(QPlatformTheme::MouseDoubleClickDistance).toInt();
             QPointF posDiff = m_lastButtonClickPosition - local;
-            if ((m_lastButtonClick.msecsTo(currentDateTime) <= m_settings->hint(QPlatformTheme::MouseDoubleClickInterval).toInt()) &&
+            if ((m_lastButtonClick.msecsTo(currentDateTime) <= GnomeSettings::hint(QPlatformTheme::MouseDoubleClickInterval).toInt()) &&
                 ((posDiff.x() <= doubleClickDistance && posDiff.x() >= -doubleClickDistance) && ((posDiff.y() <= doubleClickDistance && posDiff.y() >= -doubleClickDistance))))
                 window()->setWindowStates(window()->windowStates() ^ Qt::WindowMaximized);
             m_lastButtonClick = currentDateTime;

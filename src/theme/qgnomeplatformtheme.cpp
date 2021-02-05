@@ -27,6 +27,10 @@
 #include <QGuiApplication>
 #include <QStyleFactory>
 
+#undef signals
+#include <gtk-3.0/gtk/gtk.h>
+#define signals Q_SIGNALS
+
 #if !defined(QT_NO_DBUS) && !defined(QT_NO_SYSTEMTRAYICON)
 #include <private/qdbustrayicon_p.h>
 #endif
@@ -38,8 +42,6 @@ QGnomePlatformTheme::QGnomePlatformTheme()
             qputenv("QT_WAYLAND_DECORATION", "gnome");
     }
 
-    loadSettings();
-
     /* Initialize some types here so that Gtk+ does not crash when reading
      * the treemodel for GtkFontChooser.
      */
@@ -49,12 +51,11 @@ QGnomePlatformTheme::QGnomePlatformTheme()
 
 QGnomePlatformTheme::~QGnomePlatformTheme()
 {
-    delete m_settings;
 }
 
 QVariant QGnomePlatformTheme::themeHint(QPlatformTheme::ThemeHint hintType) const
 {
-    QVariant hint = m_settings->hint(hintType);
+    QVariant hint = GnomeSettings::hint(hintType);
     if (hint.isValid()) {
         return hint;
     } else {
@@ -64,14 +65,14 @@ QVariant QGnomePlatformTheme::themeHint(QPlatformTheme::ThemeHint hintType) cons
 
 const QFont *QGnomePlatformTheme::font(Font type) const
 {
-    return m_settings->font(type);
+    return GnomeSettings::font(type);
 }
 
 const QPalette *QGnomePlatformTheme::palette(Palette type) const
 {
-    Q_UNUSED(type);
+    Q_UNUSED(type)
 
-    return m_settings->palette();
+    return GnomeSettings::palette();
 }
 
 bool QGnomePlatformTheme::usePlatformNativeDialog(QPlatformTheme::DialogType type) const
@@ -83,7 +84,6 @@ bool QGnomePlatformTheme::usePlatformNativeDialog(QPlatformTheme::DialogType typ
         return true;
     case QPlatformTheme::ColorDialog:
         return true;
-    case QPlatformTheme::MessageDialog:
     default:
         return false;
     }
@@ -93,7 +93,7 @@ QPlatformDialogHelper *QGnomePlatformTheme::createPlatformDialogHelper(QPlatform
 {
     switch (type) {
     case QPlatformTheme::FileDialog: {
-        if (m_settings->canUseFileChooserPortal()) {
+        if (GnomeSettings::canUseFileChooserPortal()) {
             return new QXdgDesktopPortalFileDialog;
         } else {
             return new QGtk3FileDialogHelper;
@@ -103,9 +103,8 @@ QPlatformDialogHelper *QGnomePlatformTheme::createPlatformDialogHelper(QPlatform
         return new QGtk3FontDialogHelper();
     case QPlatformTheme::ColorDialog:
         return new QGtk3ColorDialogHelper();
-    case QPlatformTheme::MessageDialog:
     default:
-        return 0;
+        return nullptr;
     }
 }
 
@@ -131,8 +130,3 @@ QPlatformSystemTrayIcon * QGnomePlatformTheme::createPlatformSystemTrayIcon() co
     return Q_NULLPTR;
 }
 #endif
-
-void QGnomePlatformTheme::loadSettings()
-{
-    m_settings = new GnomeSettings;
-}
