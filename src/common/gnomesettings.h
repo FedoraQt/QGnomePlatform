@@ -20,8 +20,8 @@
 #ifndef GNOME_SETTINGS_H
 #define GNOME_SETTINGS_H
 
-#include <QtCore/QFlags>
-#include <QtCore/QObject>
+#include <QFlags>
+#include <QObject>
 
 #include <qpa/qplatformtheme.h>
 

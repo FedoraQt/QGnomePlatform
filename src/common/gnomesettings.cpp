@@ -22,14 +22,16 @@
 
 #include <AdwaitaQt/adwaitacolors.h>
 
-#include <QtCore/QDir>
-#include <QtCore/QLoggingCategory>
-#include <QtCore/QSettings>
-#include <QtCore/QString>
-#include <QtCore/QStandardPaths>
-#include <QtCore/QVariant>
-#include <QtCore/QTimer>
+// QtCore
+#include <QDir>
+#include <QLoggingCategory>
+#include <QSettings>
+#include <QString>
+#include <QStandardPaths>
+#include <QVariant>
+#include <QTimer>
 
+// QtDBus
 #include <QDBusArgument>
 #include <QDBusConnection>
 #include <QDBusMessage>
@@ -38,14 +40,15 @@
 #include <QDBusPendingReply>
 #include <QDBusVariant>
 
-#include <QtGui/QApplication>
-#include <QtGui/QDialogButtonBox>
-#include <QtGui/QGuiApplication>
-#include <QtGui/QFont>
-#include <QtGui/QMainWindow>
-#include <QtGui/QPalette>
-#include <QtGui/QStyleFactory>
-#include <QtGui/QToolBar>
+// QtGui
+#include <QApplication>
+#include <QDialogButtonBox>
+#include <QGuiApplication>
+#include <QFont>
+#include <QMainWindow>
+#include <QPalette>
+#include <QStyleFactory>
+#include <QToolBar>
 
 #include <fcntl.h>
 #include <sys/types.h>
