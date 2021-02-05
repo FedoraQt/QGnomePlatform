@@ -19,7 +19,7 @@
  */
 
 #include "qgnomeplatformtheme.h"
-#include "gnomehintssettings.h"
+#include "gnomesettings.h"
 #include "qgtk3dialoghelpers.h"
 #include "qxdgdesktopportalfiledialog_p.h"
 
@@ -49,12 +49,12 @@ QGnomePlatformTheme::QGnomePlatformTheme()
 
 QGnomePlatformTheme::~QGnomePlatformTheme()
 {
-    delete m_hints;
+    delete m_settings;
 }
 
 QVariant QGnomePlatformTheme::themeHint(QPlatformTheme::ThemeHint hintType) const
 {
-    QVariant hint = m_hints->hint(hintType);
+    QVariant hint = m_settings->hint(hintType);
     if (hint.isValid()) {
         return hint;
     } else {
@@ -64,14 +64,14 @@ QVariant QGnomePlatformTheme::themeHint(QPlatformTheme::ThemeHint hintType) cons
 
 const QFont *QGnomePlatformTheme::font(Font type) const
 {
-    return m_hints->font(type);
+    return m_settings->font(type);
 }
 
 const QPalette *QGnomePlatformTheme::palette(Palette type) const
 {
     Q_UNUSED(type);
 
-    return m_hints->palette();
+    return m_settings->palette();
 }
 
 bool QGnomePlatformTheme::usePlatformNativeDialog(QPlatformTheme::DialogType type) const
@@ -93,7 +93,7 @@ QPlatformDialogHelper *QGnomePlatformTheme::createPlatformDialogHelper(QPlatform
 {
     switch (type) {
     case QPlatformTheme::FileDialog: {
-        if (m_hints->canUseFileChooserPortal()) {
+        if (m_settings->canUseFileChooserPortal()) {
             return new QXdgDesktopPortalFileDialog;
         } else {
             return new QGtk3FileDialogHelper;
@@ -134,5 +134,5 @@ QPlatformSystemTrayIcon * QGnomePlatformTheme::createPlatformSystemTrayIcon() co
 
 void QGnomePlatformTheme::loadSettings()
 {
-    m_hints = new GnomeHintsSettings;
+    m_settings = new GnomeSettings;
 }

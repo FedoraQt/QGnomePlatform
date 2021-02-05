@@ -17,7 +17,7 @@
  *
  */
 
-#include "gnomehintssettings.h"
+#include "gnomesettings.h"
 
 #include <QDir>
 #include <QString>
@@ -85,7 +85,7 @@ void gtkMessageHandler(const gchar *log_domain,
     }
 }
 
-GnomeHintsSettings::GnomeHintsSettings()
+GnomeSettings::GnomeSettings()
     : QObject(0)
     , m_usePortal(checkUsePortalSupport())
     , m_canUseFileChooserPortal(!m_usePortal)
@@ -190,7 +190,7 @@ GnomeHintsSettings::GnomeHintsSettings()
     }
 }
 
-GnomeHintsSettings::~GnomeHintsSettings()
+GnomeSettings::~GnomeSettings()
 {
     qDeleteAll(m_fonts);
     if (m_cinnamonSettings) {
@@ -200,7 +200,7 @@ GnomeHintsSettings::~GnomeHintsSettings()
     g_object_unref(m_settings);
 }
 
-void GnomeHintsSettings::gsettingPropertyChanged(GSettings *settings, gchar *key, GnomeHintsSettings *gnomeHintsSettings)
+void GnomeSettings::gsettingPropertyChanged(GSettings *settings, gchar *key, GnomeSettings *gnomeHintsSettings)
 {
     Q_UNUSED(settings);
 
@@ -231,7 +231,7 @@ void GnomeHintsSettings::gsettingPropertyChanged(GSettings *settings, gchar *key
     }
 }
 
-void GnomeHintsSettings::cursorBlinkTimeChanged()
+void GnomeSettings::cursorBlinkTimeChanged()
 {
     int cursorBlinkTime = getSettingsProperty<int>(QStringLiteral("cursor-blink-time"));
     if (cursorBlinkTime >= 100) {
@@ -256,13 +256,13 @@ void GnomeHintsSettings::cursorBlinkTimeChanged()
     }
 }
 
-void GnomeHintsSettings::cursorSizeChanged()
+void GnomeSettings::cursorSizeChanged()
 {
     int cursorSize = getSettingsProperty<int>(QStringLiteral("cursor-size"));
     qputenv("XCURSOR_SIZE", QString::number(cursorSize).toUtf8());
 }
 
-void GnomeHintsSettings::fontChanged()
+void GnomeSettings::fontChanged()
 {
     const QFont oldSysFont = *m_fonts[QPlatformTheme::SystemFont];
     loadFonts();
@@ -280,7 +280,7 @@ void GnomeHintsSettings::fontChanged()
     }
 }
 
-void GnomeHintsSettings::iconsChanged()
+void GnomeSettings::iconsChanged()
 {
     QString systemIconTheme = getSettingsProperty<QString>(QStringLiteral("icon-theme"));
     if (!systemIconTheme.isEmpty()) {
@@ -305,12 +305,12 @@ void GnomeHintsSettings::iconsChanged()
     }
 }
 
-void GnomeHintsSettings::themeChanged()
+void GnomeSettings::themeChanged()
 {
     loadTheme();
 }
 
-void GnomeHintsSettings::loadTitlebar()
+void GnomeSettings::loadTitlebar()
 {
     const QString buttonLayout = getSettingsProperty<QString>("button-layout");
 
@@ -323,27 +323,27 @@ void GnomeHintsSettings::loadTitlebar()
         const QString &leftButtons = btnList.first();
         const QString &rightButtons = btnList.last();
 
-        m_titlebarButtonPlacement = leftButtons.contains(QStringLiteral("close")) ? GnomeHintsSettings::LeftPlacement : GnomeHintsSettings::RightPlacement;
+        m_titlebarButtonPlacement = leftButtons.contains(QStringLiteral("close")) ? GnomeSettings::LeftPlacement : GnomeSettings::RightPlacement;
 
         // TODO support button order
         TitlebarButtons buttons;
         if (leftButtons.contains(QStringLiteral("close")) || rightButtons.contains("close")) {
-            buttons = buttons | GnomeHintsSettings::CloseButton;
+            buttons = buttons | GnomeSettings::CloseButton;
         }
 
         if (leftButtons.contains(QStringLiteral("maximize")) || rightButtons.contains("maximize")) {
-            buttons = buttons | GnomeHintsSettings::MaximizeButton;
+            buttons = buttons | GnomeSettings::MaximizeButton;
         }
 
         if (leftButtons.contains(QStringLiteral("minimize")) || rightButtons.contains("minimize")) {
-            buttons = buttons | GnomeHintsSettings::MinimizeButton;
+            buttons = buttons | GnomeSettings::MinimizeButton;
         }
 
         m_titlebarButtons = buttons;
     }
 }
 
-void GnomeHintsSettings::loadTheme()
+void GnomeSettings::loadTheme()
 {
     // g_object_get(gtk_settings_get_default(), "gtk-theme-name", &m_gtkTheme, NULL);
     m_gtkTheme = getSettingsProperty<QString>(QStringLiteral("gtk-theme"));
@@ -390,7 +390,7 @@ void GnomeHintsSettings::loadTheme()
     m_hints[QPlatformTheme::StyleNames] = styleNames;
 }
 
-void GnomeHintsSettings::loadFonts()
+void GnomeSettings::loadFonts()
 {
     qDeleteAll(m_fonts);
     m_fonts.clear();
@@ -442,7 +442,7 @@ void GnomeHintsSettings::loadFonts()
     }
 }
 
-void GnomeHintsSettings::loadStaticHints() {
+void GnomeSettings::loadStaticHints() {
     int cursorBlinkTime = getSettingsProperty<int>(QStringLiteral("cursor-blink-time"));
     if (cursorBlinkTime >= 100) {
         qCDebug(QGnomePlatform) << "Cursor blink time: " << cursorBlinkTime;
@@ -487,7 +487,7 @@ void GnomeHintsSettings::loadStaticHints() {
     m_hints[QPlatformTheme::IconThemeSearchPaths] = xdgIconThemePaths();
 }
 
-void GnomeHintsSettings::portalSettingChanged(const QString &group, const QString &key, const QDBusVariant &value)
+void GnomeSettings::portalSettingChanged(const QString &group, const QString &key, const QDBusVariant &value)
 {
     if (group == QStringLiteral("org.gnome.desktop.interface") || group == QStringLiteral("org.gnome.desktop.wm.preferences")) {
         m_portalSettings[group][key] = value.variant();
@@ -495,7 +495,7 @@ void GnomeHintsSettings::portalSettingChanged(const QString &group, const QStrin
     }
 }
 
-QStringList GnomeHintsSettings::xdgIconThemePaths() const
+QStringList GnomeSettings::xdgIconThemePaths() const
 {
     QStringList paths;
 
@@ -520,7 +520,7 @@ QStringList GnomeHintsSettings::xdgIconThemePaths() const
     return paths;
 }
 
-QString GnomeHintsSettings::kvantumThemeForGtkTheme() const
+QString GnomeSettings::kvantumThemeForGtkTheme() const
 {
     if (m_gtkTheme.isEmpty()) {
         // No Gtk theme? Then can't match to Kvantum!
@@ -557,7 +557,7 @@ QString GnomeHintsSettings::kvantumThemeForGtkTheme() const
     return QString();
 }
 
-void GnomeHintsSettings::configureKvantum(const QString &theme) const
+void GnomeSettings::configureKvantum(const QString &theme) const
 {
     QSettings config(QDir::homePath() + "/.config/Kvantum/kvantum.kvconfig", QSettings::NativeFormat);
     if (!config.contains("theme") || config.value("theme").toString() != theme) {

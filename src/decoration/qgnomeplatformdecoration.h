@@ -26,7 +26,7 @@
 
 #include <QDateTime>
 
-class GnomeHintsSettings;
+class GnomeSettings;
 class QPixmap;
 
 using namespace QtWaylandClient;
@@ -88,7 +88,7 @@ private:
     QStaticText m_windowTitle;
     Button m_clicking = None;
 
-    GnomeHintsSettings *m_hints;
+    GnomeSettings *m_settings;
 };
 
 

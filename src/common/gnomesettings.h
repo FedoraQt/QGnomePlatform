@@ -17,8 +17,8 @@
  *
  */
 
-#ifndef GNOME_HINTS_SETTINGS_H
-#define GNOME_HINTS_SETTINGS_H
+#ifndef GNOME_SETTINGS_H
+#define GNOME_SETTINGS_H
 
 #include <QFont>
 #include <QFlags>
@@ -41,7 +41,7 @@
 
 class QDBusVariant;
 
-class GnomeHintsSettings : public QObject
+class GnomeSettings : public QObject
 {
     Q_OBJECT
 public:
@@ -57,8 +57,8 @@ public:
     };
     Q_DECLARE_FLAGS(TitlebarButtons, TitlebarButton);
 
-    explicit GnomeHintsSettings();
-    virtual ~GnomeHintsSettings();
+    explicit GnomeSettings();
+    virtual ~GnomeSettings();
 
     inline QFont * font(QPlatformTheme::Font type) const
     {
@@ -123,7 +123,7 @@ private Q_SLOTS:
     void portalSettingChanged(const QString &group, const QString &key, const QDBusVariant &value);
 
 protected:
-    static void gsettingPropertyChanged(GSettings *settings, gchar *key, GnomeHintsSettings *gnomeHintsSettings);
+    static void gsettingPropertyChanged(GSettings *settings, gchar *key, GnomeSettings *gnomeHintsSettings);
 
 private:
     template <typename T> T getSettingsProperty(GSettings *settings, const QString &property, bool *ok = nullptr) {
@@ -186,13 +186,13 @@ private:
     QMap<QString, QVariantMap> m_portalSettings;
 };
 
-template <> inline int GnomeHintsSettings::getSettingsProperty(GSettings *settings, const QString &property, bool *ok) {
+template <> inline int GnomeSettings::getSettingsProperty(GSettings *settings, const QString &property, bool *ok) {
     if (ok)
         *ok = true;
     return g_settings_get_int(settings, property.toStdString().c_str());
 }
 
-template <> inline QString GnomeHintsSettings::getSettingsProperty(GSettings *settings, const QString &property, bool *ok) {
+template <> inline QString GnomeSettings::getSettingsProperty(GSettings *settings, const QString &property, bool *ok) {
     // be exception and resources safe
     std::unique_ptr<gchar, void(*)(gpointer)> raw {g_settings_get_string(settings, property.toStdString().c_str()), g_free};
     if (ok)
@@ -200,12 +200,12 @@ template <> inline QString GnomeHintsSettings::getSettingsProperty(GSettings *se
     return QString{raw.get()};
 }
 
-template <> inline qreal GnomeHintsSettings::getSettingsProperty(GSettings *settings, const QString &property, bool *ok) {
+template <> inline qreal GnomeSettings::getSettingsProperty(GSettings *settings, const QString &property, bool *ok) {
     if (ok)
         *ok = true;
     return g_settings_get_double(settings, property.toStdString().c_str());
 }
 
-Q_DECLARE_OPERATORS_FOR_FLAGS(GnomeHintsSettings::TitlebarButtons)
+Q_DECLARE_OPERATORS_FOR_FLAGS(GnomeSettings::TitlebarButtons)
 
 #endif // GNOME_HINTS_SETTINGS_H

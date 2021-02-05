@@ -1,6 +1,6 @@
 
 set(common_SRCS
-    gnomehintssettings.cpp
+    gnomesettings.cpp
 )
 
 add_library(qgnomeplatform SHARED ${common_SRCS})

@@ -25,7 +25,7 @@
 #include <QPalette>
 #include <qpa/qplatformtheme.h>
 
-class GnomeHintsSettings;
+class GnomeSettings;
 
 class QGnomePlatformTheme : public QPlatformTheme
 {
@@ -45,7 +45,7 @@ public:
 private:
     void loadSettings();
 
-    GnomeHintsSettings *m_hints;
+    GnomeSettings *m_settings;
 };
 
 #endif // QGNOME_PLATFORM_THEME_HH
