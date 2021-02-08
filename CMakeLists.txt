@@ -45,6 +45,14 @@ if (DISABLE_THEME_SUPPORT)
     message(STATUS "Disabling platform theme support")
 endif()
 
+get_target_property(REAL_QMAKE_EXECUTABLE ${Qt5Core_QMAKE_EXECUTABLE}
+                    IMPORTED_LOCATION)
+
+if (NOT QT_PLUGINS_DIR)
+    execute_process(COMMAND "${REAL_QMAKE_EXECUTABLE}" -query QT_INSTALL_PLUGINS
+                    OUTPUT_VARIABLE QT_PLUGINS_DIR
+                    ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
+endif()
 
 add_subdirectory(src)
 

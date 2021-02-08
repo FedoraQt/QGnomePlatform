@@ -20,6 +20,6 @@ target_link_libraries(qgnomeplatformtheme
     PkgConfig::GTK+3
 )
 
-install(TARGETS qgnomeplatformtheme RENAME qgnomeplatform DESTINATION ${KDE_INSTALL_QTPLUGINDIR}/platformthemes)
+install(TARGETS qgnomeplatformtheme RENAME qgnomeplatform DESTINATION ${QT_PLUGINS_DIR}/platformthemes)
 
 

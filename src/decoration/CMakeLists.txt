@@ -24,5 +24,5 @@ target_link_libraries(qgnomeplatformdecoration
 )
 endif()
 
-install(TARGETS qgnomeplatformdecoration DESTINATION ${KDE_INSTALL_QTPLUGINDIR}/wayland-decoration-client)
+install(TARGETS qgnomeplatformdecoration DESTINATION ${QT_PLUGINS_DIR}//wayland-decoration-client)
 
