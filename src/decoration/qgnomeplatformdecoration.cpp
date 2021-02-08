@@ -42,6 +42,8 @@
 
 #include "gnomesettings.h"
 
+#include <AdwaitaQt/adwaitacolors.h>
+
 #include <QtGui/QColor>
 #include <QtGui/QCursor>
 #include <QtGui/QLinearGradient>
@@ -60,58 +62,31 @@
 #define BUTTON_WIDTH 26
 #define BUTTONS_RIGHT_MARGIN 6
 
-// Copied from adwaita-qt
-static QColor transparentize(const QColor &color, qreal amount = 0.1)
-{
-    qreal h, s, l, a;
-    color.getHslF(&h, &s, &l, &a);
-
-    qreal alpha = a - amount;
-    if (alpha < 0)
-        alpha = 0;
-    return QColor::fromHslF(h, s, l, alpha);
-}
-
-static QColor darken(const QColor &color, qreal amount = 0.1)
-{
-    qreal h, s, l, a;
-    color.getHslF(&h, &s, &l, &a);
-
-    qreal lightness = l - amount;
-    if (lightness < 0)
-        lightness = 0;
-
-    return QColor::fromHslF(h, s, lightness, a);
-}
-
-static QColor desaturate(const QColor &color, qreal amount = 0.1)
-{
-    qreal h, s, l, a;
-    color.getHslF(&h, &s, &l, &a);
-
-    qreal saturation = s - amount;
-    if (saturation < 0)
-        saturation = 0;
-    return QColor::fromHslF(h, saturation, l, a);
-}
-
 QGnomePlatformDecoration::QGnomePlatformDecoration()
     : m_closeButtonHovered(false)
     , m_maximizeButtonHovered(false)
     , m_minimizeButtonHovered(false)
 {
     initializeButtonPixmaps();
-    initializeColors();
 
     m_lastButtonClick = QDateTime::currentDateTime();
 
     QTextOption option(Qt::AlignHCenter | Qt::AlignVCenter);
     option.setWrapMode(QTextOption::NoWrap);
     m_windowTitle.setTextOption(option);
-}
 
-QGnomePlatformDecoration::~QGnomePlatformDecoration()
-{
+    // Colors
+    const bool darkVariant = GnomeSettings::isGtkThemeDarkVariant();
+    const QPalette &palette(Adwaita::Colors::palette(darkVariant ? Adwaita::ColorVariant::AdwaitaDark : Adwaita::ColorVariant::Adwaita));
+
+    m_foregroundColor         = palette.color(QPalette::Active, QPalette::Foreground);
+    m_foregroundInactiveColor = palette.color(QPalette::Inactive, QPalette::Foreground);
+    m_backgroundColorStart    = darkVariant ? QColor("#262626") : QColor("#dad6d2"); // Adwaita GtkHeaderBar color
+    m_backgroundColorEnd      = darkVariant ? QColor("#2b2b2b") : QColor("#e1dedb"); // Adwaita GtkHeaderBar color
+    m_foregroundInactiveColor = darkVariant ? QColor("#919190") : QColor("#929595");
+    m_backgroundInactiveColor = darkVariant ? QColor("#353535") : QColor("#f6f5f4");
+    m_borderColor             = darkVariant ? Adwaita::Colors::transparentize(QColor("#1b1b1b"), 0.1) : Adwaita::Colors::transparentize(QColor("black"), 0.77);
+    m_borderInactiveColor     = darkVariant ? Adwaita::Colors::transparentize(QColor("#1b1b1b"), 0.1) : Adwaita::Colors::transparentize(QColor("black"), 0.82);
 }
 
 void QGnomePlatformDecoration::initializeButtonPixmaps()
@@ -131,18 +106,6 @@ void QGnomePlatformDecoration::initializeButtonPixmaps()
     m_buttonPixmaps.insert(Button::Maximize, isAdwaitaIconTheme && isDarkVariant ? pixmapDarkVariant(maximizeIcon) : maximizeIcon);
     m_buttonPixmaps.insert(Button::Minimize, isAdwaitaIconTheme && isDarkVariant ? pixmapDarkVariant(minimizeIcon) : minimizeIcon);
     m_buttonPixmaps.insert(Button::Restore, isAdwaitaIconTheme && isDarkVariant ? pixmapDarkVariant(restoreIcon) : restoreIcon);
-}
-
-void QGnomePlatformDecoration::initializeColors()
-{
-    const bool darkVariant = GnomeSettings::isGtkThemeDarkVariant();
-    m_foregroundColor         = darkVariant ? QColor("#eeeeec") : QColor("#2e3436"); // Adwaita fg_color
-    m_backgroundColorStart    = darkVariant ? QColor("#262626") : QColor("#dad6d2"); // Adwaita GtkHeaderBar color
-    m_backgroundColorEnd      = darkVariant ? QColor("#2b2b2b") : QColor("#e1dedb"); // Adwaita GtkHeaderBar color
-    m_foregroundInactiveColor = darkVariant ? QColor("#919190") : QColor("#929595");
-    m_backgroundInactiveColor = darkVariant ? QColor("#353535") : QColor("#f6f5f4");
-    m_borderColor             = darkVariant ? transparentize(QColor("#1b1b1b"), 0.1) : transparentize(QColor("black"), 0.77);
-    m_borderInactiveColor     = darkVariant ? transparentize(QColor("#1b1b1b"), 0.1) : transparentize(QColor("black"), 0.82);
 }
 
 QPixmap QGnomePlatformDecoration::pixmapDarkVariant(const QPixmap &pixmap)
@@ -269,16 +232,16 @@ void QGnomePlatformDecoration::paint(QPaintDevice *device)
 
     // From adwaita-qt
     QColor windowColor;
-    QColor buttonHoverBorderColor;
+    // QColor buttonHoverBorderColor;
     // QColor buttonHoverFrameColor;
     if (GnomeSettings::isGtkThemeDarkVariant()) {
-        windowColor = darken(desaturate(QColor("#3d3846"), 1.0), 0.04);
-        buttonHoverBorderColor = darken(windowColor, 0.1);
-        // buttonHoverFrameColor = darken(windowColor, 0.01);
+        windowColor = Adwaita::Colors::darken(Adwaita::Colors::desaturate(QColor("#3d3846"), 1.0), 0.04);
+        // buttonHoverBorderColor = Adwaita::Colors::darken(windowColor, 0.1);
+        // buttonHoverFrameColor = Adwaita::Colors::darken(windowColor, 0.01);
     } else {
         windowColor = QColor("#f6f5f4");
-        buttonHoverBorderColor = darken(windowColor, 0.18);
-        // buttonHoverFrameColor = darken(windowColor, 0.04);
+        // buttonHoverBorderColor = Adwaita::Colors::darken(windowColor, 0.18);
+        // buttonHoverFrameColor = Adwaita::Colors::darken(windowColor, 0.04);
     }
 
     // Close button
@@ -289,11 +252,11 @@ void QGnomePlatformDecoration::paint(QPaintDevice *device)
         // QLinearGradient buttonGradient(buttonRect.bottomLeft(), buttonRect.topLeft());
         // buttonGradient.setColorAt(0, buttonHoverFrameColor);
         // buttonGradient.setColorAt(1, windowColor);
-        QPainterPath path;
-        path.addRoundedRect(buttonRect, 4, 4);
-        p.setPen(QPen(buttonHoverBorderColor, 1.0));
-        p.fillPath(path, windowColor);
-        p.drawPath(path);
+        // QPainterPath path;
+        // path.addRoundedRect(buttonRect, 4, 4);
+        // p.setPen(QPen(buttonHoverBorderColor, 1.0));
+        // p.fillPath(path, windowColor);
+        // p.drawPath(path);
     }
     p.drawPixmap(QPoint(rect.x() + 6, rect.y() + 6), m_buttonPixmaps[Button::Close]);
 
@@ -304,15 +267,15 @@ void QGnomePlatformDecoration::paint(QPaintDevice *device)
         p.save();
         rect = maximizeButtonRect();
         if (m_maximizeButtonHovered) {
-            QRectF buttonRect(rect.x() - 0.5, rect.y() - 0.5, 28, 28);
+            // QRectF buttonRect(rect.x() - 0.5, rect.y() - 0.5, 28, 28);
             // QLinearGradient buttonGradient(buttonRect.bottomLeft(), buttonRect.topLeft());
             // buttonGradient.setColorAt(0, buttonHoverFrameColor);
             // buttonGradient.setColorAt(1, windowColor);
-            QPainterPath path;
-            path.addRoundedRect(buttonRect, 4, 4);
-            p.setPen(QPen(buttonHoverBorderColor, 1.0));
-            p.fillPath(path, windowColor);
-            p.drawPath(path);
+            // QPainterPath path;
+            // path.addRoundedRect(buttonRect, 4, 4);
+            // p.setPen(QPen(buttonHoverBorderColor, 1.0));
+            // p.fillPath(path, windowColor);
+            // p.drawPath(path);
         }
         if ((window()->windowStates() & Qt::WindowMaximized)) {
             p.drawPixmap(QPoint(rect.x() + 5, rect.y() + 5), m_buttonPixmaps[Button::Restore]);
@@ -327,15 +290,15 @@ void QGnomePlatformDecoration::paint(QPaintDevice *device)
         p.save();
         rect = minimizeButtonRect();
         if (m_minimizeButtonHovered) {
-            QRectF buttonRect(rect.x() - 0.5, rect.y() - 0.5, 28, 28);
+            // QRectF buttonRect(rect.x() - 0.5, rect.y() - 0.5, 28, 28);
             // QLinearGradient buttonGradient(buttonRect.bottomLeft(), buttonRect.topLeft());
             // buttonGradient.setColorAt(0, buttonHoverFrameColor);
             // buttonGradient.setColorAt(1, windowColor);
-            QPainterPath path;
-            path.addRoundedRect(buttonRect, 4, 4);
-            p.setPen(QPen(buttonHoverBorderColor, 1.0));
-            p.fillPath(path, windowColor);
-            p.drawPath(path);
+            // QPainterPath path;
+            // path.addRoundedRect(buttonRect, 4, 4);
+            // p.setPen(QPen(buttonHoverBorderColor, 1.0));
+            // p.fillPath(path, windowColor);
+            // p.drawPath(path);
         }
         p.drawPixmap(QPoint(rect.x() + 5, rect.y() + 5), m_buttonPixmaps[Button::Minimize]);
         p.restore();

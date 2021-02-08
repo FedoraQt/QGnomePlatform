@@ -43,15 +43,16 @@ class QGnomePlatformDecoration : public QWaylandAbstractDecoration
 {
 public:
     QGnomePlatformDecoration();
-    ~QGnomePlatformDecoration();
+    virtual ~QGnomePlatformDecoration() override = default;
+
 protected:
     QMargins margins() const override;
     void paint(QPaintDevice *device) override;
     bool handleMouse(QWaylandInputDevice *inputDevice, const QPointF &local, const QPointF &global,Qt::MouseButtons b,Qt::KeyboardModifiers mods) override;
     bool handleTouch(QWaylandInputDevice *inputDevice, const QPointF &local, const QPointF &global, Qt::TouchPointState state, Qt::KeyboardModifiers mods) override;
+
 private:
     void initializeButtonPixmaps();
-    void initializeColors();
     QPixmap pixmapDarkVariant(const QPixmap &pixmap);
 
     void processMouseTop(QWaylandInputDevice *inputDevice, const QPointF &local, Qt::MouseButtons b,Qt::KeyboardModifiers mods);
