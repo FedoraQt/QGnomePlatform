@@ -179,9 +179,9 @@ void QGnomePlatformDecoration::paint(QPaintDevice *device)
         QRect titleBar = top;
         if (GnomeSettings::titlebarButtonPlacement() == GnomeSettings::RightPlacement) {
             titleBar.setLeft(margins().left());
-            titleBar.setRight(minimizeButtonRect().left() - 8);
+            titleBar.setRight(static_cast<int>(minimizeButtonRect().left()) - 8);
         } else {
-            titleBar.setLeft(minimizeButtonRect().right() + 8);
+            titleBar.setLeft(static_cast<int>(minimizeButtonRect().right()) + 8);
             titleBar.setRight(surfaceRect.width() - margins().right());
         }
 
@@ -189,8 +189,8 @@ void QGnomePlatformDecoration::paint(QPaintDevice *device)
         p.setClipRect(titleBar);
         p.setPen(active ? m_foregroundColor : m_foregroundInactiveColor);
         QSizeF size = m_windowTitle.size();
-        int dx = (top.width() - size.width()) /2;
-        int dy = (top.height()- size.height()) /2;
+        int dx = (static_cast<int>(top.width()) - static_cast<int>(size.width())) /2;
+        int dy = (static_cast<int>(top.height())- static_cast<int>(size.height())) /2;
         QFont font;
         const QFont *themeFont = GnomeSettings::font(QPlatformTheme::TitleBarFont);
         font.setPointSizeF(themeFont->pointSizeF());
@@ -210,7 +210,7 @@ void QGnomePlatformDecoration::paint(QPaintDevice *device)
     // Close button
     rect = closeButtonRect();
     if (m_closeButtonHovered && active) {
-        QRect buttonRect(rect.x(), rect.y(), BUTTON_WIDTH, BUTTON_WIDTH);
+        QRect buttonRect(static_cast<int>(rect.x()), static_cast<int>(rect.y()), BUTTON_WIDTH, BUTTON_WIDTH);
         Adwaita::StyleOptions styleOptions(&p, buttonRect);
         styleOptions.setMouseOver(true);
         styleOptions.setSunken(m_clicking == Button::Close);
@@ -219,14 +219,14 @@ void QGnomePlatformDecoration::paint(QPaintDevice *device)
         styleOptions.setOutlineColor(Adwaita::Colors::buttonOutlineColor(styleOptions));
         Adwaita::Renderer::renderFlatRoundedButtonFrame(styleOptions);
     }
-    decorationButtonStyle.setRect(QRect(rect.x() + (BUTTON_WIDTH / 4), rect.y() + (BUTTON_WIDTH / 4), BUTTON_WIDTH / 2, BUTTON_WIDTH / 2));
+    decorationButtonStyle.setRect(QRect(static_cast<int>(rect.x()) + (BUTTON_WIDTH / 4), static_cast<int>(rect.y()) + (BUTTON_WIDTH / 4), BUTTON_WIDTH / 2, BUTTON_WIDTH / 2));
     Adwaita::Renderer::renderDecorationButton(decorationButtonStyle, Adwaita::ButtonType::ButtonClose);
 
     // Maximize button
     if (GnomeSettings::titlebarButtons().testFlag(GnomeSettings::MaximizeButton)) {
         rect = maximizeButtonRect();
         if (m_maximizeButtonHovered && active) {
-            QRect buttonRect(rect.x(), rect.y(), BUTTON_WIDTH, BUTTON_WIDTH);
+            QRect buttonRect(static_cast<int>(rect.x()), static_cast<int>(rect.y()), BUTTON_WIDTH, BUTTON_WIDTH);
             Adwaita::StyleOptions styleOptions(&p, buttonRect);
             styleOptions.setMouseOver(true);
             styleOptions.setSunken(m_clicking == Button::Maximize || m_clicking == Button::Restore);
@@ -235,7 +235,7 @@ void QGnomePlatformDecoration::paint(QPaintDevice *device)
             styleOptions.setOutlineColor(Adwaita::Colors::buttonOutlineColor(styleOptions));
             Adwaita::Renderer::renderFlatRoundedButtonFrame(styleOptions);
         }
-        decorationButtonStyle.setRect(QRect(rect.x() + (BUTTON_WIDTH / 4), rect.y() + (BUTTON_WIDTH / 4), BUTTON_WIDTH / 2, BUTTON_WIDTH / 2));
+        decorationButtonStyle.setRect(QRect(static_cast<int>(rect.x()) + (BUTTON_WIDTH / 4), static_cast<int>(rect.y()) + (BUTTON_WIDTH / 4), BUTTON_WIDTH / 2, BUTTON_WIDTH / 2));
         const Adwaita::ButtonType buttonType = (window()->windowStates() & Qt::WindowMaximized) ? Adwaita::ButtonType::ButtonRestore : Adwaita::ButtonType::ButtonMaximize;
         Adwaita::Renderer::renderDecorationButton(decorationButtonStyle, buttonType);
     }
@@ -244,7 +244,7 @@ void QGnomePlatformDecoration::paint(QPaintDevice *device)
     if (GnomeSettings::titlebarButtons().testFlag(GnomeSettings::MinimizeButton)) {
         rect = minimizeButtonRect();
         if (m_minimizeButtonHovered && active) {
-            QRect buttonRect(rect.x(), rect.y(), 28, 28);
+            QRect buttonRect(static_cast<int>(rect.x()), static_cast<int>(rect.y()), 28, 28);
             Adwaita::StyleOptions styleOptions(&p, buttonRect);
             styleOptions.setMouseOver(true);
             styleOptions.setSunken(m_clicking == Button::Minimize);
@@ -253,7 +253,7 @@ void QGnomePlatformDecoration::paint(QPaintDevice *device)
             styleOptions.setOutlineColor(Adwaita::Colors::buttonOutlineColor(styleOptions));
             Adwaita::Renderer::renderFlatRoundedButtonFrame(styleOptions);
         }
-        decorationButtonStyle.setRect(QRect(rect.x() + (BUTTON_WIDTH / 4), rect.y() + (BUTTON_WIDTH / 4), BUTTON_WIDTH / 2, BUTTON_WIDTH / 2));
+        decorationButtonStyle.setRect(QRect(static_cast<int>(rect.x()) + (BUTTON_WIDTH / 4), static_cast<int>(rect.y()) + (BUTTON_WIDTH / 4), BUTTON_WIDTH / 2, BUTTON_WIDTH / 2));
         Adwaita::Renderer::renderDecorationButton(decorationButtonStyle, Adwaita::ButtonType::ButtonMinimize);
     }
 }
@@ -276,7 +276,7 @@ bool QGnomePlatformDecoration::clickButton(Qt::MouseButtons b, Button btn)
 
 bool QGnomePlatformDecoration::handleMouse(QWaylandInputDevice *inputDevice, const QPointF &local, const QPointF &global, Qt::MouseButtons b, Qt::KeyboardModifiers mods)
 {
-    Q_UNUSED(global);
+    Q_UNUSED(global)
 
     if (local.y() > margins().top()) {
         updateButtonHoverState(Button::None);
@@ -305,21 +305,22 @@ bool QGnomePlatformDecoration::handleMouse(QWaylandInputDevice *inputDevice, con
 
 bool QGnomePlatformDecoration::handleTouch(QWaylandInputDevice *inputDevice, const QPointF &local, const QPointF &global, Qt::TouchPointState state, Qt::KeyboardModifiers mods)
 {
-    Q_UNUSED(inputDevice);
-    Q_UNUSED(global);
-    Q_UNUSED(mods);
+    Q_UNUSED(inputDevice)
+    Q_UNUSED(global)
+    Q_UNUSED(mods)
     bool handled = state == Qt::TouchPointPressed;
     if (handled) {
-        if (closeButtonRect().contains(local))
+        if (closeButtonRect().contains(local)) {
             QWindowSystemInterface::handleCloseEvent(window());
-        else if (GnomeSettings::titlebarButtons().testFlag(GnomeSettings::MaximizeButton) && maximizeButtonRect().contains(local))
+        } else if (GnomeSettings::titlebarButtons().testFlag(GnomeSettings::MaximizeButton) && maximizeButtonRect().contains(local)) {
             window()->setWindowStates(window()->windowStates() ^ Qt::WindowMaximized);
-        else if (GnomeSettings::titlebarButtons().testFlag(GnomeSettings::MinimizeButton) && minimizeButtonRect().contains(local))
+        } else if (GnomeSettings::titlebarButtons().testFlag(GnomeSettings::MinimizeButton) && minimizeButtonRect().contains(local)) {
             window()->setWindowState(Qt::WindowMinimized);
-        else if (local.y() <= margins().top())
+        } else if (local.y() <= margins().top()) {
             waylandWindow()->shellSurface()->move(inputDevice);
-        else
+        } else {
             handled = false;
+        }
     }
 
     return handled;
@@ -327,7 +328,7 @@ bool QGnomePlatformDecoration::handleTouch(QWaylandInputDevice *inputDevice, con
 
 void QGnomePlatformDecoration::processMouseTop(QWaylandInputDevice *inputDevice, const QPointF &local, Qt::MouseButtons b, Qt::KeyboardModifiers mods)
 {
-    Q_UNUSED(mods);
+    Q_UNUSED(mods)
 
     QDateTime currentDateTime = QDateTime::currentDateTime();
 
@@ -409,7 +410,7 @@ void QGnomePlatformDecoration::processMouseTop(QWaylandInputDevice *inputDevice,
 
 void QGnomePlatformDecoration::processMouseBottom(QWaylandInputDevice *inputDevice, const QPointF &local, Qt::MouseButtons b, Qt::KeyboardModifiers mods)
 {
-    Q_UNUSED(mods);
+    Q_UNUSED(mods)
     if (local.x() <= margins().left()) {
         //bottom left bit
 #if QT_CONFIG(cursor)
@@ -445,8 +446,8 @@ void QGnomePlatformDecoration::processMouseBottom(QWaylandInputDevice *inputDevi
 
 void QGnomePlatformDecoration::processMouseLeft(QWaylandInputDevice *inputDevice, const QPointF &local, Qt::MouseButtons b, Qt::KeyboardModifiers mods)
 {
-    Q_UNUSED(local);
-    Q_UNUSED(mods);
+    Q_UNUSED(local)
+    Q_UNUSED(mods)
 #if QT_CONFIG(cursor)
     waylandWindow()->setMouseCursor(inputDevice, Qt::SplitHCursor);
 #endif
@@ -459,8 +460,8 @@ void QGnomePlatformDecoration::processMouseLeft(QWaylandInputDevice *inputDevice
 
 void QGnomePlatformDecoration::processMouseRight(QWaylandInputDevice *inputDevice, const QPointF &local, Qt::MouseButtons b, Qt::KeyboardModifiers mods)
 {
-    Q_UNUSED(local);
-    Q_UNUSED(mods);
+    Q_UNUSED(local)
+    Q_UNUSED(mods)
 #if QT_CONFIG(cursor)
     waylandWindow()->setMouseCursor(inputDevice, Qt::SplitHCursor);
 #endif
