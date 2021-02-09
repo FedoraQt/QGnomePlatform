@@ -43,6 +43,7 @@
 #include "gnomesettings.h"
 
 #include <AdwaitaQt/adwaitacolors.h>
+#include <AdwaitaQt/adwaitarenderer.h>
 
 #include <QtGui/QColor>
 #include <QtGui/QCursor>
@@ -54,12 +55,13 @@
 
 #include <qpa/qwindowsysteminterface.h>
 
+#include <QtWaylandClient/private/qwaylandshmbackingstore_p.h>
 #include <QtWaylandClient/private/qwaylandwindow_p.h>
 #include <QtWaylandClient/private/qwaylandshellsurface_p.h>
 #include <QtWaylandClient/private/wayland-wayland-client-protocol.h>
 
 #define BUTTON_SPACING 8
-#define BUTTON_WIDTH 26
+#define BUTTON_WIDTH 28
 #define BUTTONS_RIGHT_MARGIN 6
 
 QGnomePlatformDecoration::QGnomePlatformDecoration()
@@ -67,8 +69,6 @@ QGnomePlatformDecoration::QGnomePlatformDecoration()
     , m_maximizeButtonHovered(false)
     , m_minimizeButtonHovered(false)
 {
-    initializeButtonPixmaps();
-
     m_lastButtonClick = QDateTime::currentDateTime();
 
     QTextOption option(Qt::AlignHCenter | Qt::AlignVCenter);
@@ -76,6 +76,7 @@ QGnomePlatformDecoration::QGnomePlatformDecoration()
     m_windowTitle.setTextOption(option);
 
     // Colors
+    // TODO: move colors used for decorations to Adwaita-qt
     const bool darkVariant = GnomeSettings::isGtkThemeDarkVariant();
     const QPalette &palette(Adwaita::Colors::palette(darkVariant ? Adwaita::ColorVariant::AdwaitaDark : Adwaita::ColorVariant::Adwaita));
 
@@ -87,33 +88,6 @@ QGnomePlatformDecoration::QGnomePlatformDecoration()
     m_backgroundInactiveColor = darkVariant ? QColor("#353535") : QColor("#f6f5f4");
     m_borderColor             = darkVariant ? Adwaita::Colors::transparentize(QColor("#1b1b1b"), 0.1) : Adwaita::Colors::transparentize(QColor("black"), 0.77);
     m_borderInactiveColor     = darkVariant ? Adwaita::Colors::transparentize(QColor("#1b1b1b"), 0.1) : Adwaita::Colors::transparentize(QColor("black"), 0.82);
-}
-
-void QGnomePlatformDecoration::initializeButtonPixmaps()
-{
-    const QString iconTheme = GnomeSettings::hint(QPlatformTheme::SystemIconThemeName).toString();
-    const bool isAdwaitaIconTheme = iconTheme.toLower() == QStringLiteral("adwaita");
-    const bool isDarkVariant = GnomeSettings::isGtkThemeDarkVariant();
-
-    QIcon::setThemeName(GnomeSettings::hint(QPlatformTheme::SystemIconThemeName).toString());
-
-    QPixmap closeIcon = QIcon::fromTheme(QStringLiteral("window-close-symbolic"), QIcon::fromTheme(QStringLiteral("window-close"))).pixmap(QSize(16, 16));
-    QPixmap maximizeIcon = QIcon::fromTheme(QStringLiteral("window-maximize-symbolic"), QIcon::fromTheme(QStringLiteral("window-maximize"))).pixmap(QSize(16, 16));
-    QPixmap minimizeIcon = QIcon::fromTheme(QStringLiteral("window-minimize-symbolic"), QIcon::fromTheme(QStringLiteral("window-minimize"))).pixmap(QSize(16, 16));
-    QPixmap restoreIcon = QIcon::fromTheme(QStringLiteral("window-restore-symbolic"), QIcon::fromTheme(QStringLiteral("window-restore"))).pixmap(QSize(16, 16));
-
-    m_buttonPixmaps.insert(Button::Close, isAdwaitaIconTheme && isDarkVariant ? pixmapDarkVariant(closeIcon) : closeIcon);
-    m_buttonPixmaps.insert(Button::Maximize, isAdwaitaIconTheme && isDarkVariant ? pixmapDarkVariant(maximizeIcon) : maximizeIcon);
-    m_buttonPixmaps.insert(Button::Minimize, isAdwaitaIconTheme && isDarkVariant ? pixmapDarkVariant(minimizeIcon) : minimizeIcon);
-    m_buttonPixmaps.insert(Button::Restore, isAdwaitaIconTheme && isDarkVariant ? pixmapDarkVariant(restoreIcon) : restoreIcon);
-}
-
-QPixmap QGnomePlatformDecoration::pixmapDarkVariant(const QPixmap &pixmap)
-{
-    // FIXME: dark variant colors are probably not 1:1, but this is the easiest and most reliable approach for now
-    QImage image = pixmap.toImage();
-    image.invertPixels();
-    return QPixmap::fromImage(image);
 }
 
 QRectF QGnomePlatformDecoration::closeButtonRect() const
@@ -166,19 +140,20 @@ void QGnomePlatformDecoration::paint(QPaintDevice *device)
 
     // Title bar (border)
     QPainterPath borderRect;
-    if ((window()->windowStates() & Qt::WindowMaximized))
+    if ((window()->windowStates() & Qt::WindowMaximized)) {
         borderRect.addRect(0, 0, surfaceRect.width(), margins().top() + 8);
-    else
+    } else {
         borderRect.addRoundedRect(0, 0, surfaceRect.width(), margins().top() + 8, 10, 10);
-
+    }
     p.fillPath(borderRect.simplified(), active ? m_borderColor : m_borderInactiveColor);
 
     // Title bar
     QPainterPath roundedRect;
-    if ((window()->windowStates() & Qt::WindowMaximized))
+    if ((window()->windowStates() & Qt::WindowMaximized)) {
         roundedRect.addRect(1, 1, surfaceRect.width() - margins().left() - margins().right(), margins().top() + 8);
-    else
+    } else {
         roundedRect.addRoundedRect(1, 1, surfaceRect.width() - margins().left() - margins().right(), margins().top() + 8, 8, 8);
+    }
 
     QLinearGradient gradient(margins().left(), margins().top() + 6, margins().left(), 1);
     gradient.setColorAt(0, active ? m_backgroundColorStart : m_backgroundInactiveColor);
@@ -229,79 +204,57 @@ void QGnomePlatformDecoration::paint(QPaintDevice *device)
     }
 
     QRectF rect;
-
-    // From adwaita-qt
-    QColor windowColor;
-    // QColor buttonHoverBorderColor;
-    // QColor buttonHoverFrameColor;
-    if (GnomeSettings::isGtkThemeDarkVariant()) {
-        windowColor = Adwaita::Colors::darken(Adwaita::Colors::desaturate(QColor("#3d3846"), 1.0), 0.04);
-        // buttonHoverBorderColor = Adwaita::Colors::darken(windowColor, 0.1);
-        // buttonHoverFrameColor = Adwaita::Colors::darken(windowColor, 0.01);
-    } else {
-        windowColor = QColor("#f6f5f4");
-        // buttonHoverBorderColor = Adwaita::Colors::darken(windowColor, 0.18);
-        // buttonHoverFrameColor = Adwaita::Colors::darken(windowColor, 0.04);
-    }
+    Adwaita::StyleOptions decorationButtonStyle(&p, QRect());
+    decorationButtonStyle.setColor(active ? m_foregroundColor : m_foregroundInactiveColor);
 
     // Close button
-    p.save();
     rect = closeButtonRect();
-    if (m_closeButtonHovered) {
-        QRectF buttonRect(rect.x() - 0.5, rect.y() - 0.5, 28, 28);
-        // QLinearGradient buttonGradient(buttonRect.bottomLeft(), buttonRect.topLeft());
-        // buttonGradient.setColorAt(0, buttonHoverFrameColor);
-        // buttonGradient.setColorAt(1, windowColor);
-        // QPainterPath path;
-        // path.addRoundedRect(buttonRect, 4, 4);
-        // p.setPen(QPen(buttonHoverBorderColor, 1.0));
-        // p.fillPath(path, windowColor);
-        // p.drawPath(path);
+    if (m_closeButtonHovered && active) {
+        QRect buttonRect(rect.x(), rect.y(), BUTTON_WIDTH, BUTTON_WIDTH);
+        Adwaita::StyleOptions styleOptions(&p, buttonRect);
+        styleOptions.setMouseOver(true);
+        styleOptions.setSunken(m_clicking == Button::Close);
+        styleOptions.setColorVariant(GnomeSettings::isGtkThemeDarkVariant() ? Adwaita::ColorVariant::AdwaitaDark : Adwaita::ColorVariant::Adwaita);
+        styleOptions.setColor(Adwaita::Colors::buttonBackgroundColor(styleOptions));
+        styleOptions.setOutlineColor(Adwaita::Colors::buttonOutlineColor(styleOptions));
+        Adwaita::Renderer::renderFlatRoundedButtonFrame(styleOptions);
     }
-    p.drawPixmap(QPoint(rect.x() + 6, rect.y() + 6), m_buttonPixmaps[Button::Close]);
-
-    p.restore();
+    decorationButtonStyle.setRect(QRect(rect.x() + (BUTTON_WIDTH / 4), rect.y() + (BUTTON_WIDTH / 4), BUTTON_WIDTH / 2, BUTTON_WIDTH / 2));
+    Adwaita::Renderer::renderDecorationButton(decorationButtonStyle, Adwaita::ButtonType::ButtonClose);
 
     // Maximize button
     if (GnomeSettings::titlebarButtons().testFlag(GnomeSettings::MaximizeButton)) {
-        p.save();
         rect = maximizeButtonRect();
-        if (m_maximizeButtonHovered) {
-            // QRectF buttonRect(rect.x() - 0.5, rect.y() - 0.5, 28, 28);
-            // QLinearGradient buttonGradient(buttonRect.bottomLeft(), buttonRect.topLeft());
-            // buttonGradient.setColorAt(0, buttonHoverFrameColor);
-            // buttonGradient.setColorAt(1, windowColor);
-            // QPainterPath path;
-            // path.addRoundedRect(buttonRect, 4, 4);
-            // p.setPen(QPen(buttonHoverBorderColor, 1.0));
-            // p.fillPath(path, windowColor);
-            // p.drawPath(path);
+        if (m_maximizeButtonHovered && active) {
+            QRect buttonRect(rect.x(), rect.y(), BUTTON_WIDTH, BUTTON_WIDTH);
+            Adwaita::StyleOptions styleOptions(&p, buttonRect);
+            styleOptions.setMouseOver(true);
+            styleOptions.setSunken(m_clicking == Button::Maximize || m_clicking == Button::Restore);
+            styleOptions.setColorVariant(GnomeSettings::isGtkThemeDarkVariant() ? Adwaita::ColorVariant::AdwaitaDark : Adwaita::ColorVariant::Adwaita);
+            styleOptions.setColor(Adwaita::Colors::buttonBackgroundColor(styleOptions));
+            styleOptions.setOutlineColor(Adwaita::Colors::buttonOutlineColor(styleOptions));
+            Adwaita::Renderer::renderFlatRoundedButtonFrame(styleOptions);
         }
-        if ((window()->windowStates() & Qt::WindowMaximized)) {
-            p.drawPixmap(QPoint(rect.x() + 5, rect.y() + 5), m_buttonPixmaps[Button::Restore]);
-        } else {
-            p.drawPixmap(QPoint(rect.x() + 5, rect.y() + 5), m_buttonPixmaps[Button::Maximize]);
-        }
-        p.restore();
+        decorationButtonStyle.setRect(QRect(rect.x() + (BUTTON_WIDTH / 4), rect.y() + (BUTTON_WIDTH / 4), BUTTON_WIDTH / 2, BUTTON_WIDTH / 2));
+        const Adwaita::ButtonType buttonType = (window()->windowStates() & Qt::WindowMaximized) ? Adwaita::ButtonType::ButtonRestore : Adwaita::ButtonType::ButtonMaximize;
+        Adwaita::Renderer::renderDecorationButton(decorationButtonStyle, buttonType);
     }
 
     // Minimize button
     if (GnomeSettings::titlebarButtons().testFlag(GnomeSettings::MinimizeButton)) {
-        p.save();
         rect = minimizeButtonRect();
-        if (m_minimizeButtonHovered) {
-            // QRectF buttonRect(rect.x() - 0.5, rect.y() - 0.5, 28, 28);
-            // QLinearGradient buttonGradient(buttonRect.bottomLeft(), buttonRect.topLeft());
-            // buttonGradient.setColorAt(0, buttonHoverFrameColor);
-            // buttonGradient.setColorAt(1, windowColor);
-            // QPainterPath path;
-            // path.addRoundedRect(buttonRect, 4, 4);
-            // p.setPen(QPen(buttonHoverBorderColor, 1.0));
-            // p.fillPath(path, windowColor);
-            // p.drawPath(path);
+        if (m_minimizeButtonHovered && active) {
+            QRect buttonRect(rect.x(), rect.y(), 28, 28);
+            Adwaita::StyleOptions styleOptions(&p, buttonRect);
+            styleOptions.setMouseOver(true);
+            styleOptions.setSunken(m_clicking == Button::Minimize);
+            styleOptions.setColorVariant(GnomeSettings::isGtkThemeDarkVariant() ? Adwaita::ColorVariant::AdwaitaDark : Adwaita::ColorVariant::Adwaita);
+            styleOptions.setColor(Adwaita::Colors::buttonBackgroundColor(styleOptions));
+            styleOptions.setOutlineColor(Adwaita::Colors::buttonOutlineColor(styleOptions));
+            Adwaita::Renderer::renderFlatRoundedButtonFrame(styleOptions);
         }
-        p.drawPixmap(QPoint(rect.x() + 5, rect.y() + 5), m_buttonPixmaps[Button::Minimize]);
-        p.restore();
+        decorationButtonStyle.setRect(QRect(rect.x() + (BUTTON_WIDTH / 4), rect.y() + (BUTTON_WIDTH / 4), BUTTON_WIDTH / 2, BUTTON_WIDTH / 2));
+        Adwaita::Renderer::renderDecorationButton(decorationButtonStyle, Adwaita::ButtonType::ButtonMinimize);
     }
 }
 
@@ -419,17 +372,23 @@ void QGnomePlatformDecoration::processMouseTop(QWaylandInputDevice *inputDevice,
     } else if (local.x() > window()->width() + margins().left()) {
         processMouseRight(inputDevice, local, b, mods);
     } else if (closeButtonRect().contains(local)) {
-        updateButtonHoverState(Button::Close);
-        if (clickButton(b, Close))
+        if (clickButton(b, Close)) {
             QWindowSystemInterface::handleCloseEvent(window());
+            m_closeButtonHovered = false;
+        }
+        updateButtonHoverState(Button::Close);
     }  else if (GnomeSettings::titlebarButtons().testFlag(GnomeSettings::MaximizeButton) && maximizeButtonRect().contains(local)) {
         updateButtonHoverState(Button::Maximize);
-        if (clickButton(b, Maximize))
+        if (clickButton(b, Maximize)) {
             window()->setWindowStates(window()->windowStates() ^ Qt::WindowMaximized);
+            m_maximizeButtonHovered = false;
+        }
     } else if (GnomeSettings::titlebarButtons().testFlag(GnomeSettings::MinimizeButton) && minimizeButtonRect().contains(local)) {
         updateButtonHoverState(Button::Minimize);
-        if (clickButton(b, Minimize))
+        if (clickButton(b, Minimize)) {
             window()->setWindowState(Qt::WindowMinimized);
+            m_minimizeButtonHovered = false;
+        }
     } else {
         if (clickButton(b, Maximize)) {
             const int doubleClickDistance = GnomeSettings::hint(QPlatformTheme::MouseDoubleClickDistance).toInt();
@@ -514,10 +473,9 @@ void QGnomePlatformDecoration::processMouseRight(QWaylandInputDevice *inputDevic
 
 bool QGnomePlatformDecoration::updateButtonHoverState(Button hoveredButton)
 {
-#if 0
     bool currentCloseButtonState = m_closeButtonHovered;
     bool currentMaximizeButtonState = m_maximizeButtonHovered;
-    bool currentMinimizeButtonState = m_maximizeButtonHovered;
+    bool currentMinimizeButtonState = m_minimizeButtonHovered;
 
     m_closeButtonHovered = hoveredButton == Button::Close;
     m_maximizeButtonHovered = hoveredButton == Button::Maximize;
@@ -526,9 +484,13 @@ bool QGnomePlatformDecoration::updateButtonHoverState(Button hoveredButton)
     if (m_closeButtonHovered != currentCloseButtonState
         || m_maximizeButtonHovered != currentMaximizeButtonState
         || m_minimizeButtonHovered != currentMinimizeButtonState) {
-        waylandWindow()->requestUpdate();
+        // Set dirty flag
+        waylandWindow()->decoration()->update();
+        // Force re-paint
+        // NOTE: not sure it's correct, but it's the only way to make it work
+        waylandWindow()->backingStore()->flush(window(), QRegion(), QPoint());
         return true;
     }
-#endif
+
     return false;
 }
