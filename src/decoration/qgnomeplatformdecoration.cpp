@@ -170,7 +170,7 @@ void QGnomePlatformDecoration::paint(QPaintDevice *device)
     // Border between window and decorations
     QPainterPath borderMiddlePath;
     borderMiddlePath.addRect(0, margins().top() - 1, surfaceRect.width(), margins().bottom());
-    p.fillPath(borderMiddlePath, active ? Qt::black : m_borderInactiveColor);
+    p.fillPath(borderMiddlePath, active ? m_borderColor : m_borderInactiveColor);
 
     QRect top = QRect(0, 0, surfaceRect.width(), margins().top());
 
