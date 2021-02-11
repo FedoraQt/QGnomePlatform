@@ -127,30 +127,32 @@ QRectF QGnomePlatformDecoration::minimizeButtonRect() const
 
 QMargins QGnomePlatformDecoration::margins() const
 {
+    if ((window()->windowStates() & Qt::WindowMaximized)) {
+        return QMargins(0, 38, 0, 0);
+    }
     return QMargins(1, 38, 1, 1);
 }
 
 void QGnomePlatformDecoration::paint(QPaintDevice *device)
 {
-    bool active = window()->handle()->isActive();
-    QRect surfaceRect(QPoint(), window()->frameGeometry().size());
+    const bool active = window()->handle()->isActive();
+    const QRect surfaceRect(QPoint(), window()->frameGeometry().size());
+    const QColor borderColor = active ? m_borderColor : m_borderInactiveColor;
 
     QPainter p(device);
     p.setRenderHint(QPainter::Antialiasing);
 
     // Title bar (border)
     QPainterPath borderRect;
-    if ((window()->windowStates() & Qt::WindowMaximized)) {
-        borderRect.addRect(0, 0, surfaceRect.width(), margins().top() + 8);
-    } else {
+    if (!(window()->windowStates() & Qt::WindowMaximized)) {
         borderRect.addRoundedRect(0, 0, surfaceRect.width(), margins().top() + 8, 10, 10);
+        p.fillPath(borderRect.simplified(), borderColor);
     }
-    p.fillPath(borderRect.simplified(), active ? m_borderColor : m_borderInactiveColor);
 
     // Title bar
     QPainterPath roundedRect;
     if ((window()->windowStates() & Qt::WindowMaximized)) {
-        roundedRect.addRect(1, 1, surfaceRect.width() - margins().left() - margins().right(), margins().top() + 8);
+        roundedRect.addRect(0, 0, surfaceRect.width(), margins().top() + 8);
     } else {
         roundedRect.addRoundedRect(1, 1, surfaceRect.width() - margins().left() - margins().right(), margins().top() + 8, 8, 8);
     }
@@ -160,17 +162,17 @@ void QGnomePlatformDecoration::paint(QPaintDevice *device)
     gradient.setColorAt(1, active ? m_backgroundColorEnd : m_backgroundInactiveColor);
     p.fillPath(roundedRect.simplified(), gradient);
 
-    // Border
-    QPainterPath borderPath;
-    borderPath.addRect(0, margins().top(), margins().left(), surfaceRect.height() - margins().top());
-    borderPath.addRect(0, surfaceRect.height() - margins().bottom(), surfaceRect.width(), margins().bottom());
-    borderPath.addRect(surfaceRect.width() - margins().right(), margins().top(), margins().right(), surfaceRect.height() - margins().bottom());
-    p.fillPath(borderPath, active ? m_borderColor : m_borderInactiveColor);
-
+    // Border around
+    p.save();
+    p.setPen(borderColor);
+    if (!(window()->windowStates() & Qt::WindowMaximized)) {
+        p.drawLine(0, margins().top(), 0, surfaceRect.height());
+        p.drawLine(0, surfaceRect.height(), surfaceRect.width(), surfaceRect.height());
+        p.drawLine(surfaceRect.width(), surfaceRect.height(), surfaceRect.width(), margins().top());
+    }
     // Border between window and decorations
-    QPainterPath borderMiddlePath;
-    borderMiddlePath.addRect(0, margins().top() - 1, surfaceRect.width(), margins().bottom());
-    p.fillPath(borderMiddlePath, active ? m_borderColor : m_borderInactiveColor);
+    p.drawLine(0, margins().top() - 1, surfaceRect.width(), margins().top() - 1);
+    p.restore();
 
     QRect top = QRect(0, 0, surfaceRect.width(), margins().top());
 
