@@ -200,8 +200,9 @@ GnomeSettingsPrivate::GnomeSettingsPrivate(QObject *parent)
                                               QStringLiteral("SettingChanged"), this, SLOT(portalSettingChanged(QString,QString,QDBusVariant)));
     }
 
-    if (QGuiApplication::platformName() != QStringLiteral("xcb"))
+    if (QGuiApplication::platformName() != QStringLiteral("xcb")) {
         cursorSizeChanged();
+    }
 
     loadFonts();
     loadStaticHints();
@@ -322,8 +323,9 @@ void GnomeSettingsPrivate::gsettingPropertyChanged(GSettings *settings, gchar *k
     } else if (changedProperty == QStringLiteral("monospace-font-name")) {
         gnomeSettings->fontChanged();
     } else if (changedProperty == QStringLiteral("cursor-size")) {
-        if (QGuiApplication::platformName() != QStringLiteral("xcb"))
+        if (QGuiApplication::platformName() != QStringLiteral("xcb")) {
             gnomeSettings->cursorSizeChanged();
+        }
     // Org.gnome.wm.preferences
     } else if (changedProperty == QStringLiteral("titlebar-font")) {
         gnomeSettings->fontChanged();
@@ -706,11 +708,13 @@ T GnomeSettingsPrivate::getSettingsProperty(const QString &property, bool *ok) {
 
     if (m_usePortal) {
         QVariant value = m_portalSettings.value(QStringLiteral("org.gnome.desktop.interface")).value(property);
-        if (!value.isNull() && value.canConvert<T>())
+        if (!value.isNull() && value.canConvert<T>()) {
             return value.value<T>();
+        }
         value = m_portalSettings.value(QStringLiteral("org.gnome.desktop.wm.preferences")).value(property);
-        if (!value.isNull() && value.canConvert<T>())
+        if (!value.isNull() && value.canConvert<T>()) {
             return value.value<T>();
+        }
     }
 
     return getSettingsProperty<T>(settings, property, ok);
@@ -719,8 +723,9 @@ T GnomeSettingsPrivate::getSettingsProperty(const QString &property, bool *ok) {
 
 template <>
 int GnomeSettingsPrivate::getSettingsProperty(GSettings *settings, const QString &property, bool *ok) {
-    if (ok)
+    if (ok) {
         *ok = true;
+    }
     return g_settings_get_int(settings, property.toStdString().c_str());
 }
 
@@ -728,14 +733,16 @@ template <>
 QString GnomeSettingsPrivate::getSettingsProperty(GSettings *settings, const QString &property, bool *ok) {
     // be exception and resources safe
     std::unique_ptr<gchar, void(*)(gpointer)> raw {g_settings_get_string(settings, property.toStdString().c_str()), g_free};
-    if (ok)
+    if (ok) {
         *ok = !!raw;
+    }
     return QString{raw.get()};
 }
 
 template <>
 qreal GnomeSettingsPrivate::getSettingsProperty(GSettings *settings, const QString &property, bool *ok) {
-    if (ok)
+    if (ok) {
         *ok = true;
+    }
     return g_settings_get_double(settings, property.toStdString().c_str());
 }

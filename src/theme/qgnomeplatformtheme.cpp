@@ -38,8 +38,9 @@
 QGnomePlatformTheme::QGnomePlatformTheme()
 {
     if (QGuiApplication::platformName() != QStringLiteral("xcb")) {
-        if (!qEnvironmentVariableIsSet("QT_WAYLAND_DECORATION"))
+        if (!qEnvironmentVariableIsSet("QT_WAYLAND_DECORATION")) {
             qputenv("QT_WAYLAND_DECORATION", "gnome");
+        }
     }
 
     /* Initialize some types here so that Gtk+ does not crash when reading
@@ -114,8 +115,9 @@ static bool isDBusTrayAvailable() {
     static bool dbusTrayAvailableKnown = false;
     if (!dbusTrayAvailableKnown) {
         QDBusMenuConnection conn;
-        if (conn.isStatusNotifierHostRegistered())
+        if (conn.isStatusNotifierHostRegistered()) {
             dbusTrayAvailable = true;
+        }
         dbusTrayAvailableKnown = true;
     }
     return dbusTrayAvailable;
@@ -125,8 +127,9 @@ static bool isDBusTrayAvailable() {
 #if !defined(QT_NO_DBUS) && !defined(QT_NO_SYSTEMTRAYICON)
 QPlatformSystemTrayIcon * QGnomePlatformTheme::createPlatformSystemTrayIcon() const
 {
-    if (isDBusTrayAvailable())
+    if (isDBusTrayAvailable()) {
         return new QDBusTrayIcon();
+    }
     return Q_NULLPTR;
 }
 #endif
