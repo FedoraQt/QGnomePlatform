@@ -163,15 +163,18 @@ void QGnomePlatformDecoration::paint(QPaintDevice *device)
     p.fillPath(roundedRect.simplified(), gradient);
 
     // Border around
+    if (!(window()->windowStates() & Qt::WindowMaximized)) {
+        QPainterPath borderPath;
+        borderPath.addRect(0, margins().top(), margins().left(), surfaceRect.height() - margins().top());
+        borderPath.addRect(0, surfaceRect.height() - margins().bottom(), surfaceRect.width(), margins().bottom());
+        borderPath.addRect(surfaceRect.width() - margins().right(), margins().top(), margins().right(), surfaceRect.height() - margins().bottom());
+        p.fillPath(borderPath, borderColor);
+    }
+
+    // Border between window and decorations
     p.save();
     p.setPen(borderColor);
-    if (!(window()->windowStates() & Qt::WindowMaximized)) {
-        p.drawLine(0, margins().top(), 0, surfaceRect.height());
-        p.drawLine(0, surfaceRect.height(), surfaceRect.width(), surfaceRect.height());
-        p.drawLine(surfaceRect.width(), surfaceRect.height(), surfaceRect.width(), margins().top());
-    }
-    // Border between window and decorations
-    p.drawLine(0, margins().top() - 1, surfaceRect.width(), margins().top() - 1);
+    p.drawLine(1, margins().top() - 1, surfaceRect.width() - margins().left() - margins().right(), margins().top() - 1);
     p.restore();
 
     QRect top = QRect(0, 0, surfaceRect.width(), margins().top());
