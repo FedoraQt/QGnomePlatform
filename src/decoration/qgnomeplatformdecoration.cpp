@@ -1,5 +1,6 @@
 /****************************************************************************
 **
+** Copyright (C) 2019-2021 Jan Grulich <jgrulich@redhat.com>
 ** Copyright (C) 2016 Robin Burchell <robin.burchell@viroteck.net>
 ** Copyright (C) 2016 The Qt Company Ltd.
 ** Contact: https://www.qt.io/licensing/
