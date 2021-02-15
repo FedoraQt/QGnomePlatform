@@ -24,3 +24,7 @@ This platform theme can also be used by setting the QT_QPA_PLATFORMTHEME environ
 export QT_QPA_PLATFORMTHEME='gnome'
 ```
 
+## License
+Most code is under [LGPL 2.1](https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html) with the "or any later version" clause. New code should be contributed under this license.
+
+This project also incorporates some code from the Qt Project. Because of that the so-called combined work is licensed under [LGPL 3.0-only](https://www.gnu.org/licenses/lgpl-3.0), [GPL 2.0](https://www.gnu.org/licenses/old-licenses/gpl-2.0), [GPL 3.0](https://www.gnu.org/licenses/gpl-3.0), or any later GPL version approved by the [KDE Free Qt Foundation](https://kde.org/community/whatiskde/kdefreeqtfoundation/).
