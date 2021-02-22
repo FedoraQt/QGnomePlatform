@@ -60,6 +60,7 @@ private:
     void processMouseLeft(QWaylandInputDevice *inputDevice, const QPointF &local, Qt::MouseButtons b,Qt::KeyboardModifiers mods);
     void processMouseRight(QWaylandInputDevice *inputDevice, const QPointF &local, Qt::MouseButtons b,Qt::KeyboardModifiers mods);
     bool clickButton(Qt::MouseButtons b, Button btn);
+    bool doubleClickButton(Qt::MouseButtons b, const QPointF &local, const QDateTime &currentTime);
     bool updateButtonHoverState(Button hoveredButton);
 
     QRectF closeButtonRect() const;
@@ -84,6 +85,7 @@ private:
     // For double-click support
     QDateTime m_lastButtonClick;
     QPointF m_lastButtonClickPosition;
+    Button m_doubleClicking = None;
 
     QStaticText m_windowTitle;
     Button m_clicking = None;
