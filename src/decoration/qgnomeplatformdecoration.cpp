@@ -372,6 +372,24 @@ bool QGnomePlatformDecoration::clickButton(Qt::MouseButtons b, Button btn)
     return false;
 }
 
+bool QGnomePlatformDecoration::doubleClickButton(Qt::MouseButtons b, const QPointF &local,  const QDateTime &currentTime)
+{
+    if (b & Qt::LeftButton) {
+        const qint64 clickInterval = m_lastButtonClick.msecsTo(currentTime);
+        m_lastButtonClick = currentTime;
+        const int doubleClickDistance = GnomeSettings::hint(QPlatformTheme::MouseDoubleClickDistance).toInt();
+        const QPointF posDiff = m_lastButtonClickPosition - local;
+        if ((clickInterval <= GnomeSettings::hint(QPlatformTheme::MouseDoubleClickInterval).toInt()) &&
+            ((posDiff.x() <= doubleClickDistance && posDiff.x() >= -doubleClickDistance) && ((posDiff.y() <= doubleClickDistance && posDiff.y() >= -doubleClickDistance)))) {
+            return true;
+        }
+
+        m_lastButtonClickPosition = local;
+    }
+
+    return false;
+}
+
 bool QGnomePlatformDecoration::handleMouse(QWaylandInputDevice *inputDevice, const QPointF &local, const QPointF &global, Qt::MouseButtons b, Qt::KeyboardModifiers mods)
 {
     Q_UNUSED(global)
@@ -488,21 +506,13 @@ void QGnomePlatformDecoration::processMouseTop(QWaylandInputDevice *inputDevice,
             window()->setWindowState(Qt::WindowMinimized);
             m_minimizeButtonHovered = false;
         }
+    } else if (doubleClickButton(b, local, currentDateTime)) {
+        window()->setWindowStates(window()->windowStates() ^ Qt::WindowMaximized);
     } else {
-        if (clickButton(b, Maximize)) {
-            const int doubleClickDistance = GnomeSettings::hint(QPlatformTheme::MouseDoubleClickDistance).toInt();
-            QPointF posDiff = m_lastButtonClickPosition - local;
-            if ((m_lastButtonClick.msecsTo(currentDateTime) <= GnomeSettings::hint(QPlatformTheme::MouseDoubleClickInterval).toInt()) &&
-                ((posDiff.x() <= doubleClickDistance && posDiff.x() >= -doubleClickDistance) && ((posDiff.y() <= doubleClickDistance && posDiff.y() >= -doubleClickDistance))))
-                window()->setWindowStates(window()->windowStates() ^ Qt::WindowMaximized);
-            m_lastButtonClick = currentDateTime;
-            m_lastButtonClickPosition = local;
-        } else {
 #if QT_CONFIG(cursor)
-            waylandWindow()->restoreMouseCursor(inputDevice);
+        waylandWindow()->restoreMouseCursor(inputDevice);
 #endif
-            startMove(inputDevice,b);
-        }
+        startMove(inputDevice,b);
     }
 }
 
