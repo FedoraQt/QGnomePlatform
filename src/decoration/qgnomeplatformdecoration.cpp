@@ -171,14 +171,15 @@ QMargins QGnomePlatformDecoration::margins(MarginsType marginsType) const
     }
 #else
 QMargins QGnomePlatformDecoration::margins() const
+{
     if ((window()->windowStates() & Qt::WindowMaximized)) {
         return QMargins(0, TITLEBAR_HEIGHT, 0, 0);
     }
 
-    return = QMargins(WINDOW_BORDER_WIDTH,                   // Left
-                      TITLEBAR_HEIGHT + WINDOW_BORDER_WIDTH, // Top
-                      WINDOW_BORDER_WIDTH,                   // Right
-                      WINDOW_BORDER_WIDTH);                  // Bottom
+    return QMargins(WINDOW_BORDER_WIDTH,                   // Left
+                    TITLEBAR_HEIGHT + WINDOW_BORDER_WIDTH, // Top
+                    WINDOW_BORDER_WIDTH,                   // Right
+                    WINDOW_BORDER_WIDTH);                  // Bottom
 #endif
 
 }
