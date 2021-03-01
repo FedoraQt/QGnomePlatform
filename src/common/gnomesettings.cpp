@@ -451,16 +451,32 @@ void GnomeSettingsPrivate::loadTitlebar()
 
 void GnomeSettingsPrivate::loadTheme()
 {
+    QString styleOverride;
+
     // g_object_get(gtk_settings_get_default(), "gtk-theme-name", &m_gtkTheme, NULL);
     m_gtkTheme = getSettingsProperty<QString>(QStringLiteral("gtk-theme"));
     g_object_get(gtk_settings_get_default(), "gtk-application-prefer-dark-theme", &m_gtkThemeDarkVariant, NULL);
 
-    if (m_gtkTheme.isEmpty()) {
-        qCWarning(QGnomePlatform) << "Couldn't get current gtk theme!";
-    } else {
-        qCDebug(QGnomePlatform) << "Theme name: " << m_gtkTheme;
+    if (qEnvironmentVariableIsSet("QT_STYLE_OVERRIDE")) {
+        styleOverride = QString::fromLocal8Bit(qgetenv("QT_STYLE_OVERRIDE"));
+    }
 
-        if (m_gtkTheme.toLower().contains("-dark")) {
+    if (styleOverride.isEmpty()) {
+        if (m_gtkTheme.isEmpty()) {
+            qCWarning(QGnomePlatform) << "Couldn't get current gtk theme!";
+        } else {
+            qCDebug(QGnomePlatform) << "Theme name: " << m_gtkTheme;
+
+            if (m_gtkTheme.toLower().contains("-dark")) {
+                m_gtkThemeDarkVariant = true;
+            }
+
+            qCDebug(QGnomePlatform) << "Dark version: " << (m_gtkThemeDarkVariant ? "yes" : "no");
+        }
+    } else {
+        qCDebug(QGnomePlatform) << "Theme name: " << styleOverride;
+
+        if (styleOverride.toLower().contains("-dark")) {
             m_gtkThemeDarkVariant = true;
         }
 
