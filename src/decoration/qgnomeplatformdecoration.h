@@ -25,8 +25,7 @@
 #include <QtGlobal>
 
 #include <QDateTime>
-
-class QPixmap;
+#include <QPixmap>
 
 using namespace QtWaylandClient;
 
@@ -46,7 +45,11 @@ public:
     virtual ~QGnomePlatformDecoration() override = default;
 
 protected:
+#if 0
+    QMargins margins(MarginsType marginsType = Full) const override;
+#else
     QMargins margins() const override;
+#endif
     void paint(QPaintDevice *device) override;
     bool handleMouse(QWaylandInputDevice *inputDevice, const QPointF &local, const QPointF &global,Qt::MouseButtons b,Qt::KeyboardModifiers mods) override;
     bool handleTouch(QWaylandInputDevice *inputDevice, const QPointF &local, const QPointF &global, Qt::TouchPointState state, Qt::KeyboardModifiers mods) override;
@@ -59,6 +62,7 @@ private:
     bool clickButton(Qt::MouseButtons b, Button btn);
     bool doubleClickButton(Qt::MouseButtons b, const QPointF &local, const QDateTime &currentTime);
     bool updateButtonHoverState(Button hoveredButton);
+    int edgeWidth() const;
 
     QRectF closeButtonRect() const;
     QRectF maximizeButtonRect() const;
@@ -86,6 +90,9 @@ private:
 
     QStaticText m_windowTitle;
     Button m_clicking = None;
+
+    // Shadows
+    QPixmap m_shadowPixmap;
 };
 
 

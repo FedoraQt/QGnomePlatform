@@ -67,9 +67,15 @@
 #define BUTTON_WIDTH 28
 
 // Decoration sizing
+#if 0
+#define SHADOWS_WIDTH 10
+#else
 #define SHADOWS_WIDTH 0
+#endif
 #define TITLEBAR_HEIGHT 37
 #define WINDOW_BORDER_WIDTH 1
+
+Q_DECL_IMPORT void qt_blurImage(QPainter *p, QImage &blurImage, qreal radius, bool quality, bool alphaOnly, int transposed = 0);
 
 QGnomePlatformDecoration::QGnomePlatformDecoration()
     : m_closeButtonHovered(false)
@@ -100,22 +106,22 @@ QGnomePlatformDecoration::QGnomePlatformDecoration()
 QRectF QGnomePlatformDecoration::closeButtonRect() const
 {
     if (GnomeSettings::titlebarButtonPlacement() == GnomeSettings::RightPlacement) {
-        return QRectF(window()->frameGeometry().width() - BUTTON_WIDTH - (BUTTON_SPACING * 0) - BUTTON_MARGINS - SHADOWS_WIDTH,
-                      (margins().top() - BUTTON_WIDTH) / 2, BUTTON_WIDTH, BUTTON_WIDTH);
+        return QRectF(window()->frameGeometry().width() - BUTTON_WIDTH - (BUTTON_SPACING * 0) - BUTTON_MARGINS - edgeWidth(),
+                      (margins().top() - BUTTON_WIDTH + edgeWidth()) / 2, BUTTON_WIDTH, BUTTON_WIDTH);
     } else {
-        return QRectF(BUTTON_SPACING * 0 + BUTTON_MARGINS + SHADOWS_WIDTH,
-                      (margins().top() - BUTTON_WIDTH) / 2, BUTTON_WIDTH, BUTTON_WIDTH);
+        return QRectF(BUTTON_SPACING * 0 + BUTTON_MARGINS + edgeWidth(),
+                      (margins().top() - BUTTON_WIDTH + edgeWidth()) / 2, BUTTON_WIDTH, BUTTON_WIDTH);
     }
 }
 
 QRectF QGnomePlatformDecoration::maximizeButtonRect() const
 {
     if (GnomeSettings::titlebarButtonPlacement() == GnomeSettings::RightPlacement) {
-        return QRectF(window()->frameGeometry().width() - (BUTTON_WIDTH * 2) - (BUTTON_SPACING * 1) - BUTTON_MARGINS - SHADOWS_WIDTH,
-                      (margins().top() - BUTTON_WIDTH) / 2, BUTTON_WIDTH, BUTTON_WIDTH);
+        return QRectF(window()->frameGeometry().width() - (BUTTON_WIDTH * 2) - (BUTTON_SPACING * 1) - BUTTON_MARGINS - edgeWidth(),
+                      (margins().top() - BUTTON_WIDTH + edgeWidth()) / 2, BUTTON_WIDTH, BUTTON_WIDTH);
     } else {
-        return QRectF(BUTTON_WIDTH * 1 + (BUTTON_SPACING * 1) + BUTTON_MARGINS + SHADOWS_WIDTH,
-                      (margins().top() - BUTTON_WIDTH) / 2, BUTTON_WIDTH, BUTTON_WIDTH);
+        return QRectF(BUTTON_WIDTH * 1 + (BUTTON_SPACING * 1) + BUTTON_MARGINS + edgeWidth(),
+                      (margins().top() - BUTTON_WIDTH + edgeWidth()) / 2, BUTTON_WIDTH, BUTTON_WIDTH);
     }
 }
 
@@ -124,25 +130,59 @@ QRectF QGnomePlatformDecoration::minimizeButtonRect() const
     const bool maximizeEnabled = GnomeSettings::titlebarButtons().testFlag(GnomeSettings::MaximizeButton);
 
     if (GnomeSettings::titlebarButtonPlacement() == GnomeSettings::RightPlacement) {
-        return QRectF(window()->frameGeometry().width() - BUTTON_WIDTH * (maximizeEnabled ? 3 : 2) - (BUTTON_SPACING * (maximizeEnabled ? 2 : 1)) - BUTTON_MARGINS - SHADOWS_WIDTH,
-                      (margins().top() - BUTTON_WIDTH) / 2, BUTTON_WIDTH, BUTTON_WIDTH);
+        return QRectF(window()->frameGeometry().width() - BUTTON_WIDTH * (maximizeEnabled ? 3 : 2) - (BUTTON_SPACING * (maximizeEnabled ? 2 : 1)) - BUTTON_MARGINS - edgeWidth(),
+                      (margins().top() - BUTTON_WIDTH + edgeWidth()) / 2, BUTTON_WIDTH, BUTTON_WIDTH);
     } else {
-        return QRectF(BUTTON_WIDTH * (maximizeEnabled ? 2 : 1) + (BUTTON_SPACING * (maximizeEnabled ? 2 : 1)) + BUTTON_MARGINS + SHADOWS_WIDTH,
-                      (margins().top() - BUTTON_WIDTH) / 2, BUTTON_WIDTH, BUTTON_WIDTH);
+        return QRectF(BUTTON_WIDTH * (maximizeEnabled ? 2 : 1) + (BUTTON_SPACING * (maximizeEnabled ? 2 : 1)) + BUTTON_MARGINS + edgeWidth(),
+                      (margins().top() - BUTTON_WIDTH + edgeWidth()) / 2, BUTTON_WIDTH, BUTTON_WIDTH);
     }
 }
 
-QMargins QGnomePlatformDecoration::margins() const
+#if 0
+QMargins QGnomePlatformDecoration::margins(MarginsType marginsType) const
 {
+    const QMargins marginsWithoutShadows = QMargins(WINDOW_BORDER_WIDTH,                   // Left
+                                                    TITLEBAR_HEIGHT + WINDOW_BORDER_WIDTH, // Top
+                                                    WINDOW_BORDER_WIDTH,                   // Right
+                                                    WINDOW_BORDER_WIDTH );                 // Bottom
+    const QMargins shadowMargins = QMargins(SHADOWS_WIDTH, SHADOWS_WIDTH, SHADOWS_WIDTH, SHADOWS_WIDTH);
+
+    if (marginsType == Full || marginsType == ShadowsExcluded) {
+        // For maximized window, we only include window title, no borders and no shadows
+        if ((window()->windowStates() & Qt::WindowMaximized)) {
+            return QMargins(0, TITLEBAR_HEIGHT, 0, 0);
+        }
+
+        // Specifically requsted margins with shadows excluded
+        if (marginsType == ShadowsExcluded) {
+            return marginsWithoutShadows;
+        }
+
+        // Otherwise include borders and shadows
+        return marginsWithoutShadows + shadowMargins;
+
+    } else if (marginsType == ShadowsOnly) {
+        // For maximized window, we only include window title, no borders and no shadows
+        if ((window()->windowStates() & Qt::WindowMaximized)) {
+            return QMargins();
+        }
+
+        return shadowMargins;
+    }
+#else
+QMargins QGnomePlatformDecoration::margins() const
     if ((window()->windowStates() & Qt::WindowMaximized)) {
         return QMargins(0, TITLEBAR_HEIGHT, 0, 0);
     }
 
-    return QMargins(WINDOW_BORDER_WIDTH + SHADOWS_WIDTH,                   // Left
-                    TITLEBAR_HEIGHT + WINDOW_BORDER_WIDTH + SHADOWS_WIDTH, // Top
-                    WINDOW_BORDER_WIDTH + SHADOWS_WIDTH,                   // Right
-                    WINDOW_BORDER_WIDTH + SHADOWS_WIDTH);                  // Bottom
+    return = QMargins(WINDOW_BORDER_WIDTH,                   // Left
+                      TITLEBAR_HEIGHT + WINDOW_BORDER_WIDTH, // Top
+                      WINDOW_BORDER_WIDTH,                   // Right
+                      WINDOW_BORDER_WIDTH);                  // Bottom
+#endif
+
 }
+
 
 void QGnomePlatformDecoration::paint(QPaintDevice *device)
 {
@@ -164,9 +204,68 @@ void QGnomePlatformDecoration::paint(QPaintDevice *device)
     // *                              *
     // ********************************
 
-    // QPainterPath shadowRect;
-    // shadowRect.addRoundedRect(0, 0, surfaceRect.width(), surfaceRect.height(), 12, 12);
-    // p.fillPath(shadowRect, Qt::red);
+#if 0
+    if (active && !(window()->windowStates() & Qt::WindowMaximized)) {
+        if (m_shadowPixmap.size() != surfaceRect.size()) {
+            QPixmap source = QPixmap(surfaceRect.size());
+            source.fill(Qt::transparent);
+            {
+                QPainter tmpPainter(&source);
+                tmpPainter.setBrush(borderColor);
+                tmpPainter.drawRoundedRect(SHADOWS_WIDTH,                    // Do not paint over shadows
+                                  SHADOWS_WIDTH,                             // Do not paint over shadows
+                                  surfaceRect.width() - (2 * SHADOWS_WIDTH), // Full width - shadows
+                                  surfaceRect.height() / 2,                  // Half of the full height
+                                  8, 8);
+                tmpPainter.drawRect(SHADOWS_WIDTH,                           // Do not paint over shadows
+                           surfaceRect.height() / 2,                         // Start somewhere in the middle
+                           surfaceRect.width() - (2 * SHADOWS_WIDTH),        // Full width - shadows
+                           (surfaceRect.height() / 2) - SHADOWS_WIDTH);      // Half of the full height - shadows
+                tmpPainter.end();
+            }
+
+            QImage backgroundImage(surfaceRect.size(), QImage::Format_ARGB32_Premultiplied);
+            backgroundImage.fill(0);
+
+            QPainter backgroundPainter(&backgroundImage);
+            backgroundPainter.drawPixmap(QPointF(), source);
+            backgroundPainter.end();
+
+            QImage blurredImage(surfaceRect.size(), QImage::Format_ARGB32_Premultiplied);
+            blurredImage.fill(0);
+            {
+                QPainter blurPainter(&blurredImage);
+                qt_blurImage(&blurPainter, backgroundImage, 12, false, false);
+                blurPainter.end();
+            }
+            backgroundImage = blurredImage;
+
+            backgroundPainter.begin(&backgroundImage);
+            backgroundPainter.setCompositionMode(QPainter::CompositionMode_SourceIn);
+            QRect rect = backgroundImage.rect().marginsRemoved(QMargins(8, 8, 8, 8));
+            backgroundPainter.fillRect(rect, QColor(0, 0, 0, 160));
+            backgroundPainter.end();
+
+            m_shadowPixmap = QPixmap::fromImage(backgroundImage);
+        }
+
+        QRect clips [] =
+        {
+            QRect(0, 0, surfaceRect.width(), margins().top()),
+            QRect(0, margins().top(), margins().left(), surfaceRect.height() - margins().top() - margins().bottom()),
+            QRect(0, surfaceRect.height() - margins().bottom(), surfaceRect.width(), margins().bottom()),
+            QRect(surfaceRect.width() - margins().right(), margins().top(), margins().right(), surfaceRect.height() - margins().top() - margins().bottom())
+        };
+
+        for (int i = 0; i < 4; ++i) {
+            p.save();
+            p.setClipRect(clips[i]);
+            p.drawPixmap(QPoint(), m_shadowPixmap);
+            p.restore();
+        }
+    }
+
+#endif
 
     // Title bar (border)
     // ********************************
@@ -252,7 +351,6 @@ void QGnomePlatformDecoration::paint(QPaintDevice *device)
     p.restore();
 
 
-
     // Window title
     // ********************************
     // *------------------------------*
@@ -266,7 +364,7 @@ void QGnomePlatformDecoration::paint(QPaintDevice *device)
     // *------------------------------*
     // ********************************
 
-    const QRect top = QRect(0, 0, surfaceRect.width(), margins().top());
+    const QRect top = QRect(edgeWidth(), edgeWidth(), surfaceRect.width(), margins().top() - edgeWidth());
     const QString windowTitleText = window()->title();
     if (!windowTitleText.isEmpty()) {
         if (m_windowTitle.text() != windowTitleText) {
@@ -604,4 +702,13 @@ bool QGnomePlatformDecoration::updateButtonHoverState(Button hoveredButton)
     }
 
     return false;
+}
+
+int QGnomePlatformDecoration::edgeWidth() const
+{
+    if ((window()->windowStates() & Qt::WindowMaximized)) {
+        return 0;
+    } else {
+        return SHADOWS_WIDTH + WINDOW_BORDER_WIDTH;
+    }
 }
