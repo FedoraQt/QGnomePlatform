@@ -236,7 +236,7 @@ void QGnomePlatformDecoration::paint(QPaintDevice *device)
             blurredImage.fill(0);
             {
                 QPainter blurPainter(&blurredImage);
-                qt_blurImage(&blurPainter, backgroundImage, 13, false, false);
+                qt_blurImage(&blurPainter, backgroundImage, 12, false, false);
                 blurPainter.end();
             }
             backgroundImage = blurredImage;
