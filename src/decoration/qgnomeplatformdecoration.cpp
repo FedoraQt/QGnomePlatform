@@ -67,11 +67,7 @@
 #define BUTTON_WIDTH 28
 
 // Decoration sizing
-#if 0
 #define SHADOWS_WIDTH 10
-#else
-#define SHADOWS_WIDTH 0
-#endif
 #define TITLEBAR_HEIGHT 37
 #define WINDOW_BORDER_WIDTH 1
 
@@ -106,22 +102,22 @@ QGnomePlatformDecoration::QGnomePlatformDecoration()
 QRectF QGnomePlatformDecoration::closeButtonRect() const
 {
     if (GnomeSettings::titlebarButtonPlacement() == GnomeSettings::RightPlacement) {
-        return QRectF(window()->frameGeometry().width() - BUTTON_WIDTH - (BUTTON_SPACING * 0) - BUTTON_MARGINS - edgeWidth(),
-                      (margins().top() - BUTTON_WIDTH + edgeWidth()) / 2, BUTTON_WIDTH, BUTTON_WIDTH);
+        return QRectF(window()->frameGeometry().width() - BUTTON_WIDTH - (BUTTON_SPACING * 0) - BUTTON_MARGINS - margins().right(),
+                      (margins().top() - BUTTON_WIDTH + margins().bottom()) / 2, BUTTON_WIDTH, BUTTON_WIDTH);
     } else {
-        return QRectF(BUTTON_SPACING * 0 + BUTTON_MARGINS + edgeWidth(),
-                      (margins().top() - BUTTON_WIDTH + edgeWidth()) / 2, BUTTON_WIDTH, BUTTON_WIDTH);
+        return QRectF(BUTTON_SPACING * 0 + BUTTON_MARGINS + margins().left(),
+                      (margins().top() - BUTTON_WIDTH + margins().bottom()) / 2, BUTTON_WIDTH, BUTTON_WIDTH);
     }
 }
 
 QRectF QGnomePlatformDecoration::maximizeButtonRect() const
 {
     if (GnomeSettings::titlebarButtonPlacement() == GnomeSettings::RightPlacement) {
-        return QRectF(window()->frameGeometry().width() - (BUTTON_WIDTH * 2) - (BUTTON_SPACING * 1) - BUTTON_MARGINS - edgeWidth(),
-                      (margins().top() - BUTTON_WIDTH + edgeWidth()) / 2, BUTTON_WIDTH, BUTTON_WIDTH);
+        return QRectF(window()->frameGeometry().width() - (BUTTON_WIDTH * 2) - (BUTTON_SPACING * 1) - BUTTON_MARGINS - margins().right(),
+                      (margins().top() - BUTTON_WIDTH + margins().bottom()) / 2, BUTTON_WIDTH, BUTTON_WIDTH);
     } else {
-        return QRectF(BUTTON_WIDTH * 1 + (BUTTON_SPACING * 1) + BUTTON_MARGINS + edgeWidth(),
-                      (margins().top() - BUTTON_WIDTH + edgeWidth()) / 2, BUTTON_WIDTH, BUTTON_WIDTH);
+        return QRectF(BUTTON_WIDTH * 1 + (BUTTON_SPACING * 1) + BUTTON_MARGINS + margins().left(),
+                      (margins().top() - BUTTON_WIDTH + margins().bottom()) / 2, BUTTON_WIDTH, BUTTON_WIDTH);
     }
 }
 
@@ -130,44 +126,54 @@ QRectF QGnomePlatformDecoration::minimizeButtonRect() const
     const bool maximizeEnabled = GnomeSettings::titlebarButtons().testFlag(GnomeSettings::MaximizeButton);
 
     if (GnomeSettings::titlebarButtonPlacement() == GnomeSettings::RightPlacement) {
-        return QRectF(window()->frameGeometry().width() - BUTTON_WIDTH * (maximizeEnabled ? 3 : 2) - (BUTTON_SPACING * (maximizeEnabled ? 2 : 1)) - BUTTON_MARGINS - edgeWidth(),
-                      (margins().top() - BUTTON_WIDTH + edgeWidth()) / 2, BUTTON_WIDTH, BUTTON_WIDTH);
+        return QRectF(window()->frameGeometry().width() - BUTTON_WIDTH * (maximizeEnabled ? 3 : 2) - (BUTTON_SPACING * (maximizeEnabled ? 2 : 1)) - BUTTON_MARGINS - margins().right(),
+                      (margins().top() - BUTTON_WIDTH + margins().bottom()) / 2, BUTTON_WIDTH, BUTTON_WIDTH);
     } else {
-        return QRectF(BUTTON_WIDTH * (maximizeEnabled ? 2 : 1) + (BUTTON_SPACING * (maximizeEnabled ? 2 : 1)) + BUTTON_MARGINS + edgeWidth(),
-                      (margins().top() - BUTTON_WIDTH + edgeWidth()) / 2, BUTTON_WIDTH, BUTTON_WIDTH);
+        return QRectF(BUTTON_WIDTH * (maximizeEnabled ? 2 : 1) + (BUTTON_SPACING * (maximizeEnabled ? 2 : 1)) + BUTTON_MARGINS + margins().left(),
+                      (margins().top() - BUTTON_WIDTH + margins().bottom()) / 2, BUTTON_WIDTH, BUTTON_WIDTH);
     }
 }
 
-#if 0
+#ifdef DECORATION_SHADOWS_SUPPORT // Qt 6.2.0+ or patched QtWayland
 QMargins QGnomePlatformDecoration::margins(MarginsType marginsType) const
 {
-    const QMargins marginsWithoutShadows = QMargins(WINDOW_BORDER_WIDTH,                   // Left
-                                                    TITLEBAR_HEIGHT + WINDOW_BORDER_WIDTH, // Top
-                                                    WINDOW_BORDER_WIDTH,                   // Right
-                                                    WINDOW_BORDER_WIDTH );                 // Bottom
-    const QMargins shadowMargins = QMargins(SHADOWS_WIDTH, SHADOWS_WIDTH, SHADOWS_WIDTH, SHADOWS_WIDTH);
+    const bool maximized = (window()->windowStates() & Qt::WindowMaximized) || (waylandWindow()->windowStates() & Qt::WindowMaximized);
+    const bool tiledLeft = waylandWindow()->toplevelWindowTilingStates() & QWaylandWindow::WindowTiledLeft;
+    const bool tiledRight = waylandWindow()->toplevelWindowTilingStates() & QWaylandWindow::WindowTiledRight;
+    const bool tiledTop = waylandWindow()->toplevelWindowTilingStates() & QWaylandWindow::WindowTiledTop;
+    const bool tiledBottom = waylandWindow()->toplevelWindowTilingStates() & QWaylandWindow::WindowTiledBottom;
 
     if (marginsType == Full || marginsType == ShadowsExcluded) {
         // For maximized window, we only include window title, no borders and no shadows
-        if ((window()->windowStates() & Qt::WindowMaximized)) {
+        if (maximized) {
             return QMargins(0, TITLEBAR_HEIGHT, 0, 0);
         }
 
-        // Specifically requsted margins with shadows excluded
+        // Specifically requsted margins with shadows excluded, only on non-tiled side
         if (marginsType == ShadowsExcluded) {
-            return marginsWithoutShadows;
+            return QMargins(tiledLeft ? 0 : WINDOW_BORDER_WIDTH,
+                            tiledTop ? TITLEBAR_HEIGHT : TITLEBAR_HEIGHT + WINDOW_BORDER_WIDTH,
+                            tiledRight ? 0 : WINDOW_BORDER_WIDTH,
+                            tiledBottom ? 0 : WINDOW_BORDER_WIDTH);
         }
 
-        // Otherwise include borders and shadows
-        return marginsWithoutShadows + shadowMargins;
+        // Otherwise include borders and shadows only on non-tiled side
+        return QMargins(tiledLeft ? 0 : WINDOW_BORDER_WIDTH + SHADOWS_WIDTH,
+                        tiledTop ? TITLEBAR_HEIGHT : TITLEBAR_HEIGHT + WINDOW_BORDER_WIDTH + SHADOWS_WIDTH,
+                        tiledRight ? 0 : WINDOW_BORDER_WIDTH + SHADOWS_WIDTH,
+                        tiledBottom ? 0 : WINDOW_BORDER_WIDTH + SHADOWS_WIDTH);
 
-    } else if (marginsType == ShadowsOnly) {
+    } else { // (marginsType == ShadowsOnly)
         // For maximized window, we only include window title, no borders and no shadows
-        if ((window()->windowStates() & Qt::WindowMaximized)) {
+        if (maximized) {
             return QMargins();
+        } else {
+            // For tiled window, we only include shadows on non-tiled side
+            return QMargins(tiledLeft ? 0 : SHADOWS_WIDTH,
+                            tiledTop ? 0 : SHADOWS_WIDTH,
+                            tiledRight ? 0 : SHADOWS_WIDTH,
+                            tiledBottom ? 0 : SHADOWS_WIDTH);
         }
-
-        return shadowMargins;
     }
 #else
 QMargins QGnomePlatformDecoration::margins() const
@@ -181,7 +187,6 @@ QMargins QGnomePlatformDecoration::margins() const
                     WINDOW_BORDER_WIDTH,                   // Right
                     WINDOW_BORDER_WIDTH);                  // Bottom
 #endif
-
 }
 
 
@@ -194,6 +199,13 @@ void QGnomePlatformDecoration::paint(QPaintDevice *device)
     QPainter p(device);
     p.setRenderHint(QPainter::Antialiasing);
 
+#ifdef DECORATION_SHADOWS_SUPPORT // Qt 6.2.0+ or patched QtWayland
+    const bool maximized = (window()->windowStates() & Qt::WindowMaximized) || (waylandWindow()->windowStates() & Qt::WindowMaximized);
+    const bool tiledLeft = waylandWindow()->toplevelWindowTilingStates() & QWaylandWindow::WindowTiledLeft;
+    const bool tiledRight = waylandWindow()->toplevelWindowTilingStates() & QWaylandWindow::WindowTiledRight;
+    const bool tiledTop = waylandWindow()->toplevelWindowTilingStates() & QWaylandWindow::WindowTiledTop;
+    const bool tiledBottom = waylandWindow()->toplevelWindowTilingStates() & QWaylandWindow::WindowTiledBottom;
+
     // Shadows
     // ********************************
     // *                              *
@@ -204,9 +216,7 @@ void QGnomePlatformDecoration::paint(QPaintDevice *device)
     // *                              *
     // *                              *
     // ********************************
-
-#if 0
-    if (active && !(window()->windowStates() & Qt::WindowMaximized)) {
+    if (active && !(maximized || tiledBottom || tiledTop || tiledRight || tiledLeft)) {
         if (m_shadowPixmap.size() != surfaceRect.size()) {
             QPixmap source = QPixmap(surfaceRect.size());
             source.fill(Qt::transparent);
@@ -266,8 +276,88 @@ void QGnomePlatformDecoration::paint(QPaintDevice *device)
         }
     }
 
-#endif
 
+    // Title bar (border) - painted only when the window is not maximized or tiled
+    // ********************************
+    // *------------------------------*
+    // *|                            |*
+    // *------------------------------*
+    // *                              *
+    // *                              *
+    // *                              *
+    // *                              *
+    // *                              *
+    // *                              *
+    // ********************************
+    QPainterPath borderRect;
+    if (!(maximized || tiledLeft || tiledRight)) {
+        borderRect.addRoundedRect(SHADOWS_WIDTH, SHADOWS_WIDTH, surfaceRect.width() - (2 * SHADOWS_WIDTH), margins().top() + 8, 10, 10);
+        p.fillPath(borderRect.simplified(), borderColor);
+    }
+
+    // Title bar
+    // ********************************
+    // *------------------------------*
+    // *|############################|*
+    // *                              *
+    // *                              *
+    // *                              *
+    // *                              *
+    // *                              *
+    // *                              *
+    // *                              *
+    // ********************************
+    QPainterPath roundedRect;
+    if (maximized || tiledRight || tiledLeft) {
+        roundedRect.addRect(margins().left(), margins().bottom(), surfaceRect.width() - margins().left() - margins().right(), margins().top() + 8);
+    } else {
+        roundedRect.addRoundedRect(margins().left(), margins().bottom(), surfaceRect.width() - margins().left() - margins().right(), margins().top() + 8, 8, 8);
+    }
+
+    QLinearGradient gradient(margins().left(), margins().top() + 6, margins().left(), 1);
+    gradient.setColorAt(0, active ? m_backgroundColorStart : m_backgroundInactiveColor);
+    gradient.setColorAt(1, active ? m_backgroundColorEnd : m_backgroundInactiveColor);
+    p.fillPath(roundedRect.simplified(), gradient);
+
+    // Border around
+    // ********************************
+    // *------------------------------*
+    // *|############################|*
+    // *|                            |*
+    // *|                            |*
+    // *|                            |*
+    // *|                            |*
+    // *|                            |*
+    // *|                            |*
+    // *------------------------------*
+    // ********************************
+    if (!maximized) {
+        QPainterPath borderPath;
+        // Left
+        if (!tiledLeft) {
+            // Assume tiled-left also means it will be tiled-top and tiled bottom
+            borderPath.addRect(SHADOWS_WIDTH,
+                               tiledTop || tiledBottom ? 0 : margins().top(),
+                               WINDOW_BORDER_WIDTH,
+                               tiledTop || tiledBottom ? surfaceRect.height() : surfaceRect.height() - margins().top() - SHADOWS_WIDTH - WINDOW_BORDER_WIDTH);
+        }
+        // Bottom
+        if (!tiledBottom) {
+            borderPath.addRect(SHADOWS_WIDTH,
+                               surfaceRect.height() - SHADOWS_WIDTH - WINDOW_BORDER_WIDTH,
+                               surfaceRect.width() - (2 * SHADOWS_WIDTH),
+                               WINDOW_BORDER_WIDTH);
+        }
+        // Right
+        if (!tiledRight) {
+            borderPath.addRect(surfaceRect.width() - margins().right(),
+                               tiledTop || tiledBottom ? 0 : margins().top(),
+                               WINDOW_BORDER_WIDTH,
+                               tiledTop || tiledBottom ? surfaceRect.height() : surfaceRect.height() - margins().top() - SHADOWS_WIDTH - WINDOW_BORDER_WIDTH);
+        }
+        p.fillPath(borderPath, borderColor);
+    }
+#else
     // Title bar (border)
     // ********************************
     // *------------------------------*
@@ -282,7 +372,7 @@ void QGnomePlatformDecoration::paint(QPaintDevice *device)
     // ********************************
     QPainterPath borderRect;
     if (!(window()->windowStates() & Qt::WindowMaximized)) {
-        borderRect.addRoundedRect(SHADOWS_WIDTH, SHADOWS_WIDTH, surfaceRect.width() - (2 * SHADOWS_WIDTH), margins().top() + 8, 10, 10);
+        borderRect.addRoundedRect(0, 0, surfaceRect.width(), margins().top() + 8, 10, 10);
         p.fillPath(borderRect.simplified(), borderColor);
     }
 
@@ -302,7 +392,7 @@ void QGnomePlatformDecoration::paint(QPaintDevice *device)
     if ((window()->windowStates() & Qt::WindowMaximized)) {
         roundedRect.addRect(0, 0, surfaceRect.width(), margins().top() + 8);
     } else {
-        roundedRect.addRoundedRect(SHADOWS_WIDTH + WINDOW_BORDER_WIDTH, SHADOWS_WIDTH + WINDOW_BORDER_WIDTH, surfaceRect.width() - margins().left() - margins().right(), margins().top() + 8, 8, 8);
+        roundedRect.addRoundedRect(WINDOW_BORDER_WIDTH, WINDOW_BORDER_WIDTH, surfaceRect.width() - margins().left() - margins().right(), margins().top() + 8, 8, 8);
     }
 
     QLinearGradient gradient(margins().left(), margins().top() + 6, margins().left(), 1);
@@ -325,14 +415,14 @@ void QGnomePlatformDecoration::paint(QPaintDevice *device)
     if (!(window()->windowStates() & Qt::WindowMaximized)) {
         QPainterPath borderPath;
         // Left
-        borderPath.addRect(SHADOWS_WIDTH, margins().top(), margins().left(), surfaceRect.height() - margins().top() - SHADOWS_WIDTH - WINDOW_BORDER_WIDTH);
+        borderPath.addRect(0, margins().top(), margins().left(), surfaceRect.height() - margins().top() - WINDOW_BORDER_WIDTH);
         // Bottom
-        borderPath.addRect(SHADOWS_WIDTH, surfaceRect.height() - SHADOWS_WIDTH - WINDOW_BORDER_WIDTH, surfaceRect.width() - (2 * SHADOWS_WIDTH), WINDOW_BORDER_WIDTH);
+        borderPath.addRect(0, surfaceRect.height() - WINDOW_BORDER_WIDTH, surfaceRect.width(), WINDOW_BORDER_WIDTH);
         // Right
         borderPath.addRect(surfaceRect.width() - margins().right(), margins().top(), WINDOW_BORDER_WIDTH, surfaceRect.height() - margins().bottom() - margins().top());
         p.fillPath(borderPath, borderColor);
     }
-
+#endif
     // Border between window and decorations
     // ********************************
     // *------------------------------*
@@ -347,10 +437,9 @@ void QGnomePlatformDecoration::paint(QPaintDevice *device)
     // ********************************
     p.save();
     p.setPen(borderColor);
-    p.drawLine(SHADOWS_WIDTH + WINDOW_BORDER_WIDTH, margins().top() - WINDOW_BORDER_WIDTH,
-               surfaceRect.width() - SHADOWS_WIDTH - WINDOW_BORDER_WIDTH, margins().top() - WINDOW_BORDER_WIDTH);
+    p.drawLine(margins().left(), margins().top() - WINDOW_BORDER_WIDTH,
+               surfaceRect.width() - margins().right(), margins().top() - WINDOW_BORDER_WIDTH);
     p.restore();
-
 
     // Window title
     // ********************************
@@ -365,7 +454,7 @@ void QGnomePlatformDecoration::paint(QPaintDevice *device)
     // *------------------------------*
     // ********************************
 
-    const QRect top = QRect(edgeWidth(), edgeWidth(), surfaceRect.width(), margins().top() - edgeWidth());
+    const QRect top = QRect(margins().left(), margins().bottom(), surfaceRect.width(), margins().top() - margins().bottom());
     const QString windowTitleText = window()->title();
     if (!windowTitleText.isEmpty()) {
         if (m_windowTitle.text() != windowTitleText) {
@@ -703,13 +792,4 @@ bool QGnomePlatformDecoration::updateButtonHoverState(Button hoveredButton)
     }
 
     return false;
-}
-
-int QGnomePlatformDecoration::edgeWidth() const
-{
-    if ((window()->windowStates() & Qt::WindowMaximized)) {
-        return 0;
-    } else {
-        return SHADOWS_WIDTH + WINDOW_BORDER_WIDTH;
-    }
 }

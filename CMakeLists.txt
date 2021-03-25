@@ -39,6 +39,12 @@ else()
     # NOTE: I don't know how to do this only in case of qt_config(xkbcommon).
     # We would miss an include in QWaylandDisplay header file.
     find_package(Qt5XkbCommonSupport ${QT_MIN_VERSION})
+
+    if (DECORATION_SHADOWS_SUPPORT)
+        message(STATUS "Enabling Qt Wayland decoration shadows support")
+        message(STATUS "NOTE: This support requires changes in Qt Wayland from Qt 6.2")
+        add_definitions(-DDECORATION_SHADOWS_SUPPORT)
+    endif()
 endif()
 
 if (DISABLE_THEME_SUPPORT)
