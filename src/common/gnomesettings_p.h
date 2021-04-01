@@ -89,6 +89,8 @@ private:
     QHash<QPlatformTheme::Font, QFont*> m_fonts;
     QHash<QPlatformTheme::ThemeHint, QVariant> m_hints;
     QMap<QString, QVariantMap> m_portalSettings;
+    QPalette *m_palette = nullptr;
+    QFont *m_fallbackFont = nullptr;
 };
 
 #endif // GNOME_SETTINGS_P_H

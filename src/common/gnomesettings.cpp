@@ -147,6 +147,7 @@ GnomeSettingsPrivate::GnomeSettingsPrivate(QObject *parent)
     , m_canUseFileChooserPortal(!m_usePortal)
     , m_gnomeDesktopSettings(g_settings_new("org.gnome.desktop.wm.preferences"))
     , m_settings(g_settings_new("org.gnome.desktop.interface"))
+    , m_fallbackFont(new QFont(QLatin1String("Sans"), 10))
 {
     gtk_init(nullptr, nullptr);
 
@@ -209,6 +210,8 @@ GnomeSettingsPrivate::GnomeSettingsPrivate(QObject *parent)
     loadTheme();
     loadTitlebar();
 
+    m_palette = new QPalette(Adwaita::Colors::palette(m_gtkThemeDarkVariant ? Adwaita::ColorVariant::AdwaitaDark : Adwaita::ColorVariant::Adwaita));
+
     if (m_canUseFileChooserPortal) {
         QTimer::singleShot(0, this, [this] () {
             const QString filePath = QStringLiteral("/proc/%1/root").arg(QCoreApplication::applicationPid());
@@ -242,6 +245,7 @@ GnomeSettingsPrivate::GnomeSettingsPrivate(QObject *parent)
                 } else {
                     m_canUseFileChooserPortal = false;
                 }
+                watcher->deleteLater();
             });
         }
     }
@@ -250,6 +254,8 @@ GnomeSettingsPrivate::GnomeSettingsPrivate(QObject *parent)
 GnomeSettingsPrivate::~GnomeSettingsPrivate()
 {
     qDeleteAll(m_fonts);
+    delete m_fallbackFont;
+    delete m_palette;
     if (m_cinnamonSettings) {
         g_object_unref(m_cinnamonSettings);
     }
@@ -265,14 +271,13 @@ QFont * GnomeSettingsPrivate::font(QPlatformTheme::Font type) const
         return m_fonts[QPlatformTheme::SystemFont];
     } else {
         // GTK default font
-        return new QFont(QLatin1String("Sans"), 10);
+        return m_fallbackFont;
     }
 }
 
 QPalette * GnomeSettingsPrivate::palette() const
 {
-    QPalette *palette = new QPalette(Adwaita::Colors::palette(m_gtkThemeDarkVariant ? Adwaita::ColorVariant::AdwaitaDark : Adwaita::ColorVariant::Adwaita));
-    return palette;
+    return m_palette;
 }
 
 bool GnomeSettingsPrivate::canUseFileChooserPortal() const
