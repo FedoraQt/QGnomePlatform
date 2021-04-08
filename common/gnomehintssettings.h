@@ -67,14 +67,13 @@ public:
             return m_fonts[QPlatformTheme::SystemFont];
         } else {
             // GTK default font
-            return new QFont(QLatin1String("Sans"), 10);
+            return m_fallbackFont;
         }
     }
 
     inline QPalette * palette() const
     {
-        QPalette *palette = new QPalette(Adwaita::Colors::palette(m_gtkThemeDarkVariant ? Adwaita::ColorVariant::AdwaitaDark : Adwaita::ColorVariant::Adwaita));
-        return palette;
+        return m_palette;
     }
 
     inline bool canUseFileChooserPortal() const
@@ -183,6 +182,8 @@ private:
     QHash<QPlatformTheme::Font, QFont*> m_fonts;
     QHash<QPlatformTheme::ThemeHint, QVariant> m_hints;
     QMap<QString, QVariantMap> m_portalSettings;
+    QPalette *m_palette = nullptr;
+    QFont *m_fallbackFont = nullptr;
 };
 
 template <> inline int GnomeHintsSettings::getSettingsProperty(GSettings *settings, const QString &property, bool *ok) {

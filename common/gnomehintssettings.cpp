@@ -90,6 +90,7 @@ GnomeHintsSettings::GnomeHintsSettings()
     , m_canUseFileChooserPortal(!m_usePortal)
     , m_gnomeDesktopSettings(g_settings_new("org.gnome.desktop.wm.preferences"))
     , m_settings(g_settings_new("org.gnome.desktop.interface"))
+    , m_fallbackFont(new QFont(QLatin1String("Sans"), 10))
 {
     gtk_init(nullptr, nullptr);
 
@@ -151,6 +152,8 @@ GnomeHintsSettings::GnomeHintsSettings()
     loadTheme();
     loadTitlebar();
 
+    m_palette = new QPalette(Adwaita::Colors::palette(m_gtkThemeDarkVariant ? Adwaita::ColorVariant::AdwaitaDark : Adwaita::ColorVariant::Adwaita));
+
     if (m_canUseFileChooserPortal) {
         QTimer::singleShot(0, this, [this] () {
             const QString filePath = QStringLiteral("/proc/%1/root").arg(QCoreApplication::applicationPid());
@@ -184,6 +187,7 @@ GnomeHintsSettings::GnomeHintsSettings()
                 } else {
                     m_canUseFileChooserPortal = false;
                 }
+                watcher->deleteLater();
             });
         }
     }
@@ -192,6 +196,8 @@ GnomeHintsSettings::GnomeHintsSettings()
 GnomeHintsSettings::~GnomeHintsSettings()
 {
     qDeleteAll(m_fonts);
+    delete m_fallbackFont;
+    delete m_palette;
     if (m_cinnamonSettings) {
         g_object_unref(m_cinnamonSettings);
     }
