@@ -365,9 +365,9 @@ bool QGnomePlatformDecoration::doubleClickButton(Qt::MouseButtons b, const QPoin
     if (b & Qt::LeftButton) {
         const qint64 clickInterval = m_lastButtonClick.msecsTo(currentTime);
         m_lastButtonClick = currentTime;
-        const int doubleClickDistance = GnomeSettings::hint(QPlatformTheme::MouseDoubleClickDistance).toInt();
+        const int doubleClickDistance = m_hints->hint(QPlatformTheme::MouseDoubleClickDistance).toInt();
         const QPointF posDiff = m_lastButtonClickPosition - local;
-        if ((clickInterval <= GnomeSettings::hint(QPlatformTheme::MouseDoubleClickInterval).toInt()) &&
+        if ((clickInterval <= m_hints->hint(QPlatformTheme::MouseDoubleClickInterval).toInt()) &&
             ((posDiff.x() <= doubleClickDistance && posDiff.x() >= -doubleClickDistance) && ((posDiff.y() <= doubleClickDistance && posDiff.y() >= -doubleClickDistance)))) {
             return true;
         }
@@ -480,12 +480,12 @@ void QGnomePlatformDecoration::processMouseTop(QWaylandInputDevice *inputDevice,
         if (clickButton(b, Close)) {
             QWindowSystemInterface::handleCloseEvent(window());
         }
-    }  else if (GnomeSettings::titlebarButtons().testFlag(GnomeSettings::MaximizeButton) && maximizeButtonRect().contains(local)) {
+    }  else if (m_hints->titlebarButtons().testFlag(GnomeHintsSettings::MaximizeButton) && maximizeButtonRect().contains(local)) {
         updateButtonHoverState(Button::Maximize);
         if (clickButton(b, Maximize)) {
             window()->setWindowStates(window()->windowStates() ^ Qt::WindowMaximized);
         }
-    } else if (GnomeSettings::titlebarButtons().testFlag(GnomeSettings::MinimizeButton) && minimizeButtonRect().contains(local)) {
+    } else if (m_hints->titlebarButtons().testFlag(GnomeHintsSettings::MinimizeButton) && minimizeButtonRect().contains(local)) {
         updateButtonHoverState(Button::Minimize);
         if (clickButton(b, Minimize)) {
             window()->setWindowState(Qt::WindowMinimized);
