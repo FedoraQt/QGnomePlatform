@@ -45,7 +45,7 @@ public:
     virtual ~QGnomePlatformDecoration() override = default;
 
 protected:
-#if 0
+#ifdef DECORATION_SHADOWS_SUPPORT // Qt 6.2.0+ or patched QtWayland
     QMargins margins(MarginsType marginsType = Full) const override;
 #else
     QMargins margins() const override;
@@ -62,7 +62,6 @@ private:
     bool clickButton(Qt::MouseButtons b, Button btn);
     bool doubleClickButton(Qt::MouseButtons b, const QPointF &local, const QDateTime &currentTime);
     bool updateButtonHoverState(Button hoveredButton);
-    int edgeWidth() const;
 
     QRectF closeButtonRect() const;
     QRectF maximizeButtonRect() const;
