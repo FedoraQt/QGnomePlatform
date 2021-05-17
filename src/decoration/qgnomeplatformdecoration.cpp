@@ -137,7 +137,7 @@ QRectF QGnomePlatformDecoration::minimizeButtonRect() const
 #ifdef DECORATION_SHADOWS_SUPPORT // Qt 6.2.0+ or patched QtWayland
 QMargins QGnomePlatformDecoration::margins(MarginsType marginsType) const
 {
-    const bool maximized = (window()->windowStates() & Qt::WindowMaximized) || (waylandWindow()->windowStates() & Qt::WindowMaximized);
+    const bool maximized = waylandWindow()->windowStates() & Qt::WindowMaximized;
     const bool tiledLeft = waylandWindow()->toplevelWindowTilingStates() & QWaylandWindow::WindowTiledLeft;
     const bool tiledRight = waylandWindow()->toplevelWindowTilingStates() & QWaylandWindow::WindowTiledRight;
     const bool tiledTop = waylandWindow()->toplevelWindowTilingStates() & QWaylandWindow::WindowTiledTop;
@@ -200,7 +200,7 @@ void QGnomePlatformDecoration::paint(QPaintDevice *device)
     p.setRenderHint(QPainter::Antialiasing);
 
 #ifdef DECORATION_SHADOWS_SUPPORT // Qt 6.2.0+ or patched QtWayland
-    const bool maximized = (window()->windowStates() & Qt::WindowMaximized) || (waylandWindow()->windowStates() & Qt::WindowMaximized);
+    const bool maximized = waylandWindow()->windowStates() & Qt::WindowMaximized;
     const bool tiledLeft = waylandWindow()->toplevelWindowTilingStates() & QWaylandWindow::WindowTiledLeft;
     const bool tiledRight = waylandWindow()->toplevelWindowTilingStates() & QWaylandWindow::WindowTiledRight;
     const bool tiledTop = waylandWindow()->toplevelWindowTilingStates() & QWaylandWindow::WindowTiledTop;
