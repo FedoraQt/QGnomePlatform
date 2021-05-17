@@ -2,7 +2,7 @@ project(QGnomePlatform)
 
 cmake_minimum_required(VERSION 3.0)
 
-set(QGNOMEPLATFORM_VERSION "0.7.50")
+set(QGNOMEPLATFORM_VERSION "0.8.0")
 
 set(QT_MIN_VERSION "5.12.0")
 set(CMAKE_AUTOMOC ON)
@@ -20,7 +20,7 @@ find_package(Qt5Gui ${QT_MIN_VERSION} CONFIG REQUIRED Private)
 find_package(Qt5ThemeSupport REQUIRED)
 
 find_package(GSettingSchemas REQUIRED)
-find_package(AdwaitaQt "1.2.50" REQUIRED)
+find_package(AdwaitaQt "1.3.0" REQUIRED)
 
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(GTK+3 REQUIRED IMPORTED_TARGET gtk+-3.0)
