@@ -226,8 +226,11 @@ void QXdgDesktopPortalFileDialog::openPortal()
             QRegularExpressionMatch match = regexp.match(nameFilter);
             if (match.hasMatch()) {
                 QString userVisibleName = match.captured(1);
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))
+                QStringList filterStrings = match.captured(2).split(QLatin1Char(' '), Qt::SkipEmptyParts);
+#else
                 QStringList filterStrings = match.captured(2).split(QLatin1Char(' '), QString::SkipEmptyParts);
-
+#endif
                 if (filterStrings.isEmpty()) {
                     qWarning() << "Filter " << userVisibleName << " is empty and will be ignored.";
                     continue;
