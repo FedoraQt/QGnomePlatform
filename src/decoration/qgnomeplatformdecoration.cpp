@@ -43,7 +43,6 @@
 
 #include "gnomesettings.h"
 
-#include <AdwaitaQt/adwaitacolors.h>
 #include <AdwaitaQt/adwaitarenderer.h>
 
 #include <QtGui/QColor>
@@ -87,7 +86,12 @@ QGnomePlatformDecoration::QGnomePlatformDecoration()
     // Colors
     // TODO: move colors used for decorations to Adwaita-qt
     const bool darkVariant = GnomeSettings::isGtkThemeDarkVariant();
-    const QPalette &palette(Adwaita::Colors::palette(darkVariant ? Adwaita::ColorVariant::AdwaitaDark : Adwaita::ColorVariant::Adwaita));
+    const bool highContrastVariant = GnomeSettings::isGtkThemeHighContrastVariant();
+
+    m_adwaitaVariant = darkVariant ? highContrastVariant ? Adwaita::ColorVariant::AdwaitaHighcontrastInverse : Adwaita::ColorVariant::AdwaitaDark :
+                                     highContrastVariant ? Adwaita::ColorVariant::AdwaitaHighcontrast : Adwaita::ColorVariant::Adwaita;
+
+    const QPalette &palette(Adwaita::Colors::palette(m_adwaitaVariant));
 
     m_foregroundColor         = palette.color(QPalette::Active, QPalette::Foreground);
     m_foregroundInactiveColor = palette.color(QPalette::Inactive, QPalette::Foreground);
@@ -500,7 +504,7 @@ void QGnomePlatformDecoration::paint(QPaintDevice *device)
         Adwaita::StyleOptions styleOptions(&p, buttonRect);
         styleOptions.setMouseOver(true);
         styleOptions.setSunken(m_clicking == Button::Close);
-        styleOptions.setColorVariant(GnomeSettings::isGtkThemeDarkVariant() ? Adwaita::ColorVariant::AdwaitaDark : Adwaita::ColorVariant::Adwaita);
+        styleOptions.setColorVariant(m_adwaitaVariant);
         styleOptions.setColor(Adwaita::Colors::buttonBackgroundColor(styleOptions));
         styleOptions.setOutlineColor(Adwaita::Colors::buttonOutlineColor(styleOptions));
         Adwaita::Renderer::renderFlatRoundedButtonFrame(styleOptions);
@@ -516,7 +520,7 @@ void QGnomePlatformDecoration::paint(QPaintDevice *device)
             Adwaita::StyleOptions styleOptions(&p, buttonRect);
             styleOptions.setMouseOver(true);
             styleOptions.setSunken(m_clicking == Button::Maximize || m_clicking == Button::Restore);
-            styleOptions.setColorVariant(GnomeSettings::isGtkThemeDarkVariant() ? Adwaita::ColorVariant::AdwaitaDark : Adwaita::ColorVariant::Adwaita);
+            styleOptions.setColorVariant(m_adwaitaVariant);
             styleOptions.setColor(Adwaita::Colors::buttonBackgroundColor(styleOptions));
             styleOptions.setOutlineColor(Adwaita::Colors::buttonOutlineColor(styleOptions));
             Adwaita::Renderer::renderFlatRoundedButtonFrame(styleOptions);
@@ -534,7 +538,7 @@ void QGnomePlatformDecoration::paint(QPaintDevice *device)
             Adwaita::StyleOptions styleOptions(&p, buttonRect);
             styleOptions.setMouseOver(true);
             styleOptions.setSunken(m_clicking == Button::Minimize);
-            styleOptions.setColorVariant(GnomeSettings::isGtkThemeDarkVariant() ? Adwaita::ColorVariant::AdwaitaDark : Adwaita::ColorVariant::Adwaita);
+            styleOptions.setColorVariant(m_adwaitaVariant);
             styleOptions.setColor(Adwaita::Colors::buttonBackgroundColor(styleOptions));
             styleOptions.setOutlineColor(Adwaita::Colors::buttonOutlineColor(styleOptions));
             Adwaita::Renderer::renderFlatRoundedButtonFrame(styleOptions);

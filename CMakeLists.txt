@@ -20,7 +20,7 @@ find_package(Qt5Gui ${QT_MIN_VERSION} CONFIG REQUIRED Private)
 find_package(Qt5ThemeSupport REQUIRED)
 
 find_package(GSettingSchemas REQUIRED)
-find_package(AdwaitaQt "1.3.0" REQUIRED)
+find_package(AdwaitaQt "1.4.0" REQUIRED)
 
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(GTK+3 REQUIRED IMPORTED_TARGET gtk+-3.0)

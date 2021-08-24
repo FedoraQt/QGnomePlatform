@@ -22,6 +22,8 @@
 
 #include <QtWaylandClient/private/qwaylandabstractdecoration_p.h>
 
+#include <AdwaitaQt/adwaitacolors.h>
+
 #include <QtGlobal>
 
 #include <QDateTime>
@@ -92,6 +94,8 @@ private:
 
     // Shadows
     QPixmap m_shadowPixmap;
+
+    Adwaita::ColorVariant m_adwaitaVariant;
 };
 
 

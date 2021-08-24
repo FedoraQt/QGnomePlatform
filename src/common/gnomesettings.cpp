@@ -102,6 +102,11 @@ bool GnomeSettings::isGtkThemeDarkVariant()
     return gnomeSettingsGlobal->isGtkThemeDarkVariant();
 }
 
+bool GnomeSettings::isGtkThemeHighContrastVariant()
+{
+    return gnomeSettingsGlobal->isGtkThemeHighContrastVariant();
+}
+
 QString GnomeSettings::gtkTheme()
 {
     return gnomeSettingsGlobal->gtkTheme();
@@ -210,7 +215,11 @@ GnomeSettingsPrivate::GnomeSettingsPrivate(QObject *parent)
     loadTheme();
     loadTitlebar();
 
-    m_palette = new QPalette(Adwaita::Colors::palette(m_gtkThemeDarkVariant ? Adwaita::ColorVariant::AdwaitaDark : Adwaita::ColorVariant::Adwaita));
+    if (m_gtkThemeHighContrastVariant) {
+        m_palette = new QPalette(Adwaita::Colors::palette(m_gtkThemeDarkVariant ? Adwaita::ColorVariant::AdwaitaHighcontrastInverse : Adwaita::ColorVariant::AdwaitaHighcontrast));
+    } else {
+        m_palette = new QPalette(Adwaita::Colors::palette(m_gtkThemeDarkVariant ? Adwaita::ColorVariant::AdwaitaDark : Adwaita::ColorVariant::Adwaita));
+    }
 
     if (m_canUseFileChooserPortal) {
         QTimer::singleShot(0, this, [this] () {
@@ -288,6 +297,11 @@ bool GnomeSettingsPrivate::canUseFileChooserPortal() const
 bool GnomeSettingsPrivate::isGtkThemeDarkVariant() const
 {
     return m_gtkThemeDarkVariant;
+}
+
+bool GnomeSettingsPrivate::isGtkThemeHighContrastVariant() const
+{
+    return m_gtkThemeHighContrastVariant;
 }
 
 QString GnomeSettingsPrivate::gtkTheme() const
@@ -472,7 +486,11 @@ void GnomeSettingsPrivate::loadTheme()
         } else {
             qCDebug(QGnomePlatform) << "Theme name: " << m_gtkTheme;
 
-            if (m_gtkTheme.toLower().contains("-dark")) {
+            if (m_gtkTheme.toLower().startsWith("highcontrast")) {
+                m_gtkThemeHighContrastVariant = true;
+            }
+
+            if (m_gtkTheme.toLower().contains("-dark") || m_gtkTheme.toLower().endsWith("inverse")) {
                 m_gtkThemeDarkVariant = true;
             }
 
@@ -481,7 +499,11 @@ void GnomeSettingsPrivate::loadTheme()
     } else {
         qCDebug(QGnomePlatform) << "Theme name: " << styleOverride;
 
-        if (styleOverride.toLower().contains("-dark")) {
+        if (styleOverride.toLower().startsWith("highcontrast")) {
+            m_gtkThemeHighContrastVariant = true;
+        }
+
+        if (styleOverride.toLower().contains("-dark") || styleOverride.toLower().endsWith("inverse")) {
             m_gtkThemeDarkVariant = true;
         }
 
