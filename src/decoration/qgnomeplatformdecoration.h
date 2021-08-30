@@ -61,6 +61,8 @@ private:
     void processMouseBottom(QWaylandInputDevice *inputDevice, const QPointF &local, Qt::MouseButtons b,Qt::KeyboardModifiers mods);
     void processMouseLeft(QWaylandInputDevice *inputDevice, const QPointF &local, Qt::MouseButtons b,Qt::KeyboardModifiers mods);
     void processMouseRight(QWaylandInputDevice *inputDevice, const QPointF &local, Qt::MouseButtons b,Qt::KeyboardModifiers mods);
+    void renderButton(QPainter *painter, const QRectF &rect, Adwaita::ButtonType button, bool renderFrame, bool sunken);
+
     bool clickButton(Qt::MouseButtons b, Button btn);
     bool doubleClickButton(Qt::MouseButtons b, const QPointF &local, const QDateTime &currentTime);
     bool updateButtonHoverState(Button hoveredButton);
@@ -79,7 +81,6 @@ private:
     QColor m_foregroundInactiveColor;
 
     // Buttons
-    QHash<Button, QPixmap> m_buttonPixmaps;
     bool m_closeButtonHovered;
     bool m_maximizeButtonHovered;
     bool m_minimizeButtonHovered;
