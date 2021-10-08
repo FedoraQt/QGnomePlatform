@@ -43,8 +43,6 @@
 
 #include "gnomesettings.h"
 
-#include <AdwaitaQt/adwaitarenderer.h>
-
 #include <QtGui/QColor>
 #include <QtGui/QCursor>
 #include <QtGui/QLinearGradient>
@@ -93,8 +91,8 @@ QGnomePlatformDecoration::QGnomePlatformDecoration()
 
     const QPalette &palette(Adwaita::Colors::palette(m_adwaitaVariant));
 
-    m_foregroundColor         = palette.color(QPalette::Active, QPalette::Foreground);
-    m_foregroundInactiveColor = palette.color(QPalette::Inactive, QPalette::Foreground);
+    m_foregroundColor         = palette.color(QPalette::Active, QPalette::WindowText);
+    m_foregroundInactiveColor = palette.color(QPalette::Inactive, QPalette::WindowText);
     m_backgroundColorStart    = darkVariant ? QColor("#262626") : QColor("#dad6d2"); // Adwaita GtkHeaderBar color
     m_backgroundColorEnd      = darkVariant ? QColor("#2b2b2b") : QColor("#e1dedb"); // Adwaita GtkHeaderBar color
     m_foregroundInactiveColor = darkVariant ? QColor("#919190") : QColor("#929595");
@@ -573,12 +571,20 @@ bool QGnomePlatformDecoration::handleMouse(QWaylandInputDevice *inputDevice, con
     return true;
 }
 
+#if QT_VERSION >= 0x060000
+bool QGnomePlatformDecoration::handleTouch(QWaylandInputDevice *inputDevice, const QPointF &local, const QPointF &global, QEventPoint::State state, Qt::KeyboardModifiers mods)
+#else
 bool QGnomePlatformDecoration::handleTouch(QWaylandInputDevice *inputDevice, const QPointF &local, const QPointF &global, Qt::TouchPointState state, Qt::KeyboardModifiers mods)
+#endif
 {
     Q_UNUSED(inputDevice)
     Q_UNUSED(global)
     Q_UNUSED(mods)
+#if QT_VERSION >= 0x060000
+    bool handled = state == QEventPoint::Pressed;
+#else
     bool handled = state == Qt::TouchPointPressed;
+#endif
     if (handled) {
         if (closeButtonRect().contains(local)) {
             QWindowSystemInterface::handleCloseEvent(window());

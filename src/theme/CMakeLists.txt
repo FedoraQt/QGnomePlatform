@@ -12,14 +12,19 @@ set(theme_SRCS
 
 add_library(qgnomeplatformtheme MODULE ${theme_SRCS})
 target_link_libraries(qgnomeplatformtheme
-    qgnomeplatform
-    Qt::DBus
-    Qt::Gui
-    Qt::ThemeSupportPrivate
+    qgnomeplatform${LIBQGNOMEPLATFORM_SUFFIX}
+    Qt${QT_VERSION_MAJOR}::DBus
+    Qt${QT_VERSION_MAJOR}::Gui
     ${ADWAITAQT_LIBRARIES}
     PkgConfig::GTK+3
 )
 
-install(TARGETS qgnomeplatformtheme RENAME qgnomeplatform DESTINATION ${QT_PLUGINS_DIR}/platformthemes)
+if (NOT USE_QT6)
+    target_link_libraries(qgnomeplatformtheme Qt5::ThemeSupportPrivate)
+endif()
 
-
+if (USE_QT6)
+    install(TARGETS qgnomeplatformtheme DESTINATION ${QT6_INSTALL_PLUGINS}/platformthemes)
+else()
+    install(TARGETS qgnomeplatformtheme DESTINATION ${QT_PLUGINS_DIR}/platformthemes)
+endif()

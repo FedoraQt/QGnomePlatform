@@ -22,7 +22,13 @@
 
 #include <QtWaylandClient/private/qwaylandabstractdecoration_p.h>
 
-#include <AdwaitaQt/adwaitacolors.h>
+#if QT_VERSION >= 0x060000
+#include <AdwaitaQt6/adwaitacolors.h>
+#include <AdwaitaQt6/adwaitarenderer.h>
+#else
+#include <AdwaitaQt6/adwaitacolors.h>
+#include <AdwaitaQt/adwaitarenderer.h>
+#endif
 
 #include <QtGlobal>
 
@@ -54,7 +60,11 @@ protected:
 #endif
     void paint(QPaintDevice *device) override;
     bool handleMouse(QWaylandInputDevice *inputDevice, const QPointF &local, const QPointF &global,Qt::MouseButtons b,Qt::KeyboardModifiers mods) override;
+#if QT_VERSION >= 0x060000
+    bool handleTouch(QWaylandInputDevice *inputDevice, const QPointF &local, const QPointF &global, QEventPoint::State state, Qt::KeyboardModifiers mods) override;
+#else
     bool handleTouch(QWaylandInputDevice *inputDevice, const QPointF &local, const QPointF &global, Qt::TouchPointState state, Qt::KeyboardModifiers mods) override;
+#endif
 
 private:
     void processMouseTop(QWaylandInputDevice *inputDevice, const QPointF &local, Qt::MouseButtons b,Qt::KeyboardModifiers mods);
