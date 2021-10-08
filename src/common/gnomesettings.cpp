@@ -33,7 +33,6 @@
 #include <QString>
 #include <QStandardPaths>
 #include <QVariant>
-#include <QRegularExpression>
 #include <QTimer>
 
 // QtDBus
