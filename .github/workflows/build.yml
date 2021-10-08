@@ -20,7 +20,7 @@ jobs:
     - name: Install base dependencies
       run: |
         sudo apt update
-        sudo apt install cmake make pkg-config libx11-dev xcb libx11-xcb-dev libxkbcommon-dev sassc
+        sudo apt install cmake make pkg-config libx11-dev xcb libx11-xcb-dev libxkbcommon-dev libgtk-3-dev sassc
 
     - name: Install Qt
       uses: jurplel/install-qt-action@v2
@@ -52,7 +52,7 @@ jobs:
     - name: Install base dependencies
       run: |
         sudo apt update
-        sudo apt install cmake make pkg-config libx11-dev xcb libx11-xcb-dev libxkbcommon-dev sassc
+        sudo apt install cmake make pkg-config libx11-dev xcb libx11-xcb-dev libxkbcommon-dev libgtk-3-dev sassc
 
     - name: Install Qt
       uses: jurplel/install-qt-action@v2

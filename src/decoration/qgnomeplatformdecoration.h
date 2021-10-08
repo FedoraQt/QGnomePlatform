@@ -26,7 +26,7 @@
 #include <AdwaitaQt6/adwaitacolors.h>
 #include <AdwaitaQt6/adwaitarenderer.h>
 #else
-#include <AdwaitaQt6/adwaitacolors.h>
+#include <AdwaitaQt/adwaitacolors.h>
 #include <AdwaitaQt/adwaitarenderer.h>
 #endif
 
