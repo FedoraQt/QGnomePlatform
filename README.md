@@ -10,7 +10,7 @@ This library uses private Qt headers and will likely not be forward nor backward
 ```
 mkdir build
 cd build
-cmake [OPTIONS] ..
+cmake [OPTIONS] [-DUSE_QT6=true] ..
 make && make install
 ```
 

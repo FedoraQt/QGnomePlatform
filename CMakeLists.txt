@@ -45,9 +45,9 @@ endif()
 
 find_package(GSettingSchemas REQUIRED)
 if (USE_QT6)
-    find_package(AdwaitaQt6 "1.4.0" REQUIRED)
+    find_package(AdwaitaQt6 "1.4.1" REQUIRED)
 else()
-    find_package(AdwaitaQt "1.4.0" REQUIRED)
+    find_package(AdwaitaQt "1.4.1" REQUIRED)
 endif()
 
 find_package(PkgConfig REQUIRED)
