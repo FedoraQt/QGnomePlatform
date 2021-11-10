@@ -616,7 +616,24 @@ static QFont qt_fontFromString(const QString &name)
         font.setFamily(family);
 
     const int weight = pango_font_description_get_weight(desc);
-    font.setWeight(QPlatformFontDatabase::weightFromInteger(weight));
+    if (weight >= PANGO_WEIGHT_HEAVY)
+        font.setWeight(QFont::Black);
+    else if (weight >= PANGO_WEIGHT_ULTRABOLD)
+        font.setWeight(QFont::ExtraBold);
+    else if (weight >= PANGO_WEIGHT_BOLD)
+        font.setWeight(QFont::Bold);
+    else if (weight >= PANGO_WEIGHT_SEMIBOLD)
+        font.setWeight(QFont::DemiBold);
+    else if (weight >= PANGO_WEIGHT_MEDIUM)
+        font.setWeight(QFont::Medium);
+    else if (weight >= PANGO_WEIGHT_NORMAL)
+        font.setWeight(QFont::Normal);
+    else if (weight >= PANGO_WEIGHT_LIGHT)
+        font.setWeight(QFont::Light);
+    else if (weight >= PANGO_WEIGHT_ULTRALIGHT)
+        font.setWeight(QFont::ExtraLight);
+    else
+        font.setWeight(QFont::Thin);
 
     PangoStyle style = pango_font_description_get_style(desc);
     if (style == PANGO_STYLE_ITALIC)

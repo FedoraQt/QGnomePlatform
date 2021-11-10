@@ -54,6 +54,7 @@ public:
     static QVariant hint(QPlatformTheme::ThemeHint hint);
     static bool canUseFileChooserPortal();
     static bool isGtkThemeDarkVariant();
+    static bool isGtkThemeHighContrastVariant();
     static QString gtkTheme();
     static TitlebarButtons titlebarButtons();
     static TitlebarButtonsPlacement titlebarButtonPlacement();

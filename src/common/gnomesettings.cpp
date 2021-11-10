@@ -20,7 +20,11 @@
 #include "gnomesettings.h"
 #include "gnomesettings_p.h"
 
+#if QT_VERSION >= 0x060000
+#include <AdwaitaQt6/adwaitacolors.h>
+#else
 #include <AdwaitaQt/adwaitacolors.h>
+#endif
 
 // QtCore
 #include <QDir>
@@ -100,6 +104,11 @@ bool GnomeSettings::canUseFileChooserPortal()
 bool GnomeSettings::isGtkThemeDarkVariant()
 {
     return gnomeSettingsGlobal->isGtkThemeDarkVariant();
+}
+
+bool GnomeSettings::isGtkThemeHighContrastVariant()
+{
+    return gnomeSettingsGlobal->isGtkThemeHighContrastVariant();
 }
 
 QString GnomeSettings::gtkTheme()
@@ -210,7 +219,11 @@ GnomeSettingsPrivate::GnomeSettingsPrivate(QObject *parent)
     loadTheme();
     loadTitlebar();
 
-    m_palette = new QPalette(Adwaita::Colors::palette(m_gtkThemeDarkVariant ? Adwaita::ColorVariant::AdwaitaDark : Adwaita::ColorVariant::Adwaita));
+    if (m_gtkThemeHighContrastVariant) {
+        m_palette = new QPalette(Adwaita::Colors::palette(m_gtkThemeDarkVariant ? Adwaita::ColorVariant::AdwaitaHighcontrastInverse : Adwaita::ColorVariant::AdwaitaHighcontrast));
+    } else {
+        m_palette = new QPalette(Adwaita::Colors::palette(m_gtkThemeDarkVariant ? Adwaita::ColorVariant::AdwaitaDark : Adwaita::ColorVariant::Adwaita));
+    }
 
     if (m_canUseFileChooserPortal) {
         QTimer::singleShot(0, this, [this] () {
@@ -288,6 +301,11 @@ bool GnomeSettingsPrivate::canUseFileChooserPortal() const
 bool GnomeSettingsPrivate::isGtkThemeDarkVariant() const
 {
     return m_gtkThemeDarkVariant;
+}
+
+bool GnomeSettingsPrivate::isGtkThemeHighContrastVariant() const
+{
+    return m_gtkThemeHighContrastVariant;
 }
 
 QString GnomeSettingsPrivate::gtkTheme() const
@@ -472,7 +490,11 @@ void GnomeSettingsPrivate::loadTheme()
         } else {
             qCDebug(QGnomePlatform) << "Theme name: " << m_gtkTheme;
 
-            if (m_gtkTheme.toLower().contains("-dark")) {
+            if (m_gtkTheme.toLower().startsWith("highcontrast")) {
+                m_gtkThemeHighContrastVariant = true;
+            }
+
+            if (m_gtkTheme.toLower().contains("-dark") || m_gtkTheme.toLower().endsWith("inverse")) {
                 m_gtkThemeDarkVariant = true;
             }
 
@@ -481,7 +503,11 @@ void GnomeSettingsPrivate::loadTheme()
     } else {
         qCDebug(QGnomePlatform) << "Theme name: " << styleOverride;
 
-        if (styleOverride.toLower().contains("-dark")) {
+        if (styleOverride.toLower().startsWith("highcontrast")) {
+            m_gtkThemeHighContrastVariant = true;
+        }
+
+        if (styleOverride.toLower().contains("-dark") || styleOverride.toLower().endsWith("inverse")) {
             m_gtkThemeDarkVariant = true;
         }
 
@@ -517,6 +543,53 @@ void GnomeSettingsPrivate::loadTheme()
     m_hints[QPlatformTheme::StyleNames] = styleNames;
 }
 
+// FIXME: duplicate
+static QFont* qt_fontFromString(const QString &name)
+{
+    QFont *font = new QFont(QLatin1String("Sans"), 10);
+
+    PangoFontDescription *desc = pango_font_description_from_string(name.toUtf8());
+    font->setPointSizeF(static_cast<float>(pango_font_description_get_size(desc)) / PANGO_SCALE);
+
+    QString family = QString::fromUtf8(pango_font_description_get_family(desc));
+    if (!family.isEmpty()) {
+        font->setFamily(family);
+    }
+
+    const int weight = pango_font_description_get_weight(desc);
+    if (weight >= PANGO_WEIGHT_HEAVY) {
+        font->setWeight(QFont::Black);
+    } else if (weight >= PANGO_WEIGHT_ULTRABOLD) {
+        font->setWeight(QFont::ExtraBold);
+    } else if (weight >= PANGO_WEIGHT_BOLD) {
+        font->setWeight(QFont::Bold);
+    } else if (weight >= PANGO_WEIGHT_SEMIBOLD) {
+        font->setWeight(QFont::DemiBold);
+    } else if (weight >= PANGO_WEIGHT_MEDIUM) {
+        font->setWeight(QFont::Medium);
+    } else if (weight >= PANGO_WEIGHT_NORMAL) {
+        font->setWeight(QFont::Normal);
+    } else if (weight >= PANGO_WEIGHT_LIGHT) {
+        font->setWeight(QFont::Light);
+    } else if (weight >= PANGO_WEIGHT_ULTRALIGHT) {
+        font->setWeight(QFont::ExtraLight);
+    } else {
+        font->setWeight(QFont::Thin);
+    }
+
+    PangoStyle style = pango_font_description_get_style(desc);
+    if (style == PANGO_STYLE_ITALIC)  {
+        font->setStyle(QFont::StyleItalic);
+    } else if (style == PANGO_STYLE_OBLIQUE) {
+        font->setStyle(QFont::StyleOblique);
+    } else {
+        font->setStyle(QFont::StyleNormal);
+    }
+
+    pango_font_description_free(desc);
+    return font;
+}
+
 void GnomeSettingsPrivate::loadFonts()
 {
     qDeleteAll(m_fonts);
@@ -529,41 +602,17 @@ void GnomeSettingsPrivate::loadFonts()
         if (fontName.isEmpty()) {
             qCWarning(QGnomePlatform) << "Couldn't get " << fontType;
         } else {
-            bool bold = false;
-            int fontSize;
-            QString name;
-            QRegExp re("^([^,]+)[, \t]+([0-9]+)$");
-            if (re.indexIn(fontName) == 0) {
-                fontSize = re.cap(2).toInt();
-                name = re.cap(1);
-                // Bold is most likely not part of the name
-                if (name.endsWith(QStringLiteral(" Bold"))) {
-                    bold = true;
-                    name = name.remove(QStringLiteral(" Bold"));
-                }
-
-                QFont *font = new QFont(name, fontSize, bold ? QFont::Bold : QFont::Normal);
-                if (fontType == QStringLiteral("font-name")) {
-                    m_fonts[QPlatformTheme::SystemFont] = font;
-                    qCDebug(QGnomePlatform) << "Font name: " << name << " (size " << fontSize << ")";
-                } else if (fontType == QStringLiteral("monospace-font-name")) {
-                    m_fonts[QPlatformTheme::FixedFont] = font;
-                    qCDebug(QGnomePlatform) << "Monospace font name: " << name << " (size " << fontSize << ")";
-                } else if (fontType == QStringLiteral("titlebar-font")) {
-                    m_fonts[QPlatformTheme::TitleBarFont] = font;
-                    qCDebug(QGnomePlatform) << "TitleBar font name: " << name << " (size " << fontSize << ")";
-                }
-            } else {
-                if (fontType == QStringLiteral("font-name")) {
-                    m_fonts[QPlatformTheme::SystemFont] = new QFont(fontName);
-                    qCDebug(QGnomePlatform) << "Font name: " << fontName;
-                } else if (fontType == QStringLiteral("monospace-font-name")) {
-                    m_fonts[QPlatformTheme::FixedFont] = new QFont(fontName);
-                    qCDebug(QGnomePlatform) << "Monospace font name: " << fontName;
-                } else if (fontType == QStringLiteral("titlebar-font")) {
-                    m_fonts[QPlatformTheme::TitleBarFont] = new QFont(fontName);
-                    qCDebug(QGnomePlatform) << "TitleBar font name: " << fontName;
-                }
+            qCDebug(QGnomePlatform) << "String name: " << fontName;
+            QFont *font = qt_fontFromString(fontName);
+            if (fontType == QStringLiteral("font-name")) {
+                m_fonts[QPlatformTheme::SystemFont] = font;
+                qCDebug(QGnomePlatform) << "Font name: " << font->family() << " (size " << font->pointSize() << ")";
+            } else if (fontType == QStringLiteral("monospace-font-name")) {
+                m_fonts[QPlatformTheme::FixedFont] = font;
+                qCDebug(QGnomePlatform) << "Monospace font name: " << font->family() << " (size " << font->pointSize() << ")";
+            } else if (fontType == QStringLiteral("titlebar-font")) {
+                m_fonts[QPlatformTheme::TitleBarFont] = font;
+                qCDebug(QGnomePlatform) << "TitleBar font name: " << font->family() << " (size " << font->pointSize() << ")";
             }
         }
     }

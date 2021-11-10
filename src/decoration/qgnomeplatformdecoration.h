@@ -22,6 +22,14 @@
 
 #include <QtWaylandClient/private/qwaylandabstractdecoration_p.h>
 
+#if QT_VERSION >= 0x060000
+#include <AdwaitaQt6/adwaitacolors.h>
+#include <AdwaitaQt6/adwaitarenderer.h>
+#else
+#include <AdwaitaQt/adwaitacolors.h>
+#include <AdwaitaQt/adwaitarenderer.h>
+#endif
+
 #include <QtGlobal>
 
 #include <QDateTime>
@@ -52,13 +60,19 @@ protected:
 #endif
     void paint(QPaintDevice *device) override;
     bool handleMouse(QWaylandInputDevice *inputDevice, const QPointF &local, const QPointF &global,Qt::MouseButtons b,Qt::KeyboardModifiers mods) override;
+#if QT_VERSION >= 0x060000
+    bool handleTouch(QWaylandInputDevice *inputDevice, const QPointF &local, const QPointF &global, QEventPoint::State state, Qt::KeyboardModifiers mods) override;
+#else
     bool handleTouch(QWaylandInputDevice *inputDevice, const QPointF &local, const QPointF &global, Qt::TouchPointState state, Qt::KeyboardModifiers mods) override;
+#endif
 
 private:
     void processMouseTop(QWaylandInputDevice *inputDevice, const QPointF &local, Qt::MouseButtons b,Qt::KeyboardModifiers mods);
     void processMouseBottom(QWaylandInputDevice *inputDevice, const QPointF &local, Qt::MouseButtons b,Qt::KeyboardModifiers mods);
     void processMouseLeft(QWaylandInputDevice *inputDevice, const QPointF &local, Qt::MouseButtons b,Qt::KeyboardModifiers mods);
     void processMouseRight(QWaylandInputDevice *inputDevice, const QPointF &local, Qt::MouseButtons b,Qt::KeyboardModifiers mods);
+    void renderButton(QPainter *painter, const QRectF &rect, Adwaita::ButtonType button, bool renderFrame, bool sunken);
+
     bool clickButton(Qt::MouseButtons b, Button btn);
     bool doubleClickButton(Qt::MouseButtons b, const QPointF &local, const QDateTime &currentTime);
     bool updateButtonHoverState(Button hoveredButton);
@@ -77,7 +91,6 @@ private:
     QColor m_foregroundInactiveColor;
 
     // Buttons
-    QHash<Button, QPixmap> m_buttonPixmaps;
     bool m_closeButtonHovered;
     bool m_maximizeButtonHovered;
     bool m_minimizeButtonHovered;
@@ -92,6 +105,8 @@ private:
 
     // Shadows
     QPixmap m_shadowPixmap;
+
+    Adwaita::ColorVariant m_adwaitaVariant;
 };
 
 

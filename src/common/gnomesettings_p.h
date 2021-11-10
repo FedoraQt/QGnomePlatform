@@ -50,6 +50,7 @@ public:
     QPalette *palette() const;
     bool canUseFileChooserPortal() const;
     bool isGtkThemeDarkVariant() const;
+    bool isGtkThemeHighContrastVariant() const;
     QString gtkTheme() const;
     QVariant hint(QPlatformTheme::ThemeHint hint) const;
     TitlebarButtons titlebarButtons() const;
@@ -80,6 +81,7 @@ private:
     bool m_usePortal;
     bool m_canUseFileChooserPortal = false;
     bool m_gtkThemeDarkVariant = false;
+    bool m_gtkThemeHighContrastVariant = false;
     TitlebarButtons m_titlebarButtons = TitlebarButton::CloseButton;
     TitlebarButtonsPlacement m_titlebarButtonPlacement = TitlebarButtonsPlacement::RightPlacement;
     QString m_gtkTheme = nullptr;
