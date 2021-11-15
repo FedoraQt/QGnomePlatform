@@ -31,7 +31,7 @@
 #include <gtk-3.0/gtk/gtk.h>
 #define signals Q_SIGNALS
 
-#if !defined(QT_NO_DBUS) && !defined(QT_NO_SYSTEMTRAYICON)
+#ifndef QT_NO_SYSTEMTRAYICON
 #include <private/qdbustrayicon_p.h>
 #endif
 
@@ -109,7 +109,7 @@ QPlatformDialogHelper *QGnomePlatformTheme::createPlatformDialogHelper(QPlatform
     }
 }
 
-#if !defined(QT_NO_DBUS) && !defined(QT_NO_SYSTEMTRAYICON)
+#ifndef QT_NO_SYSTEMTRAYICON
 static bool isDBusTrayAvailable() {
     static bool dbusTrayAvailable = false;
     static bool dbusTrayAvailableKnown = false;
@@ -124,8 +124,8 @@ static bool isDBusTrayAvailable() {
 }
 #endif
 
-#if !defined(QT_NO_DBUS) && !defined(QT_NO_SYSTEMTRAYICON)
-QPlatformSystemTrayIcon * QGnomePlatformTheme::createPlatformSystemTrayIcon() const
+#ifndef QT_NO_SYSTEMTRAYICON
+QPlatformSystemTrayIcon* QGnomePlatformTheme::createPlatformSystemTrayIcon() const
 {
     if (isDBusTrayAvailable()) {
         return new QDBusTrayIcon();
