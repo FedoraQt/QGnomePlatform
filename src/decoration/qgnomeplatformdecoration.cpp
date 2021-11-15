@@ -618,31 +618,19 @@ void QGnomePlatformDecoration::processMouseTop(QWaylandInputDevice *inputDevice,
 #if QT_CONFIG(cursor)
             waylandWindow()->setMouseCursor(inputDevice, Qt::SizeFDiagCursor);
 #endif
-#if (QT_VERSION < QT_VERSION_CHECK(5, 13, 0))
-            startResize(inputDevice, WL_SHELL_SURFACE_RESIZE_TOP_LEFT, b);
-#else
             startResize(inputDevice, Qt::TopEdge | Qt::LeftEdge, b);
-#endif
         } else if (local.x() > window()->width() + margins().left()) {
             //top right bit
 #if QT_CONFIG(cursor)
             waylandWindow()->setMouseCursor(inputDevice, Qt::SizeBDiagCursor);
 #endif
-#if (QT_VERSION < QT_VERSION_CHECK(5, 13, 0))
-            startResize(inputDevice, WL_SHELL_SURFACE_RESIZE_TOP_RIGHT, b);
-#else
             startResize(inputDevice, Qt::TopEdge | Qt::RightEdge, b);
-#endif
         } else {
             //top resize bit
 #if QT_CONFIG(cursor)
             waylandWindow()->setMouseCursor(inputDevice, Qt::SplitVCursor);
 #endif
-#if (QT_VERSION < QT_VERSION_CHECK(5, 13, 0))
-            startResize(inputDevice, WL_SHELL_SURFACE_RESIZE_TOP, b);
-#else
             startResize(inputDevice, Qt::TopEdge, b);
-#endif
         }
     } else if (local.x() <= margins().left()) {
         processMouseLeft(inputDevice, local, b, mods);
@@ -684,31 +672,19 @@ void QGnomePlatformDecoration::processMouseBottom(QWaylandInputDevice *inputDevi
 #if QT_CONFIG(cursor)
         waylandWindow()->setMouseCursor(inputDevice, Qt::SizeBDiagCursor);
 #endif
-#if (QT_VERSION < QT_VERSION_CHECK(5, 13, 0))
-        startResize(inputDevice, WL_SHELL_SURFACE_RESIZE_BOTTOM_LEFT, b);
-#else
         startResize(inputDevice, Qt::BottomEdge | Qt::LeftEdge, b);
-#endif
     } else if (local.x() > window()->width() + margins().right()) {
         //bottom right bit
 #if QT_CONFIG(cursor)
         waylandWindow()->setMouseCursor(inputDevice, Qt::SizeFDiagCursor);
 #endif
-#if (QT_VERSION < QT_VERSION_CHECK(5, 13, 0))
-        startResize(inputDevice, WL_SHELL_SURFACE_RESIZE_BOTTOM_RIGHT, b);
-#else
         startResize(inputDevice, Qt::BottomEdge | Qt::RightEdge, b);
-#endif
     } else {
         //bottom bit
 #if QT_CONFIG(cursor)
         waylandWindow()->setMouseCursor(inputDevice, Qt::SplitVCursor);
 #endif
-#if (QT_VERSION < QT_VERSION_CHECK(5, 13, 0))
-        startResize(inputDevice, WL_SHELL_SURFACE_RESIZE_BOTTOM, b);
-#else
         startResize(inputDevice, Qt::BottomEdge, b);
-#endif
     }
 }
 
@@ -719,11 +695,7 @@ void QGnomePlatformDecoration::processMouseLeft(QWaylandInputDevice *inputDevice
 #if QT_CONFIG(cursor)
     waylandWindow()->setMouseCursor(inputDevice, Qt::SplitHCursor);
 #endif
-#if (QT_VERSION < QT_VERSION_CHECK(5, 13, 0))
-        startResize(inputDevice, WL_SHELL_SURFACE_RESIZE_LEFT, b);
-#else
     startResize(inputDevice, Qt::LeftEdge, b);
-#endif
 }
 
 void QGnomePlatformDecoration::processMouseRight(QWaylandInputDevice *inputDevice, const QPointF &local, Qt::MouseButtons b, Qt::KeyboardModifiers mods)
@@ -733,13 +705,8 @@ void QGnomePlatformDecoration::processMouseRight(QWaylandInputDevice *inputDevic
 #if QT_CONFIG(cursor)
     waylandWindow()->setMouseCursor(inputDevice, Qt::SplitHCursor);
 #endif
-#if (QT_VERSION < QT_VERSION_CHECK(5, 13, 0))
-        startResize(inputDevice, WL_SHELL_SURFACE_RESIZE_RIGHT, b);
-#else
     startResize(inputDevice, Qt::RightEdge, b);
-#endif
 }
-
 
 void QGnomePlatformDecoration::renderButton(QPainter *painter, const QRectF &rect, Adwaita::ButtonType button, bool renderFrame, bool sunken)
 {
@@ -761,7 +728,6 @@ void QGnomePlatformDecoration::renderButton(QPainter *painter, const QRectF &rec
     decorationButtonStyle.setRect(QRect(static_cast<int>(rect.x()) + (BUTTON_WIDTH / 4), static_cast<int>(rect.y()) + (BUTTON_WIDTH / 4), BUTTON_WIDTH / 2, BUTTON_WIDTH / 2));
     Adwaita::Renderer::renderDecorationButton(decorationButtonStyle, button);
 }
-
 
 bool QGnomePlatformDecoration::updateButtonHoverState(Button hoveredButton)
 {
