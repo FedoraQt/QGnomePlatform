@@ -36,8 +36,8 @@ public:
     const QPalette *palette(Palette type = SystemPalette) const Q_DECL_OVERRIDE;
     bool usePlatformNativeDialog(DialogType type) const Q_DECL_OVERRIDE;
     QPlatformDialogHelper *createPlatformDialogHelper(DialogType type) const Q_DECL_OVERRIDE;
-#if !defined(QT_NO_DBUS) && !defined(QT_NO_SYSTEMTRAYICON)
-    virtual QPlatformSystemTrayIcon *createPlatformSystemTrayIcon() const;
+#ifndef QT_NO_SYSTEMTRAYICON
+    QPlatformSystemTrayIcon *createPlatformSystemTrayIcon() const Q_DECL_OVERRIDE;
 #endif
 };
 

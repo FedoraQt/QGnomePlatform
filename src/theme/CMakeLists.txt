@@ -24,10 +24,6 @@ if (NOT USE_QT6)
 endif()
 
 if (USE_QT6)
-    target_link_libraries(qgnomeplatformtheme Qt6::GuiPrivate)
-endif()
-
-if (USE_QT6)
     install(TARGETS qgnomeplatformtheme DESTINATION ${QT6_INSTALL_PLUGINS}/platformthemes)
 else()
     install(TARGETS qgnomeplatformtheme DESTINATION ${QT_PLUGINS_DIR}/platformthemes)
