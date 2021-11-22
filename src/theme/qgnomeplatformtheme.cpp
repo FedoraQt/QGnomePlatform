@@ -31,6 +31,10 @@
 #include <gtk-3.0/gtk/gtk.h>
 #define signals Q_SIGNALS
 
+#ifndef QT_NO_SYSTEMTRAYICON
+#include <private/qdbustrayicon_p.h>
+#endif
+
 QGnomePlatformTheme::QGnomePlatformTheme()
 {
     if (QGuiApplication::platformName() != QStringLiteral("xcb")) {
@@ -106,8 +110,26 @@ QPlatformDialogHelper *QGnomePlatformTheme::createPlatformDialogHelper(QPlatform
 }
 
 #ifndef QT_NO_SYSTEMTRAYICON
+static bool isDBusTrayAvailable() {
+    static bool dbusTrayAvailable = false;
+    static bool dbusTrayAvailableKnown = false;
+    if (!dbusTrayAvailableKnown) {
+        QDBusMenuConnection conn;
+        if (conn.isStatusNotifierHostRegistered()) {
+            dbusTrayAvailable = true;
+        }
+        dbusTrayAvailableKnown = true;
+    }
+    return dbusTrayAvailable;
+}
+#endif
+
+#ifndef QT_NO_SYSTEMTRAYICON
 QPlatformSystemTrayIcon* QGnomePlatformTheme::createPlatformSystemTrayIcon() const
 {
+    if (isDBusTrayAvailable()) {
+        return new QDBusTrayIcon();
+    }
     return Q_NULLPTR;
 }
 #endif
