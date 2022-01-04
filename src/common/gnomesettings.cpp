@@ -212,6 +212,7 @@ GnomeSettingsPrivate::GnomeSettingsPrivate(QObject *parent)
 
     if (QGuiApplication::platformName() != QStringLiteral("xcb")) {
         cursorSizeChanged();
+        cursorThemeChanged();
     }
 
     loadFonts();
@@ -349,6 +350,10 @@ void GnomeSettingsPrivate::gsettingPropertyChanged(GSettings *settings, gchar *k
         if (QGuiApplication::platformName() != QStringLiteral("xcb")) {
             gnomeSettings->cursorSizeChanged();
         }
+    } else if (changedProperty == QStringLiteral("cursor-theme")) {
+        if (QGuiApplication::platformName() != QStringLiteral("xcb")) {
+            gnomeSettings->cursorThemeChanged();
+        }
     // Org.gnome.wm.preferences
     } else if (changedProperty == QStringLiteral("titlebar-font")) {
         gnomeSettings->fontChanged();
@@ -389,6 +394,12 @@ void GnomeSettingsPrivate::cursorSizeChanged()
 {
     int cursorSize = getSettingsProperty<int>(QStringLiteral("cursor-size"));
     qputenv("XCURSOR_SIZE", QString::number(cursorSize).toUtf8());
+}
+
+void GnomeSettingsPrivate::cursorThemeChanged()
+{
+    const QString cursorTheme = getSettingsProperty<QString>(QStringLiteral("cursor-theme"));
+    qputenv("XCURSOR_THEME", cursorTheme.toUtf8());
 }
 
 void GnomeSettingsPrivate::fontChanged()
