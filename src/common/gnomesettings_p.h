@@ -59,6 +59,7 @@ public:
 private Q_SLOTS:
     void cursorBlinkTimeChanged();
     void cursorSizeChanged();
+    void cursorThemeChanged();
     void fontChanged();
     void iconsChanged();
     void themeChanged();
