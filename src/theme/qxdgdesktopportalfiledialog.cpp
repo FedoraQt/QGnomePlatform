@@ -28,6 +28,7 @@
 #include <QDBusPendingCallWatcher>
 #include <QDBusPendingReply>
 
+#include <QGuiApplication>
 #include <QFile>
 #include <QMetaType>
 #include <QMimeType>
@@ -165,7 +166,6 @@ void QXdgDesktopPortalFileDialog::openPortal()
                                                           QLatin1String("/org/freedesktop/portal/desktop"),
                                                           QLatin1String("org.freedesktop.portal.FileChooser"),
                                                           d->saveFile ? QLatin1String("SaveFile") : QLatin1String("OpenFile"));
-    QString parentWindowId = QLatin1String("x11:") + QString::number(d->winId);
 
     QVariantMap options;
     if (!d->acceptLabel.isEmpty())
@@ -268,6 +268,11 @@ void QXdgDesktopPortalFileDialog::openPortal()
 
     // TODO choices a(ssa(ss)s)
     // List of serialized combo boxes to add to the file chooser.
+
+    QString parentWindowId;
+    if (QGuiApplication::platformName() == QStringLiteral("xcb")) {
+        parentWindowId = QLatin1String("x11:") + QString::number(d->winId, 16);
+    }
 
     message << parentWindowId << d->title << options;
 
