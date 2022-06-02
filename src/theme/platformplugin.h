@@ -25,7 +25,8 @@
 
 #include "qgnomeplatformtheme.h"
 
-class QGnomePlatformThemePlugin : public QPlatformThemePlugin {
+class QGnomePlatformThemePlugin : public QPlatformThemePlugin
+{
     Q_OBJECT
     Q_PLUGIN_METADATA(IID "org.qt-project.Qt.QPA.QPlatformThemeFactoryInterface.5.1" FILE "qgnomeplatformtheme.json")
 public:

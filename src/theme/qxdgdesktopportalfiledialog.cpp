@@ -21,24 +21,24 @@
 
 #include <QtCore/qeventloop.h>
 
-#include <QtDBus/QtDBus>
 #include <QDBusConnection>
 #include <QDBusMessage>
 #include <QDBusPendingCall>
 #include <QDBusPendingCallWatcher>
 #include <QDBusPendingReply>
+#include <QtDBus/QtDBus>
 
-#include <QGuiApplication>
 #include <QFile>
+#include <QGuiApplication>
 #include <QMetaType>
-#include <QMimeType>
 #include <QMimeDatabase>
+#include <QMimeType>
 #include <QRandomGenerator>
 #include <QWindow>
 
 QT_BEGIN_NAMESPACE
 
-QDBusArgument &operator <<(QDBusArgument &arg, const QXdgDesktopPortalFileDialog::FilterCondition &filterCondition)
+QDBusArgument &operator<<(QDBusArgument &arg, const QXdgDesktopPortalFileDialog::FilterCondition &filterCondition)
 {
     arg.beginStructure();
     arg << filterCondition.type << filterCondition.pattern;
@@ -46,7 +46,7 @@ QDBusArgument &operator <<(QDBusArgument &arg, const QXdgDesktopPortalFileDialog
     return arg;
 }
 
-const QDBusArgument &operator >>(const QDBusArgument &arg, QXdgDesktopPortalFileDialog::FilterCondition &filterCondition)
+const QDBusArgument &operator>>(const QDBusArgument &arg, QXdgDesktopPortalFileDialog::FilterCondition &filterCondition)
 {
     uint type;
     QString filterPattern;
@@ -59,7 +59,7 @@ const QDBusArgument &operator >>(const QDBusArgument &arg, QXdgDesktopPortalFile
     return arg;
 }
 
-QDBusArgument &operator <<(QDBusArgument &arg, const QXdgDesktopPortalFileDialog::Filter filter)
+QDBusArgument &operator<<(QDBusArgument &arg, const QXdgDesktopPortalFileDialog::Filter filter)
 {
     arg.beginStructure();
     arg << filter.name << filter.filterConditions;
@@ -67,7 +67,7 @@ QDBusArgument &operator <<(QDBusArgument &arg, const QXdgDesktopPortalFileDialog
     return arg;
 }
 
-const QDBusArgument &operator >>(const QDBusArgument &arg, QXdgDesktopPortalFileDialog::Filter &filter)
+const QDBusArgument &operator>>(const QDBusArgument &arg, QXdgDesktopPortalFileDialog::Filter &filter)
 {
     QString name;
     QXdgDesktopPortalFileDialog::FilterConditionList filterConditions;
@@ -85,7 +85,8 @@ class QXdgDesktopPortalFileDialogPrivate
 public:
     QXdgDesktopPortalFileDialogPrivate(QPlatformFileDialogHelper *nativeFileDialog)
         : nativeFileDialog(nativeFileDialog)
-    { }
+    {
+    }
 
     WId winId = 0;
     bool directoryMode = false;
@@ -278,7 +279,7 @@ void QXdgDesktopPortalFileDialog::openPortal()
 
     QDBusPendingCall pendingCall = QDBusConnection::sessionBus().asyncCall(message);
     QDBusPendingCallWatcher *watcher = new QDBusPendingCallWatcher(pendingCall);
-    connect(watcher, &QDBusPendingCallWatcher::finished, this, [this] (QDBusPendingCallWatcher *watcher) {
+    connect(watcher, &QDBusPendingCallWatcher::finished, this, [this](QDBusPendingCallWatcher *watcher) {
         QDBusPendingReply<QDBusObjectPath> reply = *watcher;
         if (reply.isError()) {
             Q_EMIT reject();
@@ -288,7 +289,7 @@ void QXdgDesktopPortalFileDialog::openPortal()
                                                   QLatin1String("org.freedesktop.portal.Request"),
                                                   QLatin1String("Response"),
                                                   this,
-                                                  SLOT(gotResponse(uint,QVariantMap)));
+                                                  SLOT(gotResponse(uint, QVariantMap)));
         }
         watcher->deleteLater();
     });

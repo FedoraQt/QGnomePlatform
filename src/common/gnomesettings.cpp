@@ -30,10 +30,10 @@
 #include <QDir>
 #include <QLoggingCategory>
 #include <QSettings>
-#include <QString>
 #include <QStandardPaths>
-#include <QVariant>
+#include <QString>
 #include <QTimer>
+#include <QVariant>
 
 // QtDBus
 #include <QDBusArgument>
@@ -47,16 +47,16 @@
 // QtGui
 #include <QApplication>
 #include <QDialogButtonBox>
-#include <QGuiApplication>
 #include <QFont>
+#include <QGuiApplication>
 #include <QMainWindow>
 #include <QPalette>
 #include <QStyleFactory>
 #include <QToolBar>
 
 #include <fcntl.h>
-#include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/types.h>
 #include <unistd.h>
 
 Q_GLOBAL_STATIC(GnomeSettingsPrivate, gnomeSettingsGlobal)
@@ -86,12 +86,12 @@ GnomeSettings::GnomeSettings(QObject *parent)
 {
 }
 
-QFont * GnomeSettings::font(QPlatformTheme::Font type)
+QFont *GnomeSettings::font(QPlatformTheme::Font type)
 {
     return gnomeSettingsGlobal->font(type);
 }
 
-QPalette * GnomeSettings::palette()
+QPalette *GnomeSettings::palette()
 {
     return gnomeSettingsGlobal->palette();
 }
@@ -136,15 +136,15 @@ static inline bool checkUsePortalSupport()
     return !QStandardPaths::locate(QStandardPaths::RuntimeLocation, QStringLiteral("flatpak-info")).isEmpty() || qEnvironmentVariableIsSet("SNAP");
 }
 
-void gtkMessageHandler(const gchar *log_domain,
-                       GLogLevelFlags log_level,
-                       const gchar *message,
-                       gpointer unused_data) {
+void gtkMessageHandler(const gchar *log_domain, GLogLevelFlags log_level, const gchar *message, gpointer unused_data)
+{
     /* Silence false-positive Gtk warnings (we are using Xlib to set
      * the WM_TRANSIENT_FOR hint).
      */
-    if (g_strcmp0(message, "GtkDialog mapped without a transient parent. "
-                           "This is discouraged.") != 0) {
+    if (g_strcmp0(message,
+                  "GtkDialog mapped without a transient parent. "
+                  "This is discouraged.")
+        != 0) {
         /* For other messages, call the default handler. */
         g_log_default_handler(log_domain, log_level, message, unused_data);
     }
@@ -190,7 +190,12 @@ GnomeSettingsPrivate::GnomeSettingsPrivate(QObject *parent)
     m_hints[QPlatformTheme::PasswordMaskCharacter] = QVariant(QChar(0x2022));
 
     // Watch for changes
-    QStringList watchListDesktopInterface = { "changed::gtk-theme", "changed::icon-theme", "changed::cursor-blink-time", "changed::font-name", "changed::monospace-font-name", "changed::cursor-size" };
+    QStringList watchListDesktopInterface = {"changed::gtk-theme",
+                                             "changed::icon-theme",
+                                             "changed::cursor-blink-time",
+                                             "changed::font-name",
+                                             "changed::monospace-font-name",
+                                             "changed::cursor-size"};
     for (const QString &watchedProperty : watchListDesktopInterface) {
         g_signal_connect(m_settings, watchedProperty.toStdString().c_str(), G_CALLBACK(gsettingPropertyChanged), this);
 
@@ -200,14 +205,18 @@ GnomeSettingsPrivate::GnomeSettingsPrivate(QObject *parent)
         }
     }
 
-    QStringList watchListWmPreferences = { "changed::titlebar-font", "changed::button-layout" };
+    QStringList watchListWmPreferences = {"changed::titlebar-font", "changed::button-layout"};
     for (const QString &watchedProperty : watchListWmPreferences) {
         g_signal_connect(m_gnomeDesktopSettings, watchedProperty.toStdString().c_str(), G_CALLBACK(gsettingPropertyChanged), this);
     }
 
     if (m_usePortal) {
-        QDBusConnection::sessionBus().connect(QString(), QStringLiteral("/org/freedesktop/portal/desktop"), QStringLiteral("org.freedesktop.portal.Settings"),
-                                              QStringLiteral("SettingChanged"), this, SLOT(portalSettingChanged(QString,QString,QDBusVariant)));
+        QDBusConnection::sessionBus().connect(QString(),
+                                              QStringLiteral("/org/freedesktop/portal/desktop"),
+                                              QStringLiteral("org.freedesktop.portal.Settings"),
+                                              QStringLiteral("SettingChanged"),
+                                              this,
+                                              SLOT(portalSettingChanged(QString, QString, QDBusVariant)));
     }
 
     if (QGuiApplication::platformName() != QStringLiteral("xcb")) {
@@ -221,13 +230,14 @@ GnomeSettingsPrivate::GnomeSettingsPrivate(QObject *parent)
     loadTitlebar();
 
     if (m_gtkThemeHighContrastVariant) {
-        m_palette = new QPalette(Adwaita::Colors::palette(m_gtkThemeDarkVariant ? Adwaita::ColorVariant::AdwaitaHighcontrastInverse : Adwaita::ColorVariant::AdwaitaHighcontrast));
+        m_palette = new QPalette(
+            Adwaita::Colors::palette(m_gtkThemeDarkVariant ? Adwaita::ColorVariant::AdwaitaHighcontrastInverse : Adwaita::ColorVariant::AdwaitaHighcontrast));
     } else {
         m_palette = new QPalette(Adwaita::Colors::palette(m_gtkThemeDarkVariant ? Adwaita::ColorVariant::AdwaitaDark : Adwaita::ColorVariant::Adwaita));
     }
 
     if (m_canUseFileChooserPortal) {
-        QTimer::singleShot(0, this, [this] () {
+        QTimer::singleShot(0, this, [this]() {
             const QString filePath = QStringLiteral("/proc/%1/root").arg(QCoreApplication::applicationPid());
             struct stat info;
             if (lstat(filePath.toStdString().c_str(), &info) == 0) {
@@ -249,7 +259,7 @@ GnomeSettingsPrivate::GnomeSettingsPrivate(QObject *parent)
             message << QLatin1String("org.freedesktop.portal.FileChooser") << QLatin1String("version");
             QDBusPendingCall pendingCall = QDBusConnection::sessionBus().asyncCall(message);
             QDBusPendingCallWatcher *watcher = new QDBusPendingCallWatcher(pendingCall);
-            QObject::connect(watcher, &QDBusPendingCallWatcher::finished, [this] (QDBusPendingCallWatcher *watcher) {
+            QObject::connect(watcher, &QDBusPendingCallWatcher::finished, [this](QDBusPendingCallWatcher *watcher) {
                 QDBusPendingReply<QVariant> reply = *watcher;
                 if (reply.isValid()) {
                     uint fileChooserPortalVersion = reply.value().toUInt();
@@ -277,7 +287,7 @@ GnomeSettingsPrivate::~GnomeSettingsPrivate()
     g_object_unref(m_settings);
 }
 
-QFont * GnomeSettingsPrivate::font(QPlatformTheme::Font type) const
+QFont *GnomeSettingsPrivate::font(QPlatformTheme::Font type) const
 {
     if (m_fonts.contains(type)) {
         return m_fonts[type];
@@ -289,7 +299,7 @@ QFont * GnomeSettingsPrivate::font(QPlatformTheme::Font type) const
     }
 }
 
-QPalette * GnomeSettingsPrivate::palette() const
+QPalette *GnomeSettingsPrivate::palette() const
 {
     return m_palette;
 }
@@ -354,12 +364,12 @@ void GnomeSettingsPrivate::gsettingPropertyChanged(GSettings *settings, gchar *k
         if (QGuiApplication::platformName() != QStringLiteral("xcb")) {
             gnomeSettings->cursorThemeChanged();
         }
-    // Org.gnome.wm.preferences
+        // Org.gnome.wm.preferences
     } else if (changedProperty == QStringLiteral("titlebar-font")) {
         gnomeSettings->fontChanged();
     } else if (changedProperty == QStringLiteral("button-layout")) {
         gnomeSettings->loadTitlebar();
-    // Fallback
+        // Fallback
     } else {
         qCDebug(QGnomePlatform) << "GSetting property change: " << key;
     }
@@ -376,7 +386,7 @@ void GnomeSettingsPrivate::cursorBlinkTimeChanged()
         m_hints[QPlatformTheme::CursorFlashTime] = 1200;
     }
 
-    //If we are not a QApplication, means that we are a QGuiApplication, then we do nothing.
+    // If we are not a QApplication, means that we are a QGuiApplication, then we do nothing.
     if (!qobject_cast<QApplication *>(QCoreApplication::instance())) {
         return;
     }
@@ -431,7 +441,7 @@ void GnomeSettingsPrivate::iconsChanged()
         m_hints[QPlatformTheme::SystemIconThemeName] = "Adwaita";
     }
 
-    //If we are not a QApplication, means that we are a QGuiApplication, then we do nothing.
+    // If we are not a QApplication, means that we are a QGuiApplication, then we do nothing.
     if (!qobject_cast<QApplication *>(QCoreApplication::instance())) {
         return;
     }
@@ -548,14 +558,12 @@ void GnomeSettingsPrivate::loadTheme()
         styleNames << QStringLiteral("adwaita-dark");
     }
 
-    styleNames << QStringLiteral("adwaita")
-               << QStringLiteral("fusion")
-               << QStringLiteral("windows");
+    styleNames << QStringLiteral("adwaita") << QStringLiteral("fusion") << QStringLiteral("windows");
     m_hints[QPlatformTheme::StyleNames] = styleNames;
 }
 
 // FIXME: duplicate
-static QFont* qt_fontFromString(const QString &name)
+static QFont *qt_fontFromString(const QString &name)
 {
     QFont *font = new QFont(QLatin1String("Sans"), 10);
 
@@ -589,7 +597,7 @@ static QFont* qt_fontFromString(const QString &name)
     }
 
     PangoStyle style = pango_font_description_get_style(desc);
-    if (style == PANGO_STYLE_ITALIC)  {
+    if (style == PANGO_STYLE_ITALIC) {
         font->setStyle(QFont::StyleItalic);
     } else if (style == PANGO_STYLE_OBLIQUE) {
         font->setStyle(QFont::StyleOblique);
@@ -606,7 +614,7 @@ void GnomeSettingsPrivate::loadFonts()
     qDeleteAll(m_fonts);
     m_fonts.clear();
 
-    const QStringList fontTypes { "font-name", "monospace-font-name", "titlebar-font" };
+    const QStringList fontTypes{"font-name", "monospace-font-name", "titlebar-font"};
 
     for (const QString &fontType : fontTypes) {
         const QString fontName = getSettingsProperty<QString>(fontType);
@@ -629,7 +637,8 @@ void GnomeSettingsPrivate::loadFonts()
     }
 }
 
-void GnomeSettingsPrivate::loadStaticHints() {
+void GnomeSettingsPrivate::loadStaticHints()
+{
     int cursorBlinkTime = getSettingsProperty<int>(QStringLiteral("cursor-blink-time"));
     if (cursorBlinkTime >= 100) {
         qCDebug(QGnomePlatform) << "Cursor blink time: " << cursorBlinkTime;
@@ -678,7 +687,7 @@ void GnomeSettingsPrivate::portalSettingChanged(const QString &group, const QStr
 {
     if (group == QStringLiteral("org.gnome.desktop.interface") || group == QStringLiteral("org.gnome.desktop.wm.preferences")) {
         m_portalSettings[group][key] = value.variant();
-        gsettingPropertyChanged(nullptr, const_cast<gchar*>(key.toStdString().c_str()), this);
+        gsettingPropertyChanged(nullptr, const_cast<gchar *>(key.toStdString().c_str()), this);
     }
 }
 
@@ -726,7 +735,7 @@ QString GnomeSettingsPrivate::kvantumThemeForGtkTheme() const
 
     // No config found in theme folder, look for a Kv<Theme> as shipped as part of Kvantum itself
     // (Kvantum ships KvAdapta, KvAmbiance, KvArc, etc.
-    QStringList names { QStringLiteral("Kv") + gtkName };
+    QStringList names{QStringLiteral("Kv") + gtkName};
 
     // Convert Ark-Dark to ArcDark to look for KvArcDark
     if (gtkName.indexOf("-") != -1) {
@@ -752,16 +761,18 @@ void GnomeSettingsPrivate::configureKvantum(const QString &theme) const
     }
 }
 
-template <typename T>
-T GnomeSettingsPrivate::getSettingsProperty(GSettings *settings, const QString &property, bool *ok) {
+template<typename T>
+T GnomeSettingsPrivate::getSettingsProperty(GSettings *settings, const QString &property, bool *ok)
+{
     Q_UNUSED(settings)
     Q_UNUSED(property)
     Q_UNUSED(ok)
     return {};
 }
 
-template <typename T>
-T GnomeSettingsPrivate::getSettingsProperty(const QString &property, bool *ok) {
+template<typename T>
+T GnomeSettingsPrivate::getSettingsProperty(const QString &property, bool *ok)
+{
     GSettings *settings = m_settings;
 
     // In case of Cinnamon session, we most probably want to return the value from here if possible
@@ -801,27 +812,29 @@ T GnomeSettingsPrivate::getSettingsProperty(const QString &property, bool *ok) {
     return getSettingsProperty<T>(settings, property, ok);
 }
 
-
-template <>
-int GnomeSettingsPrivate::getSettingsProperty(GSettings *settings, const QString &property, bool *ok) {
+template<>
+int GnomeSettingsPrivate::getSettingsProperty(GSettings *settings, const QString &property, bool *ok)
+{
     if (ok) {
         *ok = true;
     }
     return g_settings_get_int(settings, property.toStdString().c_str());
 }
 
-template <>
-QString GnomeSettingsPrivate::getSettingsProperty(GSettings *settings, const QString &property, bool *ok) {
+template<>
+QString GnomeSettingsPrivate::getSettingsProperty(GSettings *settings, const QString &property, bool *ok)
+{
     // be exception and resources safe
-    std::unique_ptr<gchar, void(*)(gpointer)> raw {g_settings_get_string(settings, property.toStdString().c_str()), g_free};
+    std::unique_ptr<gchar, void (*)(gpointer)> raw{g_settings_get_string(settings, property.toStdString().c_str()), g_free};
     if (ok) {
         *ok = !!raw;
     }
     return QString{raw.get()};
 }
 
-template <>
-qreal GnomeSettingsPrivate::getSettingsProperty(GSettings *settings, const QString &property, bool *ok) {
+template<>
+qreal GnomeSettingsPrivate::getSettingsProperty(GSettings *settings, const QString &property, bool *ok)
+{
     if (ok) {
         *ok = true;
     }

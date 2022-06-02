@@ -34,23 +34,16 @@ class GnomeSettings : public QObject
 {
     Q_OBJECT
 public:
-    enum TitlebarButtonsPlacement {
-        LeftPlacement = 0,
-        RightPlacement = 1
-    };
+    enum TitlebarButtonsPlacement { LeftPlacement = 0, RightPlacement = 1 };
 
-    enum TitlebarButton {
-        CloseButton = 0x1,
-        MinimizeButton = 0x02,
-        MaximizeButton = 0x04
-    };
+    enum TitlebarButton { CloseButton = 0x1, MinimizeButton = 0x02, MaximizeButton = 0x04 };
     Q_DECLARE_FLAGS(TitlebarButtons, TitlebarButton);
 
     explicit GnomeSettings(QObject *parent = nullptr);
     virtual ~GnomeSettings() = default;
 
-    static QFont * font(QPlatformTheme::Font type);
-    static QPalette * palette();
+    static QFont *font(QPlatformTheme::Font type);
+    static QPalette *palette();
     static QVariant hint(QPlatformTheme::ThemeHint hint);
     static bool canUseFileChooserPortal();
     static bool isGtkThemeDarkVariant();
@@ -59,7 +52,6 @@ public:
     static TitlebarButtons titlebarButtons();
     static TitlebarButtonsPlacement titlebarButtonPlacement();
 };
-
 
 Q_DECLARE_OPERATORS_FOR_FLAGS(GnomeSettings::TitlebarButtons)
 

@@ -19,9 +19,13 @@
 
 #include "platformplugin.h"
 
-QGnomePlatformThemePlugin::QGnomePlatformThemePlugin(QObject *parent) : QPlatformThemePlugin(parent) { }
+QGnomePlatformThemePlugin::QGnomePlatformThemePlugin(QObject *parent)
+    : QPlatformThemePlugin(parent)
+{
+}
 
-QPlatformTheme *QGnomePlatformThemePlugin::create(const QString &key, const QStringList &paramList) {
+QPlatformTheme *QGnomePlatformThemePlugin::create(const QString &key, const QStringList &paramList)
+{
     Q_UNUSED(paramList)
     if (key == "gnome" || key == "gtk3" || key == "qgnomeplatform")
         return new QGnomePlatformTheme();

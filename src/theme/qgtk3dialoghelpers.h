@@ -42,9 +42,9 @@
 
 #include <QtCore/qhash.h>
 #include <QtCore/qlist.h>
-#include <QtCore/qurl.h>
 #include <QtCore/qscopedpointer.h>
 #include <QtCore/qstring.h>
+#include <QtCore/qurl.h>
 #include <qpa/qplatformdialoghelper.h>
 
 typedef struct _GtkWidget GtkWidget;
@@ -117,8 +117,8 @@ private:
 
     QUrl _dir;
     QList<QUrl> _selection;
-    QHash<QString, GtkFileFilter*> _filters;
-    QHash<GtkFileFilter*, QString> _filterNames;
+    QHash<QString, GtkFileFilter *> _filters;
+    QHash<GtkFileFilter *, QString> _filterNames;
     QScopedPointer<QGtk3Dialog> d;
     GtkWidget *previewWidget;
 };

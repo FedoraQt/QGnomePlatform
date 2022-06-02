@@ -113,7 +113,8 @@ QPlatformDialogHelper *QGnomePlatformTheme::createPlatformDialogHelper(QPlatform
 
 #if QT_VERSION < 0x060000
 #ifndef QT_NO_SYSTEMTRAYICON
-static bool isDBusTrayAvailable() {
+static bool isDBusTrayAvailable()
+{
     static bool dbusTrayAvailable = false;
     static bool dbusTrayAvailableKnown = false;
     if (!dbusTrayAvailableKnown) {
@@ -129,7 +130,7 @@ static bool isDBusTrayAvailable() {
 #endif
 
 #ifndef QT_NO_SYSTEMTRAYICON
-QPlatformSystemTrayIcon* QGnomePlatformTheme::createPlatformSystemTrayIcon() const
+QPlatformSystemTrayIcon *QGnomePlatformTheme::createPlatformSystemTrayIcon() const
 {
 #if QT_VERSION < 0x060000
     if (isDBusTrayAvailable()) {

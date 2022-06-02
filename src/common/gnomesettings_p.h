@@ -73,8 +73,10 @@ protected:
     static void gsettingPropertyChanged(GSettings *settings, gchar *key, GnomeSettingsPrivate *gnomeSettings);
 
 private:
-    template <typename T> T getSettingsProperty(GSettings *settings, const QString &property, bool *ok = nullptr);
-    template <typename T> T getSettingsProperty(const QString &property, bool *ok = nullptr);
+    template<typename T>
+    T getSettingsProperty(GSettings *settings, const QString &property, bool *ok = nullptr);
+    template<typename T>
+    T getSettingsProperty(const QString &property, bool *ok = nullptr);
     QStringList xdgIconThemePaths() const;
     QString kvantumThemeForGtkTheme() const;
     void configureKvantum(const QString &theme) const;
@@ -89,7 +91,7 @@ private:
     GSettings *m_cinnamonSettings = nullptr;
     GSettings *m_gnomeDesktopSettings = nullptr;
     GSettings *m_settings = nullptr;
-    QHash<QPlatformTheme::Font, QFont*> m_fonts;
+    QHash<QPlatformTheme::Font, QFont *> m_fonts;
     QHash<QPlatformTheme::ThemeHint, QVariant> m_hints;
     QMap<QString, QVariantMap> m_portalSettings;
     QPalette *m_palette = nullptr;

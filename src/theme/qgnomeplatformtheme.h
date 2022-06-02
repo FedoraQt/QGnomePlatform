@@ -20,9 +20,9 @@
 #ifndef QGNOME_PLATFORM_THEME_H
 #define QGNOME_PLATFORM_THEME_H
 
-#include <QVariant>
 #include <QFont>
 #include <QPalette>
+#include <QVariant>
 #include <qpa/qplatformtheme.h>
 
 class QGnomePlatformTheme : public QPlatformTheme

@@ -33,4 +33,3 @@ public:
 };
 
 #endif // DECORATIONPLUGIN_H
-

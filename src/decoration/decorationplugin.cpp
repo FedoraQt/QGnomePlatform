@@ -27,4 +27,3 @@ QWaylandAbstractDecoration *QGnomePlatformDecorationPlugin::create(const QString
         return new QGnomePlatformDecoration();
     return nullptr;
 }
-

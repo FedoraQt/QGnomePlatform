@@ -20,8 +20,8 @@
 #ifndef QXDGDESKTOPPORTALFILEDIALOG_P_H
 #define QXDGDESKTOPPORTALFILEDIALOG_P_H
 
-#include <qpa/qplatformdialoghelper.h>
 #include <QVector>
+#include <qpa/qplatformdialoghelper.h>
 
 QT_BEGIN_NAMESPACE
 
@@ -32,10 +32,7 @@ class QXdgDesktopPortalFileDialog : public QPlatformFileDialogHelper
     Q_OBJECT
     Q_DECLARE_PRIVATE(QXdgDesktopPortalFileDialog)
 public:
-    enum ConditionType : uint {
-        GlobalPattern = 0,
-        MimeType = 1
-    };
+    enum ConditionType : uint { GlobalPattern = 0, MimeType = 1 };
     // Filters a(sa(us))
     // Example: [('Images', [(0, '*.ico'), (1, 'image/png')]), ('Text', [(0, '*.txt')])]
     struct FilterCondition {
@@ -46,7 +43,8 @@ public:
 
     struct Filter {
         QString name; // E.g. 'Images' or 'Text
-        FilterConditionList filterConditions;; // E.g. [(0, '*.ico'), (1, 'image/png')] or [(0, '*.txt')]
+        FilterConditionList filterConditions;
+        ; // E.g. [(0, '*.ico'), (1, 'image/png')] or [(0, '*.txt')]
     };
     typedef QVector<Filter> FilterList;
 
@@ -86,4 +84,3 @@ Q_DECLARE_METATYPE(QXdgDesktopPortalFileDialog::Filter);
 Q_DECLARE_METATYPE(QXdgDesktopPortalFileDialog::FilterList);
 
 #endif // QXDGDESKTOPPORTALFILEDIALOG_P_H
-

@@ -39,20 +39,20 @@
 
 #include "qgtk3dialoghelpers.h"
 
-#include <qeventloop.h>
-#include <qwindow.h>
 #include <qcolor.h>
 #include <qdebug.h>
-#include <qfont.h>
+#include <qeventloop.h>
 #include <qfileinfo.h>
+#include <qfont.h>
+#include <qwindow.h>
 
 #include <private/qguiapplication_p.h>
 #include <qpa/qplatformfontdatabase.h>
 
 #undef signals
-#include <gtk/gtk.h>
 #include <gdk/gdk.h>
 #include <gdk/gdkx.h>
+#include <gtk/gtk.h>
 #include <pango/pango.h>
 
 QT_BEGIN_NAMESPACE
@@ -95,7 +95,8 @@ private:
     GtkWidget *gtkWidget;
 };
 
-QGtk3Dialog::QGtk3Dialog(GtkWidget *gtkWidget) : gtkWidget(gtkWidget)
+QGtk3Dialog::QGtk3Dialog(GtkWidget *gtkWidget)
+    : gtkWidget(gtkWidget)
 {
     g_signal_connect_swapped(G_OBJECT(gtkWidget), "response", G_CALLBACK(onResponse), this);
     g_signal_connect(G_OBJECT(gtkWidget), "delete-event", G_CALLBACK(gtk_widget_hide_on_delete), NULL);
@@ -129,8 +130,7 @@ void QGtk3Dialog::exec()
 bool QGtk3Dialog::show(Qt::WindowFlags flags, Qt::WindowModality modality, QWindow *parent)
 {
     if (parent) {
-        connect(parent, &QWindow::destroyed, this, &QGtk3Dialog::onParentWindowDestroyed,
-            Qt::UniqueConnection);
+        connect(parent, &QWindow::destroyed, this, &QGtk3Dialog::onParentWindowDestroyed, Qt::UniqueConnection);
     }
     setParent(parent);
     setFlags(flags);
@@ -142,10 +142,8 @@ bool QGtk3Dialog::show(Qt::WindowFlags flags, Qt::WindowModality modality, QWind
 #ifdef GDK_WINDOWING_X11
     if (parent) {
         GdkDisplay *gdkDisplay = gdk_window_get_display(gdkWindow);
-        if (GDK_IS_X11_DISPLAY (gdkDisplay)) {
-            XSetTransientForHint(gdk_x11_display_get_xdisplay(gdkDisplay),
-                                gdk_x11_window_get_xid(gdkWindow),
-                                parent->winId());
+        if (GDK_IS_X11_DISPLAY(gdkDisplay)) {
+            XSetTransientForHint(gdk_x11_display_get_xdisplay(gdkDisplay), gdk_x11_window_get_xid(gdkWindow), parent->winId());
         }
     }
 #endif
@@ -252,10 +250,8 @@ void QGtk3ColorDialogHelper::applyOptions()
 
 QGtk3FileDialogHelper::QGtk3FileDialogHelper()
 {
-    d.reset(new QGtk3Dialog(gtk_file_chooser_dialog_new("", 0,
-                                                        GTK_FILE_CHOOSER_ACTION_OPEN,
-                                                        GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
-                                                        GTK_STOCK_OK, GTK_RESPONSE_OK, NULL)));
+    d.reset(new QGtk3Dialog(
+        gtk_file_chooser_dialog_new("", 0, GTK_FILE_CHOOSER_ACTION_OPEN, GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL, GTK_STOCK_OK, GTK_RESPONSE_OK, NULL)));
     connect(d.data(), SIGNAL(accept()), this, SLOT(onAccepted()));
     connect(d.data(), SIGNAL(reject()), this, SIGNAL(reject()));
 
@@ -351,8 +347,8 @@ QList<QUrl> QGtk3FileDialogHelper::selectedFiles() const
     QList<QUrl> selection;
     GtkDialog *gtkDialog = d->gtkDialog();
     GSList *filenames = gtk_file_chooser_get_filenames(GTK_FILE_CHOOSER(gtkDialog));
-    for (GSList *it  = filenames; it; it = it->next)
-        selection += QUrl::fromLocalFile(QString::fromUtf8((const char*)it->data));
+    for (GSList *it = filenames; it; it = it->next)
+        selection += QUrl::fromLocalFile(QString::fromUtf8((const char *)it->data));
     g_slist_free(filenames);
     return selection;
 }
@@ -393,7 +389,6 @@ void QGtk3FileDialogHelper::onAccepted()
     if (files.count() == 1)
         emit fileSelected(files.first());
     */
-
 }
 
 void QGtk3FileDialogHelper::onSelectionChanged(GtkDialog *gtkDialog, QGtk3FileDialogHelper *helper)
