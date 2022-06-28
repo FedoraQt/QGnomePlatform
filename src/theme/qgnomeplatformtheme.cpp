@@ -58,7 +58,7 @@ QGnomePlatformTheme::~QGnomePlatformTheme()
 
 QVariant QGnomePlatformTheme::themeHint(QPlatformTheme::ThemeHint hintType) const
 {
-    QVariant hint = GnomeSettings::hint(hintType);
+    QVariant hint = GnomeSettings::getInstance().hint(hintType);
     if (hint.isValid()) {
         return hint;
     } else {
@@ -68,14 +68,14 @@ QVariant QGnomePlatformTheme::themeHint(QPlatformTheme::ThemeHint hintType) cons
 
 const QFont *QGnomePlatformTheme::font(Font type) const
 {
-    return GnomeSettings::font(type);
+    return GnomeSettings::getInstance().font(type);
 }
 
 const QPalette *QGnomePlatformTheme::palette(Palette type) const
 {
     Q_UNUSED(type)
 
-    return GnomeSettings::palette();
+    return GnomeSettings::getInstance().palette();
 }
 
 bool QGnomePlatformTheme::usePlatformNativeDialog(QPlatformTheme::DialogType type) const
@@ -96,7 +96,7 @@ QPlatformDialogHelper *QGnomePlatformTheme::createPlatformDialogHelper(QPlatform
 {
     switch (type) {
     case QPlatformTheme::FileDialog: {
-        if (GnomeSettings::canUseFileChooserPortal()) {
+        if (GnomeSettings::getInstance().canUseFileChooserPortal()) {
             return new QXdgDesktopPortalFileDialog;
         } else {
             return new QGtk3FileDialogHelper;

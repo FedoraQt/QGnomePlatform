@@ -81,30 +81,21 @@ QGnomePlatformDecoration::QGnomePlatformDecoration()
     option.setWrapMode(QTextOption::NoWrap);
     m_windowTitle.setTextOption(option);
 
-    // Colors
-    // TODO: move colors used for decorations to Adwaita-qt
-    const bool darkVariant = GnomeSettings::isGtkThemeDarkVariant();
-    const bool highContrastVariant = GnomeSettings::isGtkThemeHighContrastVariant();
+    connect(&GnomeSettings::getInstance(), &GnomeSettings::themeChanged, this, [this] () {
+        loadConfiguration();
+        forceRepaint();
+    });
+    connect(&GnomeSettings::getInstance(), &GnomeSettings::titlebarChanged, this, [this] () {
+        loadConfiguration();
+        forceRepaint();
+    });
 
-    m_adwaitaVariant = darkVariant ? highContrastVariant ? Adwaita::ColorVariant::AdwaitaHighcontrastInverse : Adwaita::ColorVariant::AdwaitaDark
-        : highContrastVariant      ? Adwaita::ColorVariant::AdwaitaHighcontrast
-                                   : Adwaita::ColorVariant::Adwaita;
-
-    const QPalette &palette(Adwaita::Colors::palette(m_adwaitaVariant));
-
-    m_foregroundColor = palette.color(QPalette::Active, QPalette::WindowText);
-    m_foregroundInactiveColor = palette.color(QPalette::Inactive, QPalette::WindowText);
-    m_backgroundColorStart = darkVariant ? QColor("#262626") : QColor("#dad6d2"); // Adwaita GtkHeaderBar color
-    m_backgroundColorEnd = darkVariant ? QColor("#2b2b2b") : QColor("#e1dedb"); // Adwaita GtkHeaderBar color
-    m_foregroundInactiveColor = darkVariant ? QColor("#919190") : QColor("#929595");
-    m_backgroundInactiveColor = darkVariant ? QColor("#353535") : QColor("#f6f5f4");
-    m_borderColor = darkVariant ? Adwaita::Colors::transparentize(QColor("#1b1b1b"), 0.1) : Adwaita::Colors::transparentize(QColor("black"), 0.77);
-    m_borderInactiveColor = darkVariant ? Adwaita::Colors::transparentize(QColor("#1b1b1b"), 0.1) : Adwaita::Colors::transparentize(QColor("black"), 0.82);
+    loadConfiguration();
 }
 
 QRectF QGnomePlatformDecoration::closeButtonRect() const
 {
-    if (GnomeSettings::titlebarButtonPlacement() == GnomeSettings::RightPlacement) {
+    if (GnomeSettings::getInstance().titlebarButtonPlacement() == GnomeSettings::getInstance().RightPlacement) {
         return QRectF(window()->frameGeometry().width() - BUTTON_WIDTH - (BUTTON_SPACING * 0) - BUTTON_MARGINS - margins().right(),
                       (margins().top() - BUTTON_WIDTH + margins().bottom()) / 2,
                       BUTTON_WIDTH,
@@ -119,7 +110,7 @@ QRectF QGnomePlatformDecoration::closeButtonRect() const
 
 QRectF QGnomePlatformDecoration::maximizeButtonRect() const
 {
-    if (GnomeSettings::titlebarButtonPlacement() == GnomeSettings::RightPlacement) {
+    if (GnomeSettings::getInstance().titlebarButtonPlacement() == GnomeSettings::getInstance().RightPlacement) {
         return QRectF(window()->frameGeometry().width() - (BUTTON_WIDTH * 2) - (BUTTON_SPACING * 1) - BUTTON_MARGINS - margins().right(),
                       (margins().top() - BUTTON_WIDTH + margins().bottom()) / 2,
                       BUTTON_WIDTH,
@@ -134,9 +125,9 @@ QRectF QGnomePlatformDecoration::maximizeButtonRect() const
 
 QRectF QGnomePlatformDecoration::minimizeButtonRect() const
 {
-    const bool maximizeEnabled = GnomeSettings::titlebarButtons().testFlag(GnomeSettings::MaximizeButton);
+    const bool maximizeEnabled = GnomeSettings::getInstance().titlebarButtons().testFlag(GnomeSettings::getInstance().MaximizeButton);
 
-    if (GnomeSettings::titlebarButtonPlacement() == GnomeSettings::RightPlacement) {
+    if (GnomeSettings::getInstance().titlebarButtonPlacement() == GnomeSettings::getInstance().RightPlacement) {
         return QRectF(window()->frameGeometry().width() - BUTTON_WIDTH * (maximizeEnabled ? 3 : 2) - (BUTTON_SPACING * (maximizeEnabled ? 2 : 1))
                           - BUTTON_MARGINS - margins().right(),
                       (margins().top() - BUTTON_WIDTH + margins().bottom()) / 2,
@@ -476,7 +467,7 @@ void QGnomePlatformDecoration::paint(QPaintDevice *device)
         }
 
         QRect titleBar = top;
-        if (GnomeSettings::titlebarButtonPlacement() == GnomeSettings::RightPlacement) {
+        if (GnomeSettings::getInstance().titlebarButtonPlacement() == GnomeSettings::getInstance().RightPlacement) {
             titleBar.setLeft(margins().left());
             titleBar.setRight(static_cast<int>(minimizeButtonRect().left()) - 8);
         } else {
@@ -491,7 +482,7 @@ void QGnomePlatformDecoration::paint(QPaintDevice *device)
         int dx = (static_cast<int>(top.width()) - static_cast<int>(size.width())) / 2;
         int dy = (static_cast<int>(top.height()) - static_cast<int>(size.height())) / 2;
         QFont font;
-        const QFont *themeFont = GnomeSettings::font(QPlatformTheme::TitleBarFont);
+        const QFont *themeFont = GnomeSettings::getInstance().font(QPlatformTheme::TitleBarFont);
         font.setPointSizeF(themeFont->pointSizeF());
         font.setFamily(themeFont->family());
         font.setBold(themeFont->bold());
@@ -505,7 +496,7 @@ void QGnomePlatformDecoration::paint(QPaintDevice *device)
     renderButton(&p, closeButtonRect(), Adwaita::ButtonType::ButtonClose, m_closeButtonHovered && active, m_clicking == Button::Close);
 
     // Maximize button
-    if (GnomeSettings::titlebarButtons().testFlag(GnomeSettings::MaximizeButton)) {
+    if (GnomeSettings::getInstance().titlebarButtons().testFlag(GnomeSettings::getInstance().MaximizeButton)) {
         renderButton(&p,
                      maximizeButtonRect(),
                      (window()->windowStates() & Qt::WindowMaximized) ? Adwaita::ButtonType::ButtonRestore : Adwaita::ButtonType::ButtonMaximize,
@@ -514,7 +505,7 @@ void QGnomePlatformDecoration::paint(QPaintDevice *device)
     }
 
     // Minimize button
-    if (GnomeSettings::titlebarButtons().testFlag(GnomeSettings::MinimizeButton)) {
+    if (GnomeSettings::getInstance().titlebarButtons().testFlag(GnomeSettings::getInstance().MinimizeButton)) {
         renderButton(&p, minimizeButtonRect(), Adwaita::ButtonType::ButtonMinimize, m_minimizeButtonHovered && active, m_clicking == Button::Minimize);
     }
 }
@@ -540,9 +531,9 @@ bool QGnomePlatformDecoration::doubleClickButton(Qt::MouseButtons b, const QPoin
     if (b & Qt::LeftButton) {
         const qint64 clickInterval = m_lastButtonClick.msecsTo(currentTime);
         m_lastButtonClick = currentTime;
-        const int doubleClickDistance = GnomeSettings::hint(QPlatformTheme::MouseDoubleClickDistance).toInt();
+        const int doubleClickDistance = GnomeSettings::getInstance().hint(QPlatformTheme::MouseDoubleClickDistance).toInt();
         const QPointF posDiff = m_lastButtonClickPosition - local;
-        if ((clickInterval <= GnomeSettings::hint(QPlatformTheme::MouseDoubleClickInterval).toInt())
+        if ((clickInterval <= GnomeSettings::getInstance().hint(QPlatformTheme::MouseDoubleClickInterval).toInt())
             && ((posDiff.x() <= doubleClickDistance && posDiff.x() >= -doubleClickDistance)
                 && ((posDiff.y() <= doubleClickDistance && posDiff.y() >= -doubleClickDistance)))) {
             return true;
@@ -612,9 +603,9 @@ bool QGnomePlatformDecoration::handleTouch(QWaylandInputDevice *inputDevice,
     if (handled) {
         if (closeButtonRect().contains(local)) {
             QWindowSystemInterface::handleCloseEvent(window());
-        } else if (GnomeSettings::titlebarButtons().testFlag(GnomeSettings::MaximizeButton) && maximizeButtonRect().contains(local)) {
+        } else if (GnomeSettings::getInstance().titlebarButtons().testFlag(GnomeSettings::getInstance().MaximizeButton) && maximizeButtonRect().contains(local)) {
             window()->setWindowStates(window()->windowStates() ^ Qt::WindowMaximized);
-        } else if (GnomeSettings::titlebarButtons().testFlag(GnomeSettings::MinimizeButton) && minimizeButtonRect().contains(local)) {
+        } else if (GnomeSettings::getInstance().titlebarButtons().testFlag(GnomeSettings::getInstance().MinimizeButton) && minimizeButtonRect().contains(local)) {
             window()->setWindowState(Qt::WindowMinimized);
         } else if (local.y() <= margins().top()) {
             waylandWindow()->shellSurface()->move(inputDevice);
@@ -624,6 +615,40 @@ bool QGnomePlatformDecoration::handleTouch(QWaylandInputDevice *inputDevice,
     }
 
     return handled;
+}
+
+void QGnomePlatformDecoration::loadConfiguration()
+{
+    // Colors
+    // TODO: move colors used for decorations to Adwaita-qt
+    const bool darkVariant = GnomeSettings::getInstance().useGtkThemeDarkVariant();
+    const bool highContrastVariant = GnomeSettings::getInstance().useGtkThemeHighContrastVariant();
+
+    m_adwaitaVariant = darkVariant ? highContrastVariant ? Adwaita::ColorVariant::AdwaitaHighcontrastInverse : Adwaita::ColorVariant::AdwaitaDark
+        : highContrastVariant      ? Adwaita::ColorVariant::AdwaitaHighcontrast
+                                   : Adwaita::ColorVariant::Adwaita;
+
+    const QPalette &palette(Adwaita::Colors::palette(m_adwaitaVariant));
+
+    m_foregroundColor = palette.color(QPalette::Active, QPalette::WindowText);
+    m_foregroundInactiveColor = palette.color(QPalette::Inactive, QPalette::WindowText);
+    m_backgroundColorStart = darkVariant ? QColor("#262626") : QColor("#dad6d2"); // Adwaita GtkHeaderBar color
+    m_backgroundColorEnd = darkVariant ? QColor("#2b2b2b") : QColor("#e1dedb"); // Adwaita GtkHeaderBar color
+    m_foregroundInactiveColor = darkVariant ? QColor("#919190") : QColor("#929595");
+    m_backgroundInactiveColor = darkVariant ? QColor("#353535") : QColor("#f6f5f4");
+    m_borderColor = darkVariant ? Adwaita::Colors::transparentize(QColor("#1b1b1b"), 0.1) : Adwaita::Colors::transparentize(QColor("black"), 0.77);
+    m_borderInactiveColor = darkVariant ? Adwaita::Colors::transparentize(QColor("#1b1b1b"), 0.1) : Adwaita::Colors::transparentize(QColor("black"), 0.82);
+}
+
+void QGnomePlatformDecoration::forceRepaint()
+{
+    // Set dirty flag
+    waylandWindow()->decoration()->update();
+    // Force re-paint
+    // NOTE: not sure it's correct, but it's the only way to make it work
+    if (waylandWindow()->backingStore()) {
+        waylandWindow()->backingStore()->flush(window(), QRegion(), QPoint());
+    }
 }
 
 void QGnomePlatformDecoration::processMouseTop(QWaylandInputDevice *inputDevice, const QPointF &local, Qt::MouseButtons b, Qt::KeyboardModifiers mods)
@@ -666,13 +691,13 @@ void QGnomePlatformDecoration::processMouseTop(QWaylandInputDevice *inputDevice,
             m_closeButtonHovered = false;
         }
         updateButtonHoverState(Button::Close);
-    } else if (GnomeSettings::titlebarButtons().testFlag(GnomeSettings::MaximizeButton) && maximizeButtonRect().contains(local)) {
+    } else if (GnomeSettings::getInstance().titlebarButtons().testFlag(GnomeSettings::getInstance().MaximizeButton) && maximizeButtonRect().contains(local)) {
         updateButtonHoverState(Button::Maximize);
         if (clickButton(b, Maximize)) {
             window()->setWindowStates(window()->windowStates() ^ Qt::WindowMaximized);
             m_maximizeButtonHovered = false;
         }
-    } else if (GnomeSettings::titlebarButtons().testFlag(GnomeSettings::MinimizeButton) && minimizeButtonRect().contains(local)) {
+    } else if (GnomeSettings::getInstance().titlebarButtons().testFlag(GnomeSettings::getInstance().MinimizeButton) && minimizeButtonRect().contains(local)) {
         updateButtonHoverState(Button::Minimize);
         if (clickButton(b, Minimize)) {
             window()->setWindowState(Qt::WindowMinimized);
@@ -766,13 +791,7 @@ bool QGnomePlatformDecoration::updateButtonHoverState(Button hoveredButton)
 
     if (m_closeButtonHovered != currentCloseButtonState || m_maximizeButtonHovered != currentMaximizeButtonState
         || m_minimizeButtonHovered != currentMinimizeButtonState) {
-        // Set dirty flag
-        waylandWindow()->decoration()->update();
-        // Force re-paint
-        // NOTE: not sure it's correct, but it's the only way to make it work
-        if (waylandWindow()->backingStore()) {
-            waylandWindow()->backingStore()->flush(window(), QRegion(), QPoint());
-        }
+        forceRepaint();
         return true;
     }
 

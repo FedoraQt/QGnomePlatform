@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2021 Jan Grulich
+ * Copyright (C) 2016-2022 Jan Grulich
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -22,35 +22,70 @@
 
 #include <QFlags>
 #include <QObject>
+#include <QStringList>
 
 #include <qpa/qplatformtheme.h>
 
+#include <memory>
+
 class QFont;
-class QString;
 class QVariant;
 class QPalette;
+
+class HintProvider;
 
 class GnomeSettings : public QObject
 {
     Q_OBJECT
 public:
+    enum Appearance { PreferDark = 1, PreferLight = 2 };
     enum TitlebarButtonsPlacement { LeftPlacement = 0, RightPlacement = 1 };
-
     enum TitlebarButton { CloseButton = 0x1, MinimizeButton = 0x02, MaximizeButton = 0x04 };
     Q_DECLARE_FLAGS(TitlebarButtons, TitlebarButton);
 
     explicit GnomeSettings(QObject *parent = nullptr);
-    virtual ~GnomeSettings() = default;
+    virtual ~GnomeSettings();
 
-    static QFont *font(QPlatformTheme::Font type);
-    static QPalette *palette();
-    static QVariant hint(QPlatformTheme::ThemeHint hint);
-    static bool canUseFileChooserPortal();
-    static bool isGtkThemeDarkVariant();
-    static bool isGtkThemeHighContrastVariant();
-    static QString gtkTheme();
-    static TitlebarButtons titlebarButtons();
-    static TitlebarButtonsPlacement titlebarButtonPlacement();
+    static GnomeSettings &getInstance();
+
+    QFont *font(QPlatformTheme::Font type) const;
+    QPalette *palette() const;
+    QVariant hint(QPlatformTheme::ThemeHint hint) const;
+    bool canUseFileChooserPortal() const;
+    bool useGtkThemeDarkVariant() const;
+    bool useGtkThemeHighContrastVariant() const;
+    QString gtkTheme() const;
+    TitlebarButtons titlebarButtons() const;
+    TitlebarButtonsPlacement titlebarButtonPlacement() const;
+
+Q_SIGNALS:
+    void themeChanged();
+    void titlebarChanged();
+
+private Q_SLOTS:
+    void loadPalette();
+
+    void onCursorBlinkTimeChanged();
+    void onCursorSizeChanged();
+    void onCursorThemeChanged();
+    void onFontChanged();
+    void onIconThemeChanged();
+    void onThemeChanged();
+
+private:
+
+    void configureKvantum(const QString &theme) const;
+    QString kvantumThemeForGtkTheme() const;
+    QStringList styleNames() const;
+    QStringList xdgIconThemePaths() const;
+
+    QFont *m_fallbackFont = nullptr;
+    QPalette *m_palette = nullptr;
+
+    std::unique_ptr<HintProvider> m_hintProvider;
+
+    bool m_usePortal;
+    bool m_canUseFileChooserPortal = false;
 };
 
 Q_DECLARE_OPERATORS_FOR_FLAGS(GnomeSettings::TitlebarButtons)

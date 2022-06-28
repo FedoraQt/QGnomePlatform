@@ -39,15 +39,16 @@ find_package(Qt${QT_VERSION_MAJOR} ${QT_MIN_VERSION} CONFIG REQUIRED COMPONENTS
 )
 
 find_package(Qt${QT_VERSION_MAJOR}Gui ${QT_MIN_VERSION} CONFIG REQUIRED Private)
+
 if (NOT USE_QT6)
     find_package(Qt${QT_VERSION_MAJOR}ThemeSupport REQUIRED)
 endif()
 
 find_package(GSettingSchemas REQUIRED)
 if (USE_QT6)
-    find_package(AdwaitaQt6 "1.4.1" REQUIRED)
+    find_package(AdwaitaQt6 "1.4.2" REQUIRED)
 else()
-    find_package(AdwaitaQt "1.4.1" REQUIRED)
+    find_package(AdwaitaQt "1.4.2" REQUIRED)
 endif()
 
 find_package(PkgConfig REQUIRED)

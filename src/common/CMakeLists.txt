@@ -1,6 +1,9 @@
 
 set(common_SRCS
     gnomesettings.cpp
+    gsettingshintprovider.cpp
+    hintprovider.cpp
+    utils.cpp
 )
 
 add_library(qgnomeplatform${LIBQGNOMEPLATFORM_SUFFIX} SHARED ${common_SRCS})

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2021 Jan Grulich
+ * Copyright (C) 2016-2022 Jan Grulich
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,7 +18,8 @@
  */
 
 #include "gnomesettings.h"
-#include "gnomesettings_p.h"
+#include "hintprovider.h"
+#include "gsettingshintprovider.h"
 
 #if QT_VERSION >= 0x060000
 #include <AdwaitaQt6/adwaitacolors.h>
@@ -35,20 +36,16 @@
 #include <QTimer>
 #include <QVariant>
 
-// QtDBus
-#include <QDBusArgument>
+// QtDbus
 #include <QDBusConnection>
 #include <QDBusMessage>
-#include <QDBusPendingCall>
-#include <QDBusPendingCallWatcher>
 #include <QDBusPendingReply>
-#include <QDBusVariant>
+#include <QDBusPendingCallWatcher>
 
 // QtGui
 #include <QApplication>
 #include <QDialogButtonBox>
 #include <QFont>
-#include <QGuiApplication>
 #include <QMainWindow>
 #include <QPalette>
 #include <QStyleFactory>
@@ -59,156 +56,42 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-Q_GLOBAL_STATIC(GnomeSettingsPrivate, gnomeSettingsGlobal)
-
+Q_GLOBAL_STATIC(GnomeSettings, gnomeSettingsGlobal)
 Q_LOGGING_CATEGORY(QGnomePlatform, "qt.qpa.qgnomeplatform")
-
-const QDBusArgument &operator>>(const QDBusArgument &argument, QMap<QString, QVariantMap> &map)
-{
-    argument.beginMap();
-    map.clear();
-
-    while (!argument.atEnd()) {
-        QString key;
-        QVariantMap value;
-        argument.beginMapEntry();
-        argument >> key >> value;
-        argument.endMapEntry();
-        map.insert(key, value);
-    }
-
-    argument.endMap();
-    return argument;
-}
-
-GnomeSettings::GnomeSettings(QObject *parent)
-    : QObject(parent)
-{
-}
-
-QFont *GnomeSettings::font(QPlatformTheme::Font type)
-{
-    return gnomeSettingsGlobal->font(type);
-}
-
-QPalette *GnomeSettings::palette()
-{
-    return gnomeSettingsGlobal->palette();
-}
-
-bool GnomeSettings::canUseFileChooserPortal()
-{
-    return gnomeSettingsGlobal->canUseFileChooserPortal();
-}
-
-bool GnomeSettings::isGtkThemeDarkVariant()
-{
-    return gnomeSettingsGlobal->isGtkThemeDarkVariant();
-}
-
-bool GnomeSettings::isGtkThemeHighContrastVariant()
-{
-    return gnomeSettingsGlobal->isGtkThemeHighContrastVariant();
-}
-
-QString GnomeSettings::gtkTheme()
-{
-    return gnomeSettingsGlobal->gtkTheme();
-}
-
-QVariant GnomeSettings::hint(QPlatformTheme::ThemeHint hint)
-{
-    return gnomeSettingsGlobal->hint(hint);
-}
-
-GnomeSettings::TitlebarButtons GnomeSettings::titlebarButtons()
-{
-    return gnomeSettingsGlobal->titlebarButtons();
-}
-
-GnomeSettings::TitlebarButtonsPlacement GnomeSettings::titlebarButtonPlacement()
-{
-    return gnomeSettingsGlobal->titlebarButtonPlacement();
-}
 
 static inline bool checkUsePortalSupport()
 {
     return !QStandardPaths::locate(QStandardPaths::RuntimeLocation, QStringLiteral("flatpak-info")).isEmpty() || qEnvironmentVariableIsSet("SNAP");
 }
 
-void gtkMessageHandler(const gchar *log_domain, GLogLevelFlags log_level, const gchar *message, gpointer unused_data)
+GnomeSettings &GnomeSettings::getInstance()
 {
-    /* Silence false-positive Gtk warnings (we are using Xlib to set
-     * the WM_TRANSIENT_FOR hint).
-     */
-    if (g_strcmp0(message,
-                  "GtkDialog mapped without a transient parent. "
-                  "This is discouraged.")
-        != 0) {
-        /* For other messages, call the default handler. */
-        g_log_default_handler(log_domain, log_level, message, unused_data);
-    }
+    return *gnomeSettingsGlobal;
 }
 
-GnomeSettingsPrivate::GnomeSettingsPrivate(QObject *parent)
-    : GnomeSettings(parent)
+GnomeSettings::GnomeSettings(QObject *parent)
+    : QObject(parent)
+    , m_fallbackFont(new QFont(QLatin1String("Sans"), 10))
     , m_usePortal(checkUsePortalSupport())
     , m_canUseFileChooserPortal(!m_usePortal)
-    , m_gnomeDesktopSettings(g_settings_new("org.gnome.desktop.wm.preferences"))
-    , m_settings(g_settings_new("org.gnome.desktop.interface"))
-    , m_fallbackFont(new QFont(QLatin1String("Sans"), 10))
 {
-    gtk_init(nullptr, nullptr);
+    m_hintProvider = std::make_unique<GSettingsHintProvider>(this);
 
-    // Set log handler to suppress false GtkDialog warnings
-    g_log_set_handler("Gtk", G_LOG_LEVEL_MESSAGE, gtkMessageHandler, nullptr);
+    // Initialize some cursor env variables needed by QtWayland
+    onCursorSizeChanged();
+    onCursorThemeChanged();
 
-    // Check if this is a Cinnamon session to use additionally a different setting scheme
-    if (qgetenv("XDG_CURRENT_DESKTOP").toLower() == QStringLiteral("x-cinnamon")) {
-        m_cinnamonSettings = g_settings_new("org.cinnamon.desktop.interface");
-    }
+    connect(m_hintProvider.get(), &HintProvider::cursorBlinkTimeChanged, this, &GnomeSettings::onCursorBlinkTimeChanged);
+    connect(m_hintProvider.get(), &HintProvider::cursorSizeChanged, this, &GnomeSettings::onCursorSizeChanged);
+    connect(m_hintProvider.get(), &HintProvider::cursorThemeChanged, this, &GnomeSettings::onCursorThemeChanged);
+    connect(m_hintProvider.get(), &HintProvider::fontChanged, this, &GnomeSettings::onFontChanged);
+    connect(m_hintProvider.get(), &HintProvider::iconThemeChanged, this, &GnomeSettings::onIconThemeChanged);
+    connect(m_hintProvider.get(), &HintProvider::titlebarChanged, this, &GnomeSettings::titlebarChanged);
+    connect(m_hintProvider.get(), &HintProvider::themeChanged, this, &GnomeSettings::loadPalette);
+    connect(m_hintProvider.get(), &HintProvider::themeChanged, this, &GnomeSettings::themeChanged);
+    connect(m_hintProvider.get(), &HintProvider::themeChanged, this, &GnomeSettings::onThemeChanged);
 
-    if (m_usePortal) {
-        QDBusMessage message = QDBusMessage::createMethodCall(QStringLiteral("org.freedesktop.portal.Desktop"),
-                                                              QStringLiteral("/org/freedesktop/portal/desktop"),
-                                                              QStringLiteral("org.freedesktop.portal.Settings"),
-                                                              QStringLiteral("ReadAll"));
-        message << QStringList{{QStringLiteral("org.gnome.desktop.interface")}, {QStringLiteral("org.gnome.desktop.wm.preferences")}};
-
-        // FIXME: async?
-        QDBusMessage resultMessage = QDBusConnection::sessionBus().call(message);
-        if (resultMessage.type() == QDBusMessage::ReplyMessage) {
-            QDBusArgument dbusArgument = resultMessage.arguments().at(0).value<QDBusArgument>();
-            dbusArgument >> m_portalSettings;
-        }
-    }
-
-    m_hints[QPlatformTheme::DialogButtonBoxLayout] = QDialogButtonBox::GnomeLayout;
-    m_hints[QPlatformTheme::DialogButtonBoxButtonsHaveIcons] = true;
-    m_hints[QPlatformTheme::KeyboardScheme] = QPlatformTheme::GnomeKeyboardScheme;
-    m_hints[QPlatformTheme::IconPixmapSizes] = QVariant::fromValue(QList<int>() << 512 << 256 << 128 << 64 << 32 << 22 << 16 << 8);
-    m_hints[QPlatformTheme::PasswordMaskCharacter] = QVariant(QChar(0x2022));
-
-    // Watch for changes
-    QStringList watchListDesktopInterface = {"changed::gtk-theme",
-                                             "changed::icon-theme",
-                                             "changed::cursor-blink-time",
-                                             "changed::font-name",
-                                             "changed::monospace-font-name",
-                                             "changed::cursor-size"};
-    for (const QString &watchedProperty : watchListDesktopInterface) {
-        g_signal_connect(m_settings, watchedProperty.toStdString().c_str(), G_CALLBACK(gsettingPropertyChanged), this);
-
-        // Additionally watch Cinnamon configuration
-        if (m_cinnamonSettings) {
-            g_signal_connect(m_cinnamonSettings, watchedProperty.toStdString().c_str(), G_CALLBACK(gsettingPropertyChanged), this);
-        }
-    }
-
-    QStringList watchListWmPreferences = {"changed::titlebar-font", "changed::button-layout"};
-    for (const QString &watchedProperty : watchListWmPreferences) {
-        g_signal_connect(m_gnomeDesktopSettings, watchedProperty.toStdString().c_str(), G_CALLBACK(gsettingPropertyChanged), this);
-    }
+    loadPalette();
 
     if (m_usePortal) {
         QDBusConnection::sessionBus().connect(QString(),
@@ -217,23 +100,6 @@ GnomeSettingsPrivate::GnomeSettingsPrivate(QObject *parent)
                                               QStringLiteral("SettingChanged"),
                                               this,
                                               SLOT(portalSettingChanged(QString, QString, QDBusVariant)));
-    }
-
-    if (QGuiApplication::platformName() != QStringLiteral("xcb")) {
-        cursorSizeChanged();
-        cursorThemeChanged();
-    }
-
-    loadFonts();
-    loadStaticHints();
-    loadTheme();
-    loadTitlebar();
-
-    if (m_gtkThemeHighContrastVariant) {
-        m_palette = new QPalette(
-            Adwaita::Colors::palette(m_gtkThemeDarkVariant ? Adwaita::ColorVariant::AdwaitaHighcontrastInverse : Adwaita::ColorVariant::AdwaitaHighcontrast));
-    } else {
-        m_palette = new QPalette(Adwaita::Colors::palette(m_gtkThemeDarkVariant ? Adwaita::ColorVariant::AdwaitaDark : Adwaita::ColorVariant::Adwaita));
     }
 
     if (m_canUseFileChooserPortal) {
@@ -275,117 +141,88 @@ GnomeSettingsPrivate::GnomeSettingsPrivate(QObject *parent)
     }
 }
 
-GnomeSettingsPrivate::~GnomeSettingsPrivate()
+GnomeSettings::~GnomeSettings()
 {
-    qDeleteAll(m_fonts);
     delete m_fallbackFont;
     delete m_palette;
-    if (m_cinnamonSettings) {
-        g_object_unref(m_cinnamonSettings);
-    }
-    g_object_unref(m_gnomeDesktopSettings);
-    g_object_unref(m_settings);
 }
 
-QFont *GnomeSettingsPrivate::font(QPlatformTheme::Font type) const
+QFont *GnomeSettings::font(QPlatformTheme::Font type) const
 {
-    if (m_fonts.contains(type)) {
-        return m_fonts[type];
-    } else if (m_fonts.contains(QPlatformTheme::SystemFont)) {
-        return m_fonts[QPlatformTheme::SystemFont];
+    auto fonts = m_hintProvider->fonts();
+
+    if (fonts.contains(type)) {
+        return fonts[type];
+    } else if (fonts.contains(QPlatformTheme::SystemFont)) {
+        return fonts[QPlatformTheme::SystemFont];
     } else {
         // GTK default font
         return m_fallbackFont;
     }
 }
 
-QPalette *GnomeSettingsPrivate::palette() const
+QPalette *GnomeSettings::palette() const
 {
     return m_palette;
 }
 
-bool GnomeSettingsPrivate::canUseFileChooserPortal() const
+bool GnomeSettings::canUseFileChooserPortal() const
 {
     return m_canUseFileChooserPortal;
 }
 
-bool GnomeSettingsPrivate::isGtkThemeDarkVariant() const
+bool GnomeSettings::useGtkThemeDarkVariant() const
 {
-    return m_gtkThemeDarkVariant;
+    const QString theme = m_hintProvider->gtkTheme();
+    return theme.toLower().contains("-dark") ||
+           theme.toLower().endsWith("inverse") ||
+           m_hintProvider->appearance() == PreferDark;
 }
 
-bool GnomeSettingsPrivate::isGtkThemeHighContrastVariant() const
+bool GnomeSettings::useGtkThemeHighContrastVariant() const
 {
-    return m_gtkThemeHighContrastVariant;
+    const QString theme = m_hintProvider->gtkTheme();
+    return theme.toLower().startsWith("highcontrast");
 }
 
-QString GnomeSettingsPrivate::gtkTheme() const
+QString GnomeSettings::gtkTheme() const
 {
-    return QString(m_gtkTheme);
+    return m_hintProvider->gtkTheme();
 }
 
-QVariant GnomeSettingsPrivate::hint(QPlatformTheme::ThemeHint hint) const
+QVariant GnomeSettings::hint(QPlatformTheme::ThemeHint hint) const
 {
-    return m_hints[hint];
+    if (hint == QPlatformTheme::StyleNames) {
+        return styleNames();
+    } else if (hint == QPlatformTheme::IconThemeSearchPaths) {
+        return xdgIconThemePaths();
+    }
+
+    return m_hintProvider->hints()[hint];
 }
 
-GnomeSettings::TitlebarButtons GnomeSettingsPrivate::titlebarButtons() const
+GnomeSettings::TitlebarButtons GnomeSettings::titlebarButtons() const
 {
-    return m_titlebarButtons;
+    return m_hintProvider->titlebarButtons();
 }
 
-GnomeSettings::TitlebarButtonsPlacement GnomeSettingsPrivate::titlebarButtonPlacement() const
+GnomeSettings::TitlebarButtonsPlacement GnomeSettings::titlebarButtonPlacement() const
 {
-    return m_titlebarButtonPlacement;
+    return m_hintProvider->titlebarButtonPlacement();
 }
 
-void GnomeSettingsPrivate::gsettingPropertyChanged(GSettings *settings, gchar *key, GnomeSettingsPrivate *gnomeSettings)
+void GnomeSettings::loadPalette()
 {
-    Q_UNUSED(settings)
-
-    const QString changedProperty = key;
-
-    // Org.gnome.desktop.interface
-    if (changedProperty == QStringLiteral("gtk-theme")) {
-        gnomeSettings->themeChanged();
-    } else if (changedProperty == QStringLiteral("icon-theme")) {
-        gnomeSettings->iconsChanged();
-    } else if (changedProperty == QStringLiteral("cursor-blink-time")) {
-        gnomeSettings->cursorBlinkTimeChanged();
-    } else if (changedProperty == QStringLiteral("font-name")) {
-        gnomeSettings->fontChanged();
-    } else if (changedProperty == QStringLiteral("monospace-font-name")) {
-        gnomeSettings->fontChanged();
-    } else if (changedProperty == QStringLiteral("cursor-size")) {
-        if (QGuiApplication::platformName() != QStringLiteral("xcb")) {
-            gnomeSettings->cursorSizeChanged();
-        }
-    } else if (changedProperty == QStringLiteral("cursor-theme")) {
-        if (QGuiApplication::platformName() != QStringLiteral("xcb")) {
-            gnomeSettings->cursorThemeChanged();
-        }
-        // Org.gnome.wm.preferences
-    } else if (changedProperty == QStringLiteral("titlebar-font")) {
-        gnomeSettings->fontChanged();
-    } else if (changedProperty == QStringLiteral("button-layout")) {
-        gnomeSettings->loadTitlebar();
-        // Fallback
+    if (useGtkThemeHighContrastVariant()) {
+        m_palette = new QPalette(
+            Adwaita::Colors::palette(useGtkThemeDarkVariant() ? Adwaita::ColorVariant::AdwaitaHighcontrastInverse : Adwaita::ColorVariant::AdwaitaHighcontrast));
     } else {
-        qCDebug(QGnomePlatform) << "GSetting property change: " << key;
+        m_palette = new QPalette(Adwaita::Colors::palette(useGtkThemeDarkVariant() ? Adwaita::ColorVariant::AdwaitaDark : Adwaita::ColorVariant::Adwaita));
     }
 }
 
-void GnomeSettingsPrivate::cursorBlinkTimeChanged()
+void GnomeSettings::onCursorBlinkTimeChanged()
 {
-    int cursorBlinkTime = getSettingsProperty<int>(QStringLiteral("cursor-blink-time"));
-    if (cursorBlinkTime >= 100) {
-        qCDebug(QGnomePlatform) << "Cursor blink time changed to: " << cursorBlinkTime;
-        m_hints[QPlatformTheme::CursorFlashTime] = cursorBlinkTime;
-    } else {
-        qCDebug(QGnomePlatform) << "Cursor blink time changed to: 1200";
-        m_hints[QPlatformTheme::CursorFlashTime] = 1200;
-    }
-
     // If we are not a QApplication, means that we are a QGuiApplication, then we do nothing.
     if (!qobject_cast<QApplication *>(QCoreApplication::instance())) {
         return;
@@ -400,47 +237,35 @@ void GnomeSettingsPrivate::cursorBlinkTimeChanged()
     }
 }
 
-void GnomeSettingsPrivate::cursorSizeChanged()
+void GnomeSettings::onCursorSizeChanged()
 {
-    int cursorSize = getSettingsProperty<int>(QStringLiteral("cursor-size"));
-    qputenv("XCURSOR_SIZE", QString::number(cursorSize).toUtf8());
+    if (QGuiApplication::platformName() != QStringLiteral("xcb")) {
+        qputenv("XCURSOR_SIZE", QString::number(m_hintProvider->cursorSize()).toUtf8());
+    }
 }
 
-void GnomeSettingsPrivate::cursorThemeChanged()
+void GnomeSettings::onCursorThemeChanged()
 {
-    const QString cursorTheme = getSettingsProperty<QString>(QStringLiteral("cursor-theme"));
-    qputenv("XCURSOR_THEME", cursorTheme.toUtf8());
+    if (QGuiApplication::platformName() != QStringLiteral("xcb")) {
+        qputenv("XCURSOR_THEME", m_hintProvider->cursorTheme().toUtf8());
+    }
 }
 
-void GnomeSettingsPrivate::fontChanged()
+void GnomeSettings::onFontChanged()
 {
-    const QFont oldSysFont = *m_fonts[QPlatformTheme::SystemFont];
-    loadFonts();
-
     if (qobject_cast<QApplication *>(QCoreApplication::instance())) {
-        QApplication::setFont(*m_fonts[QPlatformTheme::SystemFont]);
+        QApplication::setFont(*m_hintProvider->fonts()[QPlatformTheme::SystemFont]);
         QWidgetList widgets = QApplication::allWidgets();
         for (QWidget *widget : widgets) {
-            if (widget->font() == oldSysFont) {
-                widget->setFont(*m_fonts[QPlatformTheme::SystemFont]);
-            }
+            widget->setFont(*m_hintProvider->fonts()[QPlatformTheme::SystemFont]);
         }
     } else {
-        QGuiApplication::setFont(*m_fonts[QPlatformTheme::SystemFont]);
+        QGuiApplication::setFont(*m_hintProvider->fonts()[QPlatformTheme::SystemFont]);
     }
 }
 
-void GnomeSettingsPrivate::iconsChanged()
+void GnomeSettings::onIconThemeChanged()
 {
-    QString systemIconTheme = getSettingsProperty<QString>(QStringLiteral("icon-theme"));
-    if (!systemIconTheme.isEmpty()) {
-        qCDebug(QGnomePlatform) << "Icon theme changed to: " << systemIconTheme;
-        m_hints[QPlatformTheme::SystemIconThemeName] = systemIconTheme;
-    } else {
-        qCDebug(QGnomePlatform) << "Icon theme changed to: Adwaita";
-        m_hints[QPlatformTheme::SystemIconThemeName] = "Adwaita";
-    }
-
     // If we are not a QApplication, means that we are a QGuiApplication, then we do nothing.
     if (!qobject_cast<QApplication *>(QCoreApplication::instance())) {
         return;
@@ -455,91 +280,47 @@ void GnomeSettingsPrivate::iconsChanged()
     }
 }
 
-void GnomeSettingsPrivate::themeChanged()
+void GnomeSettings::onThemeChanged()
 {
-    loadTheme();
-}
-
-void GnomeSettingsPrivate::loadTitlebar()
-{
-    const QString buttonLayout = getSettingsProperty<QString>("button-layout");
-
-    if (buttonLayout.isEmpty()) {
+    QApplication *app = qobject_cast<QApplication *>(QCoreApplication::instance());
+    if (!app) {
         return;
     }
 
-    const QStringList btnList = buttonLayout.split(QLatin1Char(':'));
-    if (btnList.count() == 2) {
-        const QString &leftButtons = btnList.first();
-        const QString &rightButtons = btnList.last();
-
-        m_titlebarButtonPlacement = leftButtons.contains(QStringLiteral("close")) ? GnomeSettingsPrivate::LeftPlacement : GnomeSettingsPrivate::RightPlacement;
-
-        // TODO support button order
-        TitlebarButtons buttons;
-        if (leftButtons.contains(QStringLiteral("close")) || rightButtons.contains("close")) {
-            buttons = buttons | GnomeSettingsPrivate::CloseButton;
-        }
-
-        if (leftButtons.contains(QStringLiteral("maximize")) || rightButtons.contains("maximize")) {
-            buttons = buttons | GnomeSettingsPrivate::MaximizeButton;
-        }
-
-        if (leftButtons.contains(QStringLiteral("minimize")) || rightButtons.contains("minimize")) {
-            buttons = buttons | GnomeSettingsPrivate::MinimizeButton;
-        }
-
-        m_titlebarButtons = buttons;
-    }
+    app->setStyle(styleNames().first());
 }
 
-void GnomeSettingsPrivate::loadTheme()
+QStringList GnomeSettings::styleNames() const
 {
-    QString styleOverride;
-
-    // g_object_get(gtk_settings_get_default(), "gtk-theme-name", &m_gtkTheme, NULL);
-    m_gtkTheme = getSettingsProperty<QString>(QStringLiteral("gtk-theme"));
-    g_object_get(gtk_settings_get_default(), "gtk-application-prefer-dark-theme", &m_gtkThemeDarkVariant, NULL);
-
-    if (qEnvironmentVariableIsSet("QT_STYLE_OVERRIDE")) {
-        styleOverride = QString::fromLocal8Bit(qgetenv("QT_STYLE_OVERRIDE"));
-    }
-
-    if (styleOverride.isEmpty()) {
-        if (m_gtkTheme.isEmpty()) {
-            qCWarning(QGnomePlatform) << "Couldn't get current gtk theme!";
-        } else {
-            qCDebug(QGnomePlatform) << "Theme name: " << m_gtkTheme;
-
-            if (m_gtkTheme.toLower().startsWith("highcontrast")) {
-                m_gtkThemeHighContrastVariant = true;
-            }
-
-            if (m_gtkTheme.toLower().contains("-dark") || m_gtkTheme.toLower().endsWith("inverse")) {
-                m_gtkThemeDarkVariant = true;
-            }
-
-            qCDebug(QGnomePlatform) << "Dark version: " << (m_gtkThemeDarkVariant ? "yes" : "no");
-        }
-    } else {
-        qCDebug(QGnomePlatform) << "Theme name: " << styleOverride;
-
-        if (styleOverride.toLower().startsWith("highcontrast")) {
-            m_gtkThemeHighContrastVariant = true;
-        }
-
-        if (styleOverride.toLower().contains("-dark") || styleOverride.toLower().endsWith("inverse")) {
-            m_gtkThemeDarkVariant = true;
-        }
-
-        qCDebug(QGnomePlatform) << "Dark version: " << (m_gtkThemeDarkVariant ? "yes" : "no");
-    }
-
     QStringList styleNames;
 
-    // First try to use GTK theme if it's Qt version is available
-    styleNames << m_gtkTheme;
+    // QT_STYLE_OVERRIDE should always have highest priority
+    QString styleOverride;
+    if (qEnvironmentVariableIsSet("QT_STYLE_OVERRIDE")) {
+        styleOverride = QString::fromLocal8Bit(qgetenv("QT_STYLE_OVERRIDE"));
+        styleNames << styleOverride;
+    }
 
+    bool isDarkTheme = false;
+    const bool preferDarkTheme = m_hintProvider->appearance() == Appearance::PreferDark;
+    const QString gtkTheme = m_hintProvider->gtkTheme();
+
+    if (gtkTheme.toLower().contains("-dark") || gtkTheme.toLower().endsWith("inverse")) {
+        isDarkTheme = true;
+    }
+
+    // 2) Use GTK theme
+    if (!gtkTheme.isEmpty()) {
+        const QStringList adwaitaStyles = { QStringLiteral("adwaita"), QStringLiteral("adwaita-dark"), QStringLiteral("highcontrast"), QStringLiteral("highcontrastinverse") };
+        if (adwaitaStyles.contains(gtkTheme.toLower())) {
+            // Generic adwaita-based style that can be changed on runtime based on the Adwaita variant specified
+            // as the next style on the list
+            styleNames << QStringLiteral("adwaita-auto");
+            styleNames << gtkTheme;
+        }
+    }
+
+    // 3) Use Kvantum
     // Detect if we have a Kvantum theme for this Gtk theme
     QString kvTheme = kvantumThemeForGtkTheme();
 
@@ -547,151 +328,27 @@ void GnomeSettingsPrivate::loadTheme()
         // Found matching Kvantum theme, configure user's Kvantum setting to use this
         configureKvantum(kvTheme);
 
-        if (m_gtkThemeDarkVariant) {
+        if (isDarkTheme || preferDarkTheme) {
             styleNames << QStringLiteral("kvantum-dark");
         }
         styleNames << QStringLiteral("kvantum");
     }
 
-    // Otherwise, use adwaita or try default themes
-    if (m_gtkThemeDarkVariant) {
+    // 4) Use light/dark adwaita as fallback
+    if (isDarkTheme || preferDarkTheme) {
         styleNames << QStringLiteral("adwaita-dark");
-    }
-
-    styleNames << QStringLiteral("adwaita") << QStringLiteral("fusion") << QStringLiteral("windows");
-    m_hints[QPlatformTheme::StyleNames] = styleNames;
-}
-
-// FIXME: duplicate
-static QFont *qt_fontFromString(const QString &name)
-{
-    QFont *font = new QFont(QLatin1String("Sans"), 10);
-
-    PangoFontDescription *desc = pango_font_description_from_string(name.toUtf8());
-    font->setPointSizeF(static_cast<float>(pango_font_description_get_size(desc)) / PANGO_SCALE);
-
-    QString family = QString::fromUtf8(pango_font_description_get_family(desc));
-    if (!family.isEmpty()) {
-        font->setFamily(family);
-    }
-
-    const int weight = pango_font_description_get_weight(desc);
-    if (weight >= PANGO_WEIGHT_HEAVY) {
-        font->setWeight(QFont::Black);
-    } else if (weight >= PANGO_WEIGHT_ULTRABOLD) {
-        font->setWeight(QFont::ExtraBold);
-    } else if (weight >= PANGO_WEIGHT_BOLD) {
-        font->setWeight(QFont::Bold);
-    } else if (weight >= PANGO_WEIGHT_SEMIBOLD) {
-        font->setWeight(QFont::DemiBold);
-    } else if (weight >= PANGO_WEIGHT_MEDIUM) {
-        font->setWeight(QFont::Medium);
-    } else if (weight >= PANGO_WEIGHT_NORMAL) {
-        font->setWeight(QFont::Normal);
-    } else if (weight >= PANGO_WEIGHT_LIGHT) {
-        font->setWeight(QFont::Light);
-    } else if (weight >= PANGO_WEIGHT_ULTRALIGHT) {
-        font->setWeight(QFont::ExtraLight);
     } else {
-        font->setWeight(QFont::Thin);
+        styleNames << QStringLiteral("adwaita-light");
     }
 
-    PangoStyle style = pango_font_description_get_style(desc);
-    if (style == PANGO_STYLE_ITALIC) {
-        font->setStyle(QFont::StyleItalic);
-    } else if (style == PANGO_STYLE_OBLIQUE) {
-        font->setStyle(QFont::StyleOblique);
-    } else {
-        font->setStyle(QFont::StyleNormal);
-    }
+    // 5) Use other styles
+    styleNames << QStringLiteral("fusion")
+               << QStringLiteral("windows");
 
-    pango_font_description_free(desc);
-    return font;
+    return styleNames;
 }
 
-void GnomeSettingsPrivate::loadFonts()
-{
-    qDeleteAll(m_fonts);
-    m_fonts.clear();
-
-    const QStringList fontTypes{"font-name", "monospace-font-name", "titlebar-font"};
-
-    for (const QString &fontType : fontTypes) {
-        const QString fontName = getSettingsProperty<QString>(fontType);
-        if (fontName.isEmpty()) {
-            qCWarning(QGnomePlatform) << "Couldn't get " << fontType;
-        } else {
-            qCDebug(QGnomePlatform) << "String name: " << fontName;
-            QFont *font = qt_fontFromString(fontName);
-            if (fontType == QStringLiteral("font-name")) {
-                m_fonts[QPlatformTheme::SystemFont] = font;
-                qCDebug(QGnomePlatform) << "Font name: " << font->family() << " (size " << font->pointSize() << ")";
-            } else if (fontType == QStringLiteral("monospace-font-name")) {
-                m_fonts[QPlatformTheme::FixedFont] = font;
-                qCDebug(QGnomePlatform) << "Monospace font name: " << font->family() << " (size " << font->pointSize() << ")";
-            } else if (fontType == QStringLiteral("titlebar-font")) {
-                m_fonts[QPlatformTheme::TitleBarFont] = font;
-                qCDebug(QGnomePlatform) << "TitleBar font name: " << font->family() << " (size " << font->pointSize() << ")";
-            }
-        }
-    }
-}
-
-void GnomeSettingsPrivate::loadStaticHints()
-{
-    int cursorBlinkTime = getSettingsProperty<int>(QStringLiteral("cursor-blink-time"));
-    if (cursorBlinkTime >= 100) {
-        qCDebug(QGnomePlatform) << "Cursor blink time: " << cursorBlinkTime;
-        m_hints[QPlatformTheme::CursorFlashTime] = cursorBlinkTime;
-    } else {
-        m_hints[QPlatformTheme::CursorFlashTime] = 1200;
-    }
-
-    gint doubleClickTime = 400;
-    g_object_get(gtk_settings_get_default(), "gtk-double-click-time", &doubleClickTime, NULL);
-    qCDebug(QGnomePlatform) << "Double click time: " << doubleClickTime;
-    m_hints[QPlatformTheme::MouseDoubleClickInterval] = doubleClickTime;
-
-    guint longPressTime = 500;
-    g_object_get(gtk_settings_get_default(), "gtk-long-press-time", &longPressTime, NULL);
-    qCDebug(QGnomePlatform) << "Long press time: " << longPressTime;
-    m_hints[QPlatformTheme::MousePressAndHoldInterval] = longPressTime;
-
-    gint doubleClickDistance = 5;
-    g_object_get(gtk_settings_get_default(), "gtk-double-click-distance", &doubleClickDistance, NULL);
-    qCDebug(QGnomePlatform) << "Double click distance: " << doubleClickDistance;
-    m_hints[QPlatformTheme::MouseDoubleClickDistance] = doubleClickDistance;
-
-    gint startDragDistance = 8;
-    g_object_get(gtk_settings_get_default(), "gtk-dnd-drag-threshold", &startDragDistance, NULL);
-    qCDebug(QGnomePlatform) << "Dnd drag threshold: " << startDragDistance;
-    m_hints[QPlatformTheme::StartDragDistance] = startDragDistance;
-
-    guint passwordMaskDelay = 0;
-    g_object_get(gtk_settings_get_default(), "gtk-entry-password-hint-timeout", &passwordMaskDelay, NULL);
-    qCDebug(QGnomePlatform) << "Password hint timeout: " << passwordMaskDelay;
-    m_hints[QPlatformTheme::PasswordMaskDelay] = passwordMaskDelay;
-
-    QString systemIconTheme = getSettingsProperty<QString>(QStringLiteral("icon-theme"));
-    if (!systemIconTheme.isEmpty()) {
-        qCDebug(QGnomePlatform) << "Icon theme: " << systemIconTheme;
-        m_hints[QPlatformTheme::SystemIconThemeName] = systemIconTheme;
-    } else {
-        m_hints[QPlatformTheme::SystemIconThemeName] = "Adwaita";
-    }
-    m_hints[QPlatformTheme::SystemIconFallbackThemeName] = "hicolor";
-    m_hints[QPlatformTheme::IconThemeSearchPaths] = xdgIconThemePaths();
-}
-
-void GnomeSettingsPrivate::portalSettingChanged(const QString &group, const QString &key, const QDBusVariant &value)
-{
-    if (group == QStringLiteral("org.gnome.desktop.interface") || group == QStringLiteral("org.gnome.desktop.wm.preferences")) {
-        m_portalSettings[group][key] = value.variant();
-        gsettingPropertyChanged(nullptr, const_cast<gchar *>(key.toStdString().c_str()), this);
-    }
-}
-
-QStringList GnomeSettingsPrivate::xdgIconThemePaths() const
+QStringList GnomeSettings::xdgIconThemePaths() const
 {
     QStringList paths;
 
@@ -716,14 +373,14 @@ QStringList GnomeSettingsPrivate::xdgIconThemePaths() const
     return paths;
 }
 
-QString GnomeSettingsPrivate::kvantumThemeForGtkTheme() const
+QString GnomeSettings::kvantumThemeForGtkTheme() const
 {
-    if (m_gtkTheme.isEmpty()) {
+    if (m_hintProvider->gtkTheme().isEmpty()) {
         // No Gtk theme? Then can't match to Kvantum!
         return QString();
     }
 
-    QString gtkName = m_gtkTheme;
+    QString gtkName = m_hintProvider->gtkTheme();
     QStringList dirs = QStandardPaths::standardLocations(QStandardPaths::GenericDataLocation);
 
     // Look for a matching KVantum config file in the theme's folder
@@ -753,90 +410,10 @@ QString GnomeSettingsPrivate::kvantumThemeForGtkTheme() const
     return QString();
 }
 
-void GnomeSettingsPrivate::configureKvantum(const QString &theme) const
+void GnomeSettings::configureKvantum(const QString &theme) const
 {
     QSettings config(QDir::homePath() + "/.config/Kvantum/kvantum.kvconfig", QSettings::NativeFormat);
     if (!config.contains("theme") || config.value("theme").toString() != theme) {
         config.setValue("theme", theme);
     }
-}
-
-template<typename T>
-T GnomeSettingsPrivate::getSettingsProperty(GSettings *settings, const QString &property, bool *ok)
-{
-    Q_UNUSED(settings)
-    Q_UNUSED(property)
-    Q_UNUSED(ok)
-    return {};
-}
-
-template<typename T>
-T GnomeSettingsPrivate::getSettingsProperty(const QString &property, bool *ok)
-{
-    GSettings *settings = m_settings;
-
-    // In case of Cinnamon session, we most probably want to return the value from here if possible
-    if (m_cinnamonSettings) {
-        GSettingsSchema *schema;
-        g_object_get(G_OBJECT(m_cinnamonSettings), "settings-schema", &schema, NULL);
-
-        if (schema) {
-            if (g_settings_schema_has_key(schema, property.toStdString().c_str())) {
-                settings = m_cinnamonSettings;
-            }
-        }
-    }
-
-    // Use org.gnome.desktop.wm.preferences if the property is there, otherwise it would bail on
-    // non-existent property
-    GSettingsSchema *schema;
-    g_object_get(G_OBJECT(m_gnomeDesktopSettings), "settings-schema", &schema, NULL);
-
-    if (schema) {
-        if (g_settings_schema_has_key(schema, property.toStdString().c_str())) {
-            settings = m_gnomeDesktopSettings;
-        }
-    }
-
-    if (m_usePortal) {
-        QVariant value = m_portalSettings.value(QStringLiteral("org.gnome.desktop.interface")).value(property);
-        if (!value.isNull() && value.canConvert<T>()) {
-            return value.value<T>();
-        }
-        value = m_portalSettings.value(QStringLiteral("org.gnome.desktop.wm.preferences")).value(property);
-        if (!value.isNull() && value.canConvert<T>()) {
-            return value.value<T>();
-        }
-    }
-
-    return getSettingsProperty<T>(settings, property, ok);
-}
-
-template<>
-int GnomeSettingsPrivate::getSettingsProperty(GSettings *settings, const QString &property, bool *ok)
-{
-    if (ok) {
-        *ok = true;
-    }
-    return g_settings_get_int(settings, property.toStdString().c_str());
-}
-
-template<>
-QString GnomeSettingsPrivate::getSettingsProperty(GSettings *settings, const QString &property, bool *ok)
-{
-    // be exception and resources safe
-    std::unique_ptr<gchar, void (*)(gpointer)> raw{g_settings_get_string(settings, property.toStdString().c_str()), g_free};
-    if (ok) {
-        *ok = !!raw;
-    }
-    return QString{raw.get()};
-}
-
-template<>
-qreal GnomeSettingsPrivate::getSettingsProperty(GSettings *settings, const QString &property, bool *ok)
-{
-    if (ok) {
-        *ok = true;
-    }
-    return g_settings_get_double(settings, property.toStdString().c_str());
 }
