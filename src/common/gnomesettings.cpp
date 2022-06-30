@@ -448,6 +448,15 @@ void GnomeSettingsPrivate::iconsChanged()
 void GnomeSettingsPrivate::themeChanged()
 {
     loadTheme();
+    auto app = qobject_cast<QApplication *>(QCoreApplication::instance());
+    if (app != nullptr) {
+        auto styleNames = qvariant_cast<QStringList>(m_hints[QPlatformTheme::StyleNames]);
+        for (auto style : styleNames) {
+            if (app->setStyle(style) != nullptr) {
+                break;
+            }
+        }
+    }
 }
 
 void GnomeSettingsPrivate::loadTitlebar()
