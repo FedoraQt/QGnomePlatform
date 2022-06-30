@@ -81,6 +81,15 @@ QGnomePlatformDecoration::QGnomePlatformDecoration()
     option.setWrapMode(QTextOption::NoWrap);
     m_windowTitle.setTextOption(option);
 
+    updateColors();
+
+    GnomeSettings::setOnThemeChanged([this]() {
+        this->updateColors();
+        this->update();
+    });
+}
+
+void QGnomePlatformDecoration::updateColors() {
     // Colors
     // TODO: move colors used for decorations to Adwaita-qt
     const bool darkVariant = GnomeSettings::isGtkThemeDarkVariant();

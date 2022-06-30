@@ -72,6 +72,7 @@ private:
     void processMouseLeft(QWaylandInputDevice *inputDevice, const QPointF &local, Qt::MouseButtons b,Qt::KeyboardModifiers mods);
     void processMouseRight(QWaylandInputDevice *inputDevice, const QPointF &local, Qt::MouseButtons b,Qt::KeyboardModifiers mods);
     void renderButton(QPainter *painter, const QRectF &rect, Adwaita::ButtonType button, bool renderFrame, bool sunken);
+    void updateColors();
 
     bool clickButton(Qt::MouseButtons b, Button btn);
     bool doubleClickButton(Qt::MouseButtons b, const QPointF &local, const QDateTime &currentTime);
