@@ -313,9 +313,6 @@ QStringList GnomeSettings::styleNames() const
     if (!gtkTheme.isEmpty()) {
         const QStringList adwaitaStyles = { QStringLiteral("adwaita"), QStringLiteral("adwaita-dark"), QStringLiteral("highcontrast"), QStringLiteral("highcontrastinverse") };
         if (adwaitaStyles.contains(gtkTheme.toLower())) {
-            // Generic adwaita-based style that can be changed on runtime based on the Adwaita variant specified
-            // as the next style on the list
-            styleNames << QStringLiteral("adwaita-auto");
             styleNames << gtkTheme;
         }
     }
@@ -338,7 +335,7 @@ QStringList GnomeSettings::styleNames() const
     if (isDarkTheme || preferDarkTheme) {
         styleNames << QStringLiteral("adwaita-dark");
     } else {
-        styleNames << QStringLiteral("adwaita-light");
+        styleNames << QStringLiteral("adwaita");
     }
 
     // 5) Use other styles
