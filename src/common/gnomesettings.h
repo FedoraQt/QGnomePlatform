@@ -58,6 +58,7 @@ public:
     static QString gtkTheme();
     static TitlebarButtons titlebarButtons();
     static TitlebarButtonsPlacement titlebarButtonPlacement();
+    static void setOnThemeChanged(std::function<void()> callback);
 };
 
 

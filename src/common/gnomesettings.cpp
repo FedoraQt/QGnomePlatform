@@ -131,6 +131,10 @@ GnomeSettings::TitlebarButtonsPlacement GnomeSettings::titlebarButtonPlacement()
     return gnomeSettingsGlobal->titlebarButtonPlacement();
 }
 
+void GnomeSettings::setOnThemeChanged(std::function<void ()> callback) {
+    gnomeSettingsGlobal->setOnThemeChanged(callback);
+}
+
 static inline bool checkUsePortalSupport()
 {
     return !QStandardPaths::locate(QStandardPaths::RuntimeLocation, QStringLiteral("flatpak-info")).isEmpty() || qEnvironmentVariableIsSet("SNAP");
@@ -457,6 +461,10 @@ void GnomeSettingsPrivate::themeChanged()
             }
         }
     }
+
+    if (m_onThemeChanged != nullptr) {
+        m_onThemeChanged();
+    }
 }
 
 void GnomeSettingsPrivate::loadTitlebar()
@@ -759,6 +767,11 @@ void GnomeSettingsPrivate::configureKvantum(const QString &theme) const
     if (!config.contains("theme") || config.value("theme").toString() != theme) {
         config.setValue("theme", theme);
     }
+}
+
+void GnomeSettingsPrivate::setOnThemeChanged(std::function<void()> callback)
+{
+    m_onThemeChanged = callback;
 }
 
 template <typename T>

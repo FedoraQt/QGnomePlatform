@@ -55,6 +55,7 @@ public:
     QVariant hint(QPlatformTheme::ThemeHint hint) const;
     TitlebarButtons titlebarButtons() const;
     TitlebarButtonsPlacement titlebarButtonPlacement() const;
+    void setOnThemeChanged(std::function<void()> callback);
 
 private Q_SLOTS:
     void cursorBlinkTimeChanged();
@@ -94,6 +95,7 @@ private:
     QMap<QString, QVariantMap> m_portalSettings;
     QPalette *m_palette = nullptr;
     QFont *m_fallbackFont = nullptr;
+    std::function<void()> m_onThemeChanged = nullptr;
 };
 
 #endif // GNOME_SETTINGS_P_H
