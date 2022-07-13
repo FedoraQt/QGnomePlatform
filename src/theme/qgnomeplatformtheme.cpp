@@ -31,11 +31,27 @@
 #include <gtk-3.0/gtk/gtk.h>
 #define signals Q_SIGNALS
 
+#include <X11/Xlib.h>
+
 #if QT_VERSION < 0x060000
 #ifndef QT_NO_SYSTEMTRAYICON
 #include <private/qdbustrayicon_p.h>
 #endif
 #endif
+
+void gtkMessageHandler(const gchar *log_domain, GLogLevelFlags log_level, const gchar *message, gpointer unused_data)
+{
+    /* Silence false-positive Gtk warnings (we are using Xlib to set
+     * the WM_TRANSIENT_FOR hint).
+     */
+    if (g_strcmp0(message,
+                  "GtkDialog mapped without a transient parent. "
+                  "This is discouraged.")
+        != 0) {
+        /* For other messages, call the default handler. */
+        g_log_default_handler(log_domain, log_level, message, unused_data);
+    }
+}
 
 QGnomePlatformTheme::QGnomePlatformTheme()
 {
@@ -44,6 +60,18 @@ QGnomePlatformTheme::QGnomePlatformTheme()
             qputenv("QT_WAYLAND_DECORATION", "gnome");
         }
     }
+
+    // Ensure gtk uses the same windowing system, but let it
+    // fallback in case GDK_BACKEND environment variable
+    // filters the preferred one out
+    if (QGuiApplication::platformName().startsWith(QLatin1String("wayland"))) {
+        gdk_set_allowed_backends("wayland,x11");
+    } else if (QGuiApplication::platformName() == QLatin1String("xcb")) {
+        gdk_set_allowed_backends("x11,wayland");
+    }
+
+    // Set log handler to suppress false GtkDialog warnings
+    g_log_set_handler("Gtk", G_LOG_LEVEL_MESSAGE, gtkMessageHandler, nullptr);
 
     /* Initialize some types here so that Gtk+ does not crash when reading
      * the treemodel for GtkFontChooser.

@@ -26,30 +26,11 @@
 
 Q_LOGGING_CATEGORY(QGnomePlatformGSettingsHintProvider, "qt.qpa.qgnomeplatform.gsettingshintprovider")
 
-void gtkMessageHandler(const gchar *log_domain, GLogLevelFlags log_level, const gchar *message, gpointer unused_data)
-{
-    /* Silence false-positive Gtk warnings (we are using Xlib to set
-     * the WM_TRANSIENT_FOR hint).
-     */
-    if (g_strcmp0(message,
-                  "GtkDialog mapped without a transient parent. "
-                  "This is discouraged.")
-        != 0) {
-        /* For other messages, call the default handler. */
-        g_log_default_handler(log_domain, log_level, message, unused_data);
-    }
-}
-
 GSettingsHintProvider::GSettingsHintProvider(QObject *parent)
     : HintProvider(parent)
     , m_gnomeDesktopSettings(g_settings_new("org.gnome.desktop.wm.preferences"))
     , m_settings(g_settings_new("org.gnome.desktop.interface"))
 {
-    gtk_init(nullptr, nullptr);
-
-    // Set log handler to suppress false GtkDialog warnings
-    g_log_set_handler("Gtk", G_LOG_LEVEL_MESSAGE, gtkMessageHandler, nullptr);
-
     // Check if this is a Cinnamon session to use additionally a different setting scheme
     if (qgetenv("XDG_CURRENT_DESKTOP").toLower() == QStringLiteral("x-cinnamon")) {
         m_cinnamonSettings = g_settings_new("org.cinnamon.desktop.interface");

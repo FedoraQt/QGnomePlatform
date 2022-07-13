@@ -75,6 +75,8 @@ GnomeSettings::GnomeSettings(QObject *parent)
     , m_usePortal(checkUsePortalSupport())
     , m_canUseFileChooserPortal(!m_usePortal)
 {
+    gtk_init(nullptr, nullptr);
+
     m_hintProvider = std::make_unique<GSettingsHintProvider>(this);
 
     // Initialize some cursor env variables needed by QtWayland
