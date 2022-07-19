@@ -20,6 +20,7 @@
 #include "gnomesettings.h"
 #include "hintprovider.h"
 #include "gsettingshintprovider.h"
+#include "portalhintprovider.h"
 
 #if QT_VERSION >= 0x060000
 #include <AdwaitaQt6/adwaitacolors.h>
@@ -44,11 +45,9 @@
 
 // QtGui
 #include <QApplication>
-#include <QDialogButtonBox>
 #include <QFont>
 #include <QMainWindow>
 #include <QPalette>
-#include <QStyleFactory>
 #include <QToolBar>
 
 #include <fcntl.h>
@@ -77,6 +76,7 @@ GnomeSettings::GnomeSettings(QObject *parent)
 {
     gtk_init(nullptr, nullptr);
 
+    // TODO: use PortalHintProvider when possible
     m_hintProvider = std::make_unique<GSettingsHintProvider>(this);
 
     // Initialize some cursor env variables needed by QtWayland
@@ -94,15 +94,6 @@ GnomeSettings::GnomeSettings(QObject *parent)
     connect(m_hintProvider.get(), &HintProvider::themeChanged, this, &GnomeSettings::onThemeChanged);
 
     loadPalette();
-
-    if (m_usePortal) {
-        QDBusConnection::sessionBus().connect(QString(),
-                                              QStringLiteral("/org/freedesktop/portal/desktop"),
-                                              QStringLiteral("org.freedesktop.portal.Settings"),
-                                              QStringLiteral("SettingChanged"),
-                                              this,
-                                              SLOT(portalSettingChanged(QString, QString, QDBusVariant)));
-    }
 
     if (m_canUseFileChooserPortal) {
         QTimer::singleShot(0, this, [this]() {

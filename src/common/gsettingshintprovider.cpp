@@ -113,108 +113,70 @@ void GSettingsHintProvider::gsettingPropertyChanged(GSettings *settings, gchar *
 
 void GSettingsHintProvider::loadCursorBlinkTime()
 {
-    int cursorBlinkTime = getSettingsProperty<int>(QStringLiteral("cursor-blink-time"));
-    if (cursorBlinkTime >= 100) {
-        qCDebug(QGnomePlatformGSettingsHintProvider) << "Cursor blink time: " << cursorBlinkTime;
-        m_hints[QPlatformTheme::CursorFlashTime] = cursorBlinkTime;
-    } else {
-        m_hints[QPlatformTheme::CursorFlashTime] = 1200;
-    }
+    const int cursorBlinkTime = getSettingsProperty<int>(QStringLiteral("cursor-blink-time"));
+    setCursorBlinkTime(cursorBlinkTime);
 }
 
 void GSettingsHintProvider::loadCursorSize()
 {
-    m_cursorSize = getSettingsProperty<int>(QStringLiteral("cursor-size"));
+    const int cursorSize = getSettingsProperty<int>(QStringLiteral("cursor-size"));
+    setCursorSize(cursorSize);
 }
 
 void GSettingsHintProvider::loadCursorTheme()
 {
-
-    m_cursorTheme = getSettingsProperty<QString>(QStringLiteral("cursor-theme"));
+    const QString cursorTheme = getSettingsProperty<QString>(QStringLiteral("cursor-theme"));
+    setCursorTheme(cursorTheme);
 }
 
 void GSettingsHintProvider::loadIconTheme()
 {
     const QString systemIconTheme = getSettingsProperty<QString>(QStringLiteral("icon-theme"));
-    if (!systemIconTheme.isEmpty()) {
-        qCDebug(QGnomePlatformGSettingsHintProvider) << "Icon theme: " << systemIconTheme;
-        m_hints[QPlatformTheme::SystemIconThemeName] = systemIconTheme;
-    } else {
-        m_hints[QPlatformTheme::SystemIconThemeName] = "Adwaita";
-    }
+    setIconTheme(systemIconTheme);
 }
 
 void GSettingsHintProvider::loadFonts()
 {
-    qDeleteAll(m_fonts);
-    m_fonts.clear();
+    const QString fontName = getSettingsProperty<QString>(QStringLiteral("font-name"));
+    const QString monospaceFontName = getSettingsProperty<QString>(QStringLiteral("monospace-font-name"));
+    const QString titlebarFontName = getSettingsProperty<QString>(QStringLiteral("titlebar-font"));
 
-    const QStringList fontTypes{"font-name", "monospace-font-name", "titlebar-font"};
-
-    for (const QString &fontType : fontTypes) {
-        const QString fontName = getSettingsProperty<QString>(fontType);
-        if (fontName.isEmpty()) {
-            qCWarning(QGnomePlatformGSettingsHintProvider) << "Couldn't get " << fontType;
-        } else {
-            qCDebug(QGnomePlatformGSettingsHintProvider) << "String name: " << fontName;
-            QFont *font = Utils::qt_fontFromString(fontName);
-            if (fontType == QStringLiteral("font-name")) {
-                m_fonts[QPlatformTheme::SystemFont] = font;
-                qCDebug(QGnomePlatformGSettingsHintProvider) << "Font name: " << font->family() << " (size " << font->pointSize() << ")";
-            } else if (fontType == QStringLiteral("monospace-font-name")) {
-                m_fonts[QPlatformTheme::FixedFont] = font;
-                qCDebug(QGnomePlatformGSettingsHintProvider) << "Monospace font name: " << font->family() << " (size " << font->pointSize() << ")";
-            } else if (fontType == QStringLiteral("titlebar-font")) {
-                m_fonts[QPlatformTheme::TitleBarFont] = font;
-                qCDebug(QGnomePlatformGSettingsHintProvider) << "TitleBar font name: " << font->family() << " (size " << font->pointSize() << ")";
-            }
-        }
-    }
+    setFonts(fontName, monospaceFontName, titlebarFontName);
 }
 
 void GSettingsHintProvider::loadTitlebar()
 {
     const QString buttonLayout = getSettingsProperty<QString>("button-layout");
-    m_titlebarButtonPlacement = Utils::titlebarButtonPlacementFromString(buttonLayout);
-    m_titlebarButtons = Utils::titlebarButtonsFromString(buttonLayout);
+    setTitlebar(buttonLayout);
 }
 
 void GSettingsHintProvider::loadTheme()
 {
     bool isDarkTheme;
-    m_gtkTheme = getSettingsProperty<QString>(QStringLiteral("gtk-theme"));
-    qCDebug(QGnomePlatformGSettingsHintProvider) << "GTK theme: " << m_gtkTheme;
     g_object_get(gtk_settings_get_default(), "gtk-application-prefer-dark-theme", &isDarkTheme, NULL);
-    m_appearance = isDarkTheme ? GnomeSettings::PreferDark : GnomeSettings::PreferLight;
-    qCDebug(QGnomePlatformGSettingsHintProvider) << "Prefer dark theme: " << (isDarkTheme ? "yes" : "no");
+    const QString theme = getSettingsProperty<QString>(QStringLiteral("gtk-theme"));
+    const GnomeSettings::Appearance appearance = isDarkTheme ? GnomeSettings::PreferDark : GnomeSettings::PreferLight;
+    setTheme(theme, appearance);
 }
 
 void GSettingsHintProvider::loadStaticHints()
 {
     gint doubleClickTime = 400;
     g_object_get(gtk_settings_get_default(), "gtk-double-click-time", &doubleClickTime, NULL);
-    qCDebug(QGnomePlatformGSettingsHintProvider) << "Double click time: " << doubleClickTime;
-    m_hints[QPlatformTheme::MouseDoubleClickInterval] = doubleClickTime;
 
     guint longPressTime = 500;
     g_object_get(gtk_settings_get_default(), "gtk-long-press-time", &longPressTime, NULL);
-    qCDebug(QGnomePlatformGSettingsHintProvider) << "Long press time: " << longPressTime;
-    m_hints[QPlatformTheme::MousePressAndHoldInterval] = longPressTime;
 
     gint doubleClickDistance = 5;
     g_object_get(gtk_settings_get_default(), "gtk-double-click-distance", &doubleClickDistance, NULL);
-    qCDebug(QGnomePlatformGSettingsHintProvider) << "Double click distance: " << doubleClickDistance;
-    m_hints[QPlatformTheme::MouseDoubleClickDistance] = doubleClickDistance;
 
     gint startDragDistance = 8;
     g_object_get(gtk_settings_get_default(), "gtk-dnd-drag-threshold", &startDragDistance, NULL);
-    qCDebug(QGnomePlatformGSettingsHintProvider) << "Dnd drag threshold: " << startDragDistance;
-    m_hints[QPlatformTheme::StartDragDistance] = startDragDistance;
 
     guint passwordMaskDelay = 0;
     g_object_get(gtk_settings_get_default(), "gtk-entry-password-hint-timeout", &passwordMaskDelay, NULL);
-    qCDebug(QGnomePlatformGSettingsHintProvider) << "Password hint timeout: " << passwordMaskDelay;
-    m_hints[QPlatformTheme::PasswordMaskDelay] = passwordMaskDelay;
+
+    setStaticHints(doubleClickTime, longPressTime, doubleClickDistance, startDragDistance, passwordMaskDelay);
 }
 
 template<typename T>

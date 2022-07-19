@@ -3,6 +3,7 @@ set(common_SRCS
     gnomesettings.cpp
     gsettingshintprovider.cpp
     hintprovider.cpp
+    portalhintprovider.cpp
     utils.cpp
 )
 

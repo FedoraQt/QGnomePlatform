@@ -63,6 +63,15 @@ Q_SIGNALS:
     void themeChanged();
 
 protected:
+    void setCursorBlinkTime(int cursorBlinkTime);
+    void setCursorSize(int cursorSize);
+    void setCursorTheme(const QString &cursorTheme);
+    void setIconTheme(const QString &iconTheme);
+    void setFonts(const QString &systemFont, const QString &monospaceFont, const QString &titlebarFont);
+    void setTheme(const QString &theme, GnomeSettings::Appearance appearance);
+    void setTitlebar(const QString &buttonLayout);
+    void setStaticHints(int doubleClickTime, int longPressTime, int doubleClickDistance, int startDragDistance, int passwordMaskDelay);
+
     // Theme
     QString m_gtkTheme;
     GnomeSettings::Appearance m_appearance = GnomeSettings::PreferLight;

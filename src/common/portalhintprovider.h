@@ -32,16 +32,20 @@ class PortalHintProvider : public HintProvider
     Q_OBJECT
 public:
     explicit PortalHintProvider(QObject *parent = nullptr);
-    virtual ~PortalHintProvider();
+    virtual ~PortalHintProvider() = default;
 
 private Q_SLOTS:
     void settingChanged(const QString &group, const QString &key, const QDBusVariant &value);
 
 private:
-//     void loadFonts();
-//     void loadTheme();
-//     void loadTitlebar();
-//     void loadStaticHints();
+    void loadCursorBlinkTime();
+    void loadCursorSize();
+    void loadCursorTheme();
+    void loadIconTheme();
+    void loadFonts();
+    void loadTheme();
+    void loadTitlebar();
+    void loadStaticHints();
 
     QMap<QString, QVariantMap> m_portalSettings;
 
