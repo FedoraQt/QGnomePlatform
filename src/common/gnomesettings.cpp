@@ -39,9 +39,12 @@
 
 // QtDbus
 #include <QDBusConnection>
+#include <QDBusConnectionInterface>
 #include <QDBusMessage>
 #include <QDBusPendingReply>
 #include <QDBusPendingCallWatcher>
+#include <QDBusReply>
+#include <QDBusServiceWatcher>
 
 // QtGui
 #include <QApplication>
@@ -58,7 +61,7 @@
 Q_GLOBAL_STATIC(GnomeSettings, gnomeSettingsGlobal)
 Q_LOGGING_CATEGORY(QGnomePlatform, "qt.qpa.qgnomeplatform")
 
-static inline bool checkUsePortalSupport()
+static inline bool checkSandboxApplication()
 {
     return !QStandardPaths::locate(QStandardPaths::RuntimeLocation, QStringLiteral("flatpak-info")).isEmpty() || qEnvironmentVariableIsSet("SNAP");
 }
@@ -71,27 +74,61 @@ GnomeSettings &GnomeSettings::getInstance()
 GnomeSettings::GnomeSettings(QObject *parent)
     : QObject(parent)
     , m_fallbackFont(new QFont(QLatin1String("Sans"), 10))
-    , m_usePortal(checkUsePortalSupport())
-    , m_canUseFileChooserPortal(!m_usePortal)
+    , m_isRunningInSandbox(checkSandboxApplication())
+    , m_canUseFileChooserPortal(!m_isRunningInSandbox)
 {
     gtk_init(nullptr, nullptr);
 
-    // TODO: use PortalHintProvider when possible
-    m_hintProvider = std::make_unique<GSettingsHintProvider>(this);
+    if (m_isRunningInSandbox) {
+        qCDebug(QGnomePlatform) << "Using xdg-desktop-portal backend";
+        m_hintProvider = std::make_unique<PortalHintProvider>(this);
+    } else if (qgetenv("XDG_CURRENT_DESKTOP").toLower() == QStringLiteral("x-cinnamon")) {
+        qCDebug(QGnomePlatform) << "Using GSettings backend";
+        m_hintProvider = std::make_unique<GSettingsHintProvider>(this);
+    } else {
+        // check if service already exists on QGnomePlatform initialization
+        QDBusConnectionInterface *interface = QDBusConnection::sessionBus().interface();
+        const bool dbusServiceExists = interface && interface->isServiceRegistered(QString::fromLatin1("org.freedesktop.portal.Desktop"));
+
+        if (dbusServiceExists) {
+            qCDebug(QGnomePlatform) << "Using xdg-desktop-portal backend";
+            m_hintProvider = std::make_unique<PortalHintProvider>(this);
+        } else {
+            qCDebug(QGnomePlatform) << "Using GSettings backend";
+            m_hintProvider = std::make_unique<GSettingsHintProvider>(this);
+        }
+
+        // to switch between backends on runtime
+        QDBusServiceWatcher *watcher = new QDBusServiceWatcher(this);
+        watcher->setConnection(QDBusConnection::sessionBus());
+        watcher->setWatchMode(QDBusServiceWatcher::WatchForOwnerChange);
+        watcher->addWatchedService(QString::fromLatin1("org.freedesktop.portal.Desktop"));
+        connect(watcher, &QDBusServiceWatcher::serviceOwnerChanged, this, [=] (const QString &service, const QString &oldOwner, const QString &newOwner) {
+            Q_UNUSED(service)
+
+            if (newOwner.isEmpty()) {
+                qCDebug(QGnomePlatform) << "Portal service disappeared. Switching to GSettings backend";
+                m_hintProvider = std::make_unique<GSettingsHintProvider>(this);
+            } else if (oldOwner.isEmpty()) {
+                qCDebug(QGnomePlatform) << "Portal service appeared. Switching xdg-desktop-portal backend";
+                m_hintProvider = std::make_unique<PortalHintProvider>(this);
+            }
+
+            initializeHintProvider();
+
+            // Reload some configuration as switching backends we might get different configuration
+            loadPalette();
+            onThemeChanged();
+            // Also notify to update decorations
+            Q_EMIT themeChanged();
+        });
+    }
+
+    initializeHintProvider();
 
     // Initialize some cursor env variables needed by QtWayland
     onCursorSizeChanged();
     onCursorThemeChanged();
-
-    connect(m_hintProvider.get(), &HintProvider::cursorBlinkTimeChanged, this, &GnomeSettings::onCursorBlinkTimeChanged);
-    connect(m_hintProvider.get(), &HintProvider::cursorSizeChanged, this, &GnomeSettings::onCursorSizeChanged);
-    connect(m_hintProvider.get(), &HintProvider::cursorThemeChanged, this, &GnomeSettings::onCursorThemeChanged);
-    connect(m_hintProvider.get(), &HintProvider::fontChanged, this, &GnomeSettings::onFontChanged);
-    connect(m_hintProvider.get(), &HintProvider::iconThemeChanged, this, &GnomeSettings::onIconThemeChanged);
-    connect(m_hintProvider.get(), &HintProvider::titlebarChanged, this, &GnomeSettings::titlebarChanged);
-    connect(m_hintProvider.get(), &HintProvider::themeChanged, this, &GnomeSettings::loadPalette);
-    connect(m_hintProvider.get(), &HintProvider::themeChanged, this, &GnomeSettings::themeChanged);
-    connect(m_hintProvider.get(), &HintProvider::themeChanged, this, &GnomeSettings::onThemeChanged);
 
     loadPalette();
 
@@ -140,6 +177,19 @@ GnomeSettings::~GnomeSettings()
     delete m_palette;
 }
 
+void GnomeSettings::initializeHintProvider() const
+{
+    connect(m_hintProvider.get(), &HintProvider::cursorBlinkTimeChanged, this, &GnomeSettings::onCursorBlinkTimeChanged);
+    connect(m_hintProvider.get(), &HintProvider::cursorSizeChanged, this, &GnomeSettings::onCursorSizeChanged);
+    connect(m_hintProvider.get(), &HintProvider::cursorThemeChanged, this, &GnomeSettings::onCursorThemeChanged);
+    connect(m_hintProvider.get(), &HintProvider::fontChanged, this, &GnomeSettings::onFontChanged);
+    connect(m_hintProvider.get(), &HintProvider::iconThemeChanged, this, &GnomeSettings::onIconThemeChanged);
+    connect(m_hintProvider.get(), &HintProvider::titlebarChanged, this, &GnomeSettings::titlebarChanged);
+    connect(m_hintProvider.get(), &HintProvider::themeChanged, this, &GnomeSettings::loadPalette);
+    connect(m_hintProvider.get(), &HintProvider::themeChanged, this, &GnomeSettings::themeChanged);
+    connect(m_hintProvider.get(), &HintProvider::themeChanged, this, &GnomeSettings::onThemeChanged);
+}
+
 QFont *GnomeSettings::font(QPlatformTheme::Font type) const
 {
     auto fonts = m_hintProvider->fonts();
@@ -167,6 +217,11 @@ bool GnomeSettings::canUseFileChooserPortal() const
 bool GnomeSettings::useGtkThemeDarkVariant() const
 {
     const QString theme = m_hintProvider->gtkTheme();
+
+    if (m_hintProvider->canRelyOnAppearance()) {
+        return m_hintProvider->appearance() == PreferDark;
+    }
+
     return theme.toLower().contains("-dark") ||
            theme.toLower().endsWith("inverse") ||
            m_hintProvider->appearance() == PreferDark;
@@ -306,7 +361,17 @@ QStringList GnomeSettings::styleNames() const
     if (!gtkTheme.isEmpty()) {
         const QStringList adwaitaStyles = { QStringLiteral("adwaita"), QStringLiteral("adwaita-dark"), QStringLiteral("highcontrast"), QStringLiteral("highcontrastinverse") };
         if (adwaitaStyles.contains(gtkTheme.toLower())) {
-            styleNames << gtkTheme;
+            QString theme = gtkTheme;
+
+            if (m_hintProvider->canRelyOnAppearance()) {
+                if (gtkTheme.toLower().contains(QStringLiteral("adwaita"))) {
+                    theme = preferDarkTheme ? QStringLiteral("adwaita-dark") : QStringLiteral("adwaita");
+                } else if (gtkTheme.toLower().contains(QStringLiteral("highcontrast"))) {
+                    theme = preferDarkTheme ? QStringLiteral("highcontrastinverse") : QStringLiteral("highcontrast");
+                }
+            }
+
+            styleNames << theme;
         }
     }
 

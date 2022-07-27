@@ -73,8 +73,8 @@ private Q_SLOTS:
     void onThemeChanged();
 
 private:
-
     void configureKvantum(const QString &theme) const;
+    void initializeHintProvider() const;
     QString kvantumThemeForGtkTheme() const;
     QStringList styleNames() const;
     QStringList xdgIconThemePaths() const;
@@ -84,7 +84,8 @@ private:
 
     std::unique_ptr<HintProvider> m_hintProvider;
 
-    bool m_usePortal;
+    bool m_relyOnAppearance = false;
+    bool m_isRunningInSandbox;
     bool m_canUseFileChooserPortal = false;
 };
 

@@ -58,13 +58,19 @@ PortalHintProvider::PortalHintProvider(QObject *parent)
                                                           QStringLiteral("/org/freedesktop/portal/desktop"),
                                                           QStringLiteral("org.freedesktop.portal.Settings"),
                                                           QStringLiteral("ReadAll"));
-    message << QStringList{{QStringLiteral("org.gnome.desktop.interface")}, {QStringLiteral("org.gnome.desktop.wm.preferences")}};
+    message << QStringList{{QStringLiteral("org.gnome.desktop.interface")}, {QStringLiteral("org.gnome.desktop.wm.preferences")}, {QStringLiteral("org.freedesktop.appearance")}};
 
     // FIXME: async?
+    qCDebug(QGnomePlatformPortalHintProvider) << "Reading settings from xdg-desktop-portal";
     QDBusMessage resultMessage = QDBusConnection::sessionBus().call(message);
+    qCDebug(QGnomePlatformPortalHintProvider) << "Received settings from xdg-desktop-portal";
     if (resultMessage.type() == QDBusMessage::ReplyMessage) {
         QDBusArgument dbusArgument = resultMessage.arguments().at(0).value<QDBusArgument>();
         dbusArgument >> m_portalSettings;
+    }
+
+    if (m_portalSettings.contains(QStringLiteral("org.freedesktop.appearance"))) {
+        m_canRelyOnAppearance = true;
     }
 
     QDBusConnection::sessionBus().connect(QString(),
@@ -143,7 +149,7 @@ void PortalHintProvider::loadFonts()
 {
     const QString fontName = m_portalSettings.value(QStringLiteral("org.gnome.desktop.interface")).value(QStringLiteral("font-name")).toString();
     const QString monospaceFontName = m_portalSettings.value(QStringLiteral("org.gnome.desktop.interface")).value(QStringLiteral("monospace-font-name")).toString();
-    const QString titlebarFontName = m_portalSettings.value(QStringLiteral("org.gnome.desktop.interface")).value(QStringLiteral("titlebar-font")).toString();
+    const QString titlebarFontName = m_portalSettings.value(QStringLiteral("org.gnome.desktop.wm.preferences")).value(QStringLiteral("titlebar-font")).toString();
     setFonts(fontName, monospaceFontName, titlebarFontName);
 }
 

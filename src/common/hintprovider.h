@@ -44,6 +44,11 @@ public:
     // Theme
     inline QString gtkTheme() const { return m_gtkTheme; }
     inline GnomeSettings::Appearance appearance() const { return m_appearance; }
+    // Whether we can assume e.g. Adwaita-dark should be used when Appearance == PreferDark
+    // even though the theme is set to Adwaita
+    // Used only when color-scheme from org.freedesktop.Appearance interface is implemented
+    // in the xdg-desktop-portal backend
+    inline bool canRelyOnAppearance() const { return m_canRelyOnAppearance; }
 
     // Cursor
     inline int cursorSize() const { return m_cursorSize; }
@@ -75,6 +80,7 @@ protected:
     // Theme
     QString m_gtkTheme;
     GnomeSettings::Appearance m_appearance = GnomeSettings::PreferLight;
+    bool m_canRelyOnAppearance = false;
 
     // Cursor
     int m_cursorSize = 0;
