@@ -62,6 +62,8 @@ protected:
 #endif
 
 private:
+    QRect windowContentGeometry() const;
+
     void forceRepaint();
     void loadConfiguration();
 

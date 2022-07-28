@@ -96,7 +96,7 @@ QGnomePlatformDecoration::QGnomePlatformDecoration()
 QRectF QGnomePlatformDecoration::closeButtonRect() const
 {
     if (GnomeSettings::getInstance().titlebarButtonPlacement() == GnomeSettings::getInstance().RightPlacement) {
-        return QRectF(waylandWindow()->windowContentGeometry().width() - BUTTON_WIDTH - (BUTTON_SPACING * 0) - BUTTON_MARGINS - margins().right(),
+        return QRectF(windowContentGeometry().width() - BUTTON_WIDTH - (BUTTON_SPACING * 0) - BUTTON_MARGINS - margins().right(),
                       (margins().top() - BUTTON_WIDTH + margins().bottom()) / 2,
                       BUTTON_WIDTH,
                       BUTTON_WIDTH);
@@ -111,7 +111,7 @@ QRectF QGnomePlatformDecoration::closeButtonRect() const
 QRectF QGnomePlatformDecoration::maximizeButtonRect() const
 {
     if (GnomeSettings::getInstance().titlebarButtonPlacement() == GnomeSettings::getInstance().RightPlacement) {
-        return QRectF(waylandWindow()->windowContentGeometry().width() - (BUTTON_WIDTH * 2) - (BUTTON_SPACING * 1) - BUTTON_MARGINS - margins().right(),
+        return QRectF(windowContentGeometry().width() - (BUTTON_WIDTH * 2) - (BUTTON_SPACING * 1) - BUTTON_MARGINS - margins().right(),
                       (margins().top() - BUTTON_WIDTH + margins().bottom()) / 2,
                       BUTTON_WIDTH,
                       BUTTON_WIDTH);
@@ -128,7 +128,7 @@ QRectF QGnomePlatformDecoration::minimizeButtonRect() const
     const bool maximizeEnabled = GnomeSettings::getInstance().titlebarButtons().testFlag(GnomeSettings::getInstance().MaximizeButton);
 
     if (GnomeSettings::getInstance().titlebarButtonPlacement() == GnomeSettings::getInstance().RightPlacement) {
-        return QRectF(waylandWindow()->windowContentGeometry().width() - BUTTON_WIDTH * (maximizeEnabled ? 3 : 2) - (BUTTON_SPACING * (maximizeEnabled ? 2 : 1))
+        return QRectF(windowContentGeometry().width() - BUTTON_WIDTH * (maximizeEnabled ? 3 : 2) - (BUTTON_SPACING * (maximizeEnabled ? 2 : 1))
                           - BUTTON_MARGINS - margins().right(),
                       (margins().top() - BUTTON_WIDTH + margins().bottom()) / 2,
                       BUTTON_WIDTH,
@@ -196,7 +196,7 @@ QMargins QGnomePlatformDecoration::margins() const
 void QGnomePlatformDecoration::paint(QPaintDevice *device)
 {
     const bool active = window()->handle()->isActive();
-    const QRect surfaceRect = waylandWindow()->windowContentGeometry();
+    const QRect surfaceRect = windowContentGeometry();
     const QColor borderColor = active ? m_borderColor : m_borderInactiveColor;
 
     QPainter p(device);
@@ -558,7 +558,7 @@ bool QGnomePlatformDecoration::handleMouse(QWaylandInputDevice *inputDevice,
     }
 
     // Figure out what area mouse is in
-    QRect surfaceRect = waylandWindow()->windowContentGeometry();
+    QRect surfaceRect = windowContentGeometry();
     if (local.y() <= surfaceRect.top() + margins().top()) {
         processMouseTop(inputDevice, local, b, mods);
     } else if (local.y() > surfaceRect.bottom() - margins().bottom()) {
@@ -618,6 +618,15 @@ bool QGnomePlatformDecoration::handleTouch(QWaylandInputDevice *inputDevice,
     return handled;
 }
 
+QRect QGnomePlatformDecoration::windowContentGeometry() const
+{
+#if QT_VERSION >= 0x060000
+    return waylandWindow()->windowContentGeometry() + margins(ShadowsOnly);
+#else
+    return waylandWindow()->windowContentGeometry();
+#endif
+}
+
 void QGnomePlatformDecoration::loadConfiguration()
 {
     // Colors
@@ -657,7 +666,7 @@ void QGnomePlatformDecoration::processMouseTop(QWaylandInputDevice *inputDevice,
     Q_UNUSED(mods)
 
     QDateTime currentDateTime = QDateTime::currentDateTime();
-    QRect surfaceRect = waylandWindow()->windowContentGeometry();
+    QRect surfaceRect = windowContentGeometry();
 
     if (!closeButtonRect().contains(local) && !maximizeButtonRect().contains(local) && !minimizeButtonRect().contains(local)) {
         updateButtonHoverState(Button::None);
