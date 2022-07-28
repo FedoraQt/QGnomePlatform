@@ -88,7 +88,7 @@ GnomeSettings::GnomeSettings(QObject *parent)
     } else {
         // check if service already exists on QGnomePlatform initialization
         QDBusConnectionInterface *interface = QDBusConnection::sessionBus().interface();
-        const bool dbusServiceExists = interface && interface->isServiceRegistered(QString::fromLatin1("org.freedesktop.portal.Desktop"));
+        const bool dbusServiceExists = interface && interface->isServiceRegistered(QString::fromLatin1("org.freedesktop.impl.portal.desktop.gnome"));
 
         if (dbusServiceExists) {
             qCDebug(QGnomePlatform) << "Using xdg-desktop-portal backend";
@@ -109,18 +109,15 @@ GnomeSettings::GnomeSettings(QObject *parent)
             if (newOwner.isEmpty()) {
                 qCDebug(QGnomePlatform) << "Portal service disappeared. Switching to GSettings backend";
                 m_hintProvider = std::make_unique<GSettingsHintProvider>(this);
+                onHintProviderChanged();
             } else if (oldOwner.isEmpty()) {
                 qCDebug(QGnomePlatform) << "Portal service appeared. Switching xdg-desktop-portal backend";
-                m_hintProvider = std::make_unique<PortalHintProvider>(this);
+                PortalHintProvider *provider = new PortalHintProvider(this, true);
+                connect(provider, &PortalHintProvider::settingsRecieved, this, [=]() {
+                    m_hintProvider.reset(provider);
+                    onHintProviderChanged();
+                });
             }
-
-            initializeHintProvider();
-
-            // Reload some configuration as switching backends we might get different configuration
-            loadPalette();
-            onThemeChanged();
-            // Also notify to update decorations
-            Q_EMIT themeChanged();
         });
     }
 
@@ -336,6 +333,17 @@ void GnomeSettings::onThemeChanged()
     }
 
     app->setStyle(styleNames().first());
+}
+
+void GnomeSettings::onHintProviderChanged()
+{
+    initializeHintProvider();
+
+    // Reload some configuration as switching backends we might get different configuration
+    loadPalette();
+    onThemeChanged();
+    // Also notify to update decorations
+    Q_EMIT themeChanged();
 }
 
 QStringList GnomeSettings::styleNames() const

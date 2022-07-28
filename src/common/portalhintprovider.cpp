@@ -20,6 +20,7 @@
 #include "portalhintprovider.h"
 
 // QtDBus
+#include <QtDBus/QtDBus>
 #include <QDBusArgument>
 #include <QDBusConnection>
 #include <QDBusMessage>
@@ -51,7 +52,7 @@ const QDBusArgument
     return argument;
 }
 
-PortalHintProvider::PortalHintProvider(QObject *parent)
+PortalHintProvider::PortalHintProvider(QObject *parent, bool asynchronous)
     : HintProvider(parent)
 {
     QDBusMessage message = QDBusMessage::createMethodCall(QStringLiteral("org.freedesktop.portal.Desktop"),
@@ -60,17 +61,29 @@ PortalHintProvider::PortalHintProvider(QObject *parent)
                                                           QStringLiteral("ReadAll"));
     message << QStringList{{QStringLiteral("org.gnome.desktop.interface")}, {QStringLiteral("org.gnome.desktop.wm.preferences")}, {QStringLiteral("org.freedesktop.appearance")}};
 
-    // FIXME: async?
     qCDebug(QGnomePlatformPortalHintProvider) << "Reading settings from xdg-desktop-portal";
-    QDBusMessage resultMessage = QDBusConnection::sessionBus().call(message);
-    qCDebug(QGnomePlatformPortalHintProvider) << "Received settings from xdg-desktop-portal";
-    if (resultMessage.type() == QDBusMessage::ReplyMessage) {
-        QDBusArgument dbusArgument = resultMessage.arguments().at(0).value<QDBusArgument>();
-        dbusArgument >> m_portalSettings;
-    }
+    if (asynchronous) {
+        qDBusRegisterMetaType<QMap<QString, QVariantMap>>();
+        QDBusPendingCall pendingCall = QDBusConnection::sessionBus().asyncCall(message);
+        QDBusPendingCallWatcher *watcher = new QDBusPendingCallWatcher(pendingCall);
+        QObject::connect(watcher, &QDBusPendingCallWatcher::finished, [=](QDBusPendingCallWatcher *watcher) {
+            QDBusPendingReply<QMap<QString, QVariantMap>> reply = *watcher;
+            if (reply.isValid()) {
+                m_portalSettings = reply.value();
+                onSettingsReceived();
+                Q_EMIT settingsRecieved();
+                watcher->deleteLater();
+            }
+        });
+    } else {
+        QDBusMessage resultMessage = QDBusConnection::sessionBus().call(message);
+        qCDebug(QGnomePlatformPortalHintProvider) << "Received settings from xdg-desktop-portal";
 
-    if (m_portalSettings.contains(QStringLiteral("org.freedesktop.appearance"))) {
-        m_canRelyOnAppearance = true;
+        if (resultMessage.type() == QDBusMessage::ReplyMessage) {
+            QDBusArgument dbusArgument = resultMessage.arguments().at(0).value<QDBusArgument>();
+            dbusArgument >> m_portalSettings;
+            onSettingsReceived();
+        }
     }
 
     QDBusConnection::sessionBus().connect(QString(),
@@ -79,6 +92,13 @@ PortalHintProvider::PortalHintProvider(QObject *parent)
                                           QStringLiteral("SettingChanged"),
                                           this,
                                           SLOT(settingChanged(QString, QString, QDBusVariant)));
+}
+
+void PortalHintProvider::onSettingsReceived()
+{
+    if (m_portalSettings.contains(QStringLiteral("org.freedesktop.appearance"))) {
+        m_canRelyOnAppearance = true;
+    }
 
     loadCursorBlinkTime();
     loadCursorSize();
@@ -89,7 +109,6 @@ PortalHintProvider::PortalHintProvider(QObject *parent)
     loadTheme();
     loadTitlebar();
 }
-
 void PortalHintProvider::settingChanged(const QString &group, const QString &key, const QDBusVariant &value)
 {
     qCDebug(QGnomePlatformPortalHintProvider) << "Setting property change: " << group << " : " << key;

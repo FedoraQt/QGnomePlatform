@@ -31,13 +31,18 @@ class PortalHintProvider : public HintProvider
 {
     Q_OBJECT
 public:
-    explicit PortalHintProvider(QObject *parent = nullptr);
+    explicit PortalHintProvider(QObject *parent = nullptr, bool asynchronous = false);
     virtual ~PortalHintProvider() = default;
+
+Q_SIGNALS:
+    void settingsRecieved();
 
 private Q_SLOTS:
     void settingChanged(const QString &group, const QString &key, const QDBusVariant &value);
 
 private:
+    void onSettingsReceived();
+
     void loadCursorBlinkTime();
     void loadCursorSize();
     void loadCursorTheme();
