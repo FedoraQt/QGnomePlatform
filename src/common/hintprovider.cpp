@@ -68,6 +68,7 @@ void HintProvider::setIconTheme(const QString &iconTheme)
     if (!iconTheme.isEmpty()) {
         qCDebug(QGnomePlatformHintProvider) << "Icon theme: " << iconTheme;
         m_hints[QPlatformTheme::SystemIconThemeName] = iconTheme;
+        m_hints[QPlatformTheme::SystemIconFallbackThemeName] = "Adwaita";
     } else {
         m_hints[QPlatformTheme::SystemIconThemeName] = "Adwaita";
     }
