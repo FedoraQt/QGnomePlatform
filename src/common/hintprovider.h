@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2022 Jan Grulich
+ * Copyright (C) 2016-2022 Jan Grulich <jgrulich@redhat.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
