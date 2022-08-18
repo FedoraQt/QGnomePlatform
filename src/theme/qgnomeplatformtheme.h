@@ -39,6 +39,9 @@ public:
 #ifndef QT_NO_SYSTEMTRAYICON
     QPlatformSystemTrayIcon *createPlatformSystemTrayIcon() const Q_DECL_OVERRIDE;
 #endif
+#if QT_VERSION > 0x060000
+    QPlatformTheme::Appearance appearance() const Q_DECL_OVERRIDE;
+#endif
 };
 
 #endif // QGNOME_PLATFORM_THEME_HH
