@@ -169,7 +169,7 @@ QPlatformSystemTrayIcon *QGnomePlatformTheme::createPlatformSystemTrayIcon() con
 }
 #endif
 
-#if QT_VERSION > 0x060000
+#if QT_VERSION > 0x060300
 QPlatformTheme::Appearance QGnomePlatformTheme::appearance() const
 {
     return GnomeSettings::getInstance().useGtkThemeDarkVariant() ? Appearance::Dark : Appearance::Light;

@@ -39,7 +39,7 @@ public:
 #ifndef QT_NO_SYSTEMTRAYICON
     QPlatformSystemTrayIcon *createPlatformSystemTrayIcon() const Q_DECL_OVERRIDE;
 #endif
-#if QT_VERSION > 0x060000
+#if QT_VERSION > 0x060300
     QPlatformTheme::Appearance appearance() const Q_DECL_OVERRIDE;
 #endif
 };
