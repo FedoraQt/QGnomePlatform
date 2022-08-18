@@ -717,6 +717,10 @@ void QGnomePlatformDecoration::processMouseTop(QWaylandInputDevice *inputDevice,
     } else if (doubleClickButton(b, local, currentDateTime)) {
         window()->setWindowStates(window()->windowStates() ^ Qt::WindowMaximized);
     } else {
+        // Show window menu
+        if (b == Qt::MouseButton::RightButton) {
+            waylandWindow()->shellSurface()->showWindowMenu(inputDevice);
+        }
 #if QT_CONFIG(cursor)
         waylandWindow()->restoreMouseCursor(inputDevice);
 #endif
