@@ -39,6 +39,10 @@
 #endif
 #endif
 
+#if QT_VERSION > 0x060000
+#include <QtGui/private/qgenericunixthemes_p.h>
+#endif
+
 void gtkMessageHandler(const gchar *log_domain, GLogLevelFlags log_level, const gchar *message, gpointer unused_data)
 {
     /* Silence false-positive Gtk warnings (we are using Xlib to set
@@ -78,6 +82,11 @@ QGnomePlatformTheme::QGnomePlatformTheme()
      */
     g_type_ensure(PANGO_TYPE_FONT_FAMILY);
     g_type_ensure(PANGO_TYPE_FONT_FACE);
+
+#if QT_VERSION > 0x060000
+    // Load QGnomeTheme
+    m_platformTheme = QGenericUnixTheme::createUnixTheme(QLatin1String("gnome"));
+#endif
 }
 
 QGnomePlatformTheme::~QGnomePlatformTheme()
@@ -163,6 +172,10 @@ QPlatformSystemTrayIcon *QGnomePlatformTheme::createPlatformSystemTrayIcon() con
 #if QT_VERSION < 0x060000
     if (isDBusTrayAvailable()) {
         return new QDBusTrayIcon();
+    }
+#else
+    if (m_platformTheme) {
+        return m_platformTheme->createPlatformSystemTrayIcon();
     }
 #endif
     return Q_NULLPTR;

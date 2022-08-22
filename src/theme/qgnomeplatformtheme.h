@@ -42,6 +42,13 @@ public:
 #if QT_VERSION > 0x060300
     QPlatformTheme::Appearance appearance() const Q_DECL_OVERRIDE;
 #endif
+
+private:
+#if QT_VERSION > 0x060000
+    // Used to load Qt's internall platform theme to get access to
+    // non-public stuff, like QDBusTrayIcon
+    QPlatformTheme *m_platformTheme = nullptr;
+#endif
 };
 
-#endif // QGNOME_PLATFORM_THEME_HH
+#endif // QGNOME_PLATFORM_THEME_H

@@ -15,6 +15,7 @@ target_link_libraries(qgnomeplatformtheme
     qgnomeplatform${LIBQGNOMEPLATFORM_SUFFIX}
     Qt${QT_VERSION_MAJOR}::DBus
     Qt${QT_VERSION_MAJOR}::Gui
+    Qt${QT_VERSION_MAJOR}::GuiPrivate
     ${ADWAITAQT_LIBRARIES}
     PkgConfig::GTK+3
 )
