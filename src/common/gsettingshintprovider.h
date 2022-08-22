@@ -24,8 +24,8 @@
 
 #undef signals
 #include <gio/gio.h>
-#include <gtk-3.0/gtk/gtk.h>
-#include <gtk-3.0/gtk/gtksettings.h>
+#include <gtk-4.0/gtk/gtk.h>
+#include <gtk-4.0/gtk/gtksettings.h>
 #define signals Q_SIGNALS
 
 class QFont;

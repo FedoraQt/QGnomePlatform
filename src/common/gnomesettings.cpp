@@ -77,7 +77,7 @@ GnomeSettings::GnomeSettings(QObject *parent)
     , m_isRunningInSandbox(checkSandboxApplication())
     , m_canUseFileChooserPortal(!m_isRunningInSandbox)
 {
-    gtk_init(nullptr, nullptr);
+    gtk_init();
 
     if (m_isRunningInSandbox) {
         qCDebug(QGnomePlatform) << "Using xdg-desktop-portal backend";

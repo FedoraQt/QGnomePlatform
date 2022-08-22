@@ -15,7 +15,7 @@ target_link_libraries(qgnomeplatformdecoration
     Qt${QT_VERSION_MAJOR}::GuiPrivate
     Qt${QT_VERSION_MAJOR}::WaylandClientPrivate
     ${ADWAITAQT_LIBRARIES}
-    PkgConfig::GTK+3
+    PkgConfig::GTK4
 )
 
 if (NOT USE_QT6)

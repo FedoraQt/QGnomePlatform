@@ -37,8 +37,8 @@
 **
 ****************************************************************************/
 
-#ifndef QGTK3DIALOGHELPERS_H
-#define QGTK3DIALOGHELPERS_H
+#ifndef QGTK4DIALOGHELPERS_H
+#define QGTK4DIALOGHELPERS_H
 
 #include <QtCore/qhash.h>
 #include <QtCore/qlist.h>
@@ -54,16 +54,16 @@ typedef struct _GtkFileFilter GtkFileFilter;
 
 QT_BEGIN_NAMESPACE
 
-class QGtk3Dialog;
+class QGtk4Dialog;
 class QColor;
 
-class QGtk3ColorDialogHelper : public QPlatformColorDialogHelper
+class QGtk4ColorDialogHelper : public QPlatformColorDialogHelper
 {
     Q_OBJECT
 
 public:
-    QGtk3ColorDialogHelper();
-    ~QGtk3ColorDialogHelper();
+    QGtk4ColorDialogHelper();
+    ~QGtk4ColorDialogHelper();
 
     bool show(Qt::WindowFlags flags, Qt::WindowModality modality, QWindow *parent) Q_DECL_OVERRIDE;
     void exec() Q_DECL_OVERRIDE;
@@ -76,19 +76,19 @@ private Q_SLOTS:
     void onAccepted();
 
 private:
-    static void onColorChanged(QGtk3ColorDialogHelper *helper);
+    static void onColorChanged(QGtk4ColorDialogHelper *helper);
     void applyOptions();
 
-    QScopedPointer<QGtk3Dialog> d;
+    QScopedPointer<QGtk4Dialog> d;
 };
 
-class QGtk3FileDialogHelper : public QPlatformFileDialogHelper
+class QGtk4FileDialogHelper : public QPlatformFileDialogHelper
 {
     Q_OBJECT
 
 public:
-    QGtk3FileDialogHelper();
-    ~QGtk3FileDialogHelper();
+    QGtk4FileDialogHelper();
+    ~QGtk4FileDialogHelper();
 
     GtkImage *previewImage() const;
 
@@ -109,9 +109,9 @@ private Q_SLOTS:
     void onAccepted();
 
 private:
-    static void onSelectionChanged(GtkDialog *dialog, QGtk3FileDialogHelper *helper);
-    static void onCurrentFolderChanged(QGtk3FileDialogHelper *helper);
-    static void onUpdatePreview(GtkDialog *dialog, QGtk3FileDialogHelper *helper);
+    static void onSelectionChanged(GtkDialog *dialog, QGtk4FileDialogHelper *helper);
+    static void onCurrentFolderChanged(QGtk4FileDialogHelper *helper);
+    static void onUpdatePreview(GtkDialog *dialog, QGtk4FileDialogHelper *helper);
     void applyOptions();
     void setNameFilters(const QStringList &filters);
 
@@ -119,17 +119,17 @@ private:
     QList<QUrl> _selection;
     QHash<QString, GtkFileFilter *> _filters;
     QHash<GtkFileFilter *, QString> _filterNames;
-    QScopedPointer<QGtk3Dialog> d;
+    QScopedPointer<QGtk4Dialog> d;
     GtkWidget *previewWidget;
 };
 
-class QGtk3FontDialogHelper : public QPlatformFontDialogHelper
+class QGtk4FontDialogHelper : public QPlatformFontDialogHelper
 {
     Q_OBJECT
 
 public:
-    QGtk3FontDialogHelper();
-    ~QGtk3FontDialogHelper();
+    QGtk4FontDialogHelper();
+    ~QGtk4FontDialogHelper();
 
     bool show(Qt::WindowFlags flags, Qt::WindowModality modality, QWindow *parent) Q_DECL_OVERRIDE;
     void exec() Q_DECL_OVERRIDE;
@@ -144,9 +144,9 @@ private Q_SLOTS:
 private:
     void applyOptions();
 
-    QScopedPointer<QGtk3Dialog> d;
+    QScopedPointer<QGtk4Dialog> d;
 };
 
 QT_END_NAMESPACE
 
-#endif // QGTK3DIALOGHELPERS_H
+#endif // QGTK4DIALOGHELPERS_H

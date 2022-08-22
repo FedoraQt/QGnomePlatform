@@ -20,7 +20,7 @@
 
 #include "qgnomeplatformtheme.h"
 #include "gnomesettings.h"
-#include "qgtk3dialoghelpers.h"
+#include "qgtk4dialoghelpers.h"
 #include "qxdgdesktopportalfiledialog_p.h"
 
 #include <QApplication>
@@ -28,7 +28,7 @@
 #include <QStyleFactory>
 
 #undef signals
-#include <gtk-3.0/gtk/gtk.h>
+#include <gtk-4.0/gtk/gtk.h>
 #define signals Q_SIGNALS
 
 #include <X11/Xlib.h>
@@ -127,13 +127,13 @@ QPlatformDialogHelper *QGnomePlatformTheme::createPlatformDialogHelper(QPlatform
         if (GnomeSettings::getInstance().canUseFileChooserPortal()) {
             return new QXdgDesktopPortalFileDialog;
         } else {
-            return new QGtk3FileDialogHelper;
+            return new QGtk4FileDialogHelper;
         }
     }
     case QPlatformTheme::FontDialog:
-        return new QGtk3FontDialogHelper();
+        return new QGtk4FontDialogHelper();
     case QPlatformTheme::ColorDialog:
-        return new QGtk3ColorDialogHelper();
+        return new QGtk4ColorDialogHelper();
     default:
         return nullptr;
     }

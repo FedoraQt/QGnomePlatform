@@ -6,7 +6,7 @@ include_directories(
 set(theme_SRCS
     platformplugin.cpp
     qgnomeplatformtheme.cpp
-    qgtk3dialoghelpers.cpp
+    qgtk4dialoghelpers.cpp
     qxdgdesktopportalfiledialog.cpp
 )
 
@@ -16,7 +16,7 @@ target_link_libraries(qgnomeplatformtheme
     Qt${QT_VERSION_MAJOR}::DBus
     Qt${QT_VERSION_MAJOR}::Gui
     ${ADWAITAQT_LIBRARIES}
-    PkgConfig::GTK+3
+    PkgConfig::GTK4
 )
 
 if (NOT USE_QT6)

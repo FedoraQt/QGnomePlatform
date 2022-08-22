@@ -13,14 +13,14 @@ env:
 
 jobs:
   Linux_Qt5:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
     - uses: actions/checkout@v2
 
     - name: Install base dependencies
       run: |
         sudo apt update
-        sudo apt install cmake make pkg-config libx11-dev xcb libx11-xcb-dev libxkbcommon-dev libgtk-3-dev sassc
+        sudo apt install cmake make pkg-config libx11-dev xcb libx11-xcb-dev libxkbcommon-dev libgtk-4-dev sassc
 
     - name: Install Qt
       uses: jurplel/install-qt-action@v2
@@ -45,14 +45,14 @@ jobs:
         make -j2
 
   Linux_Qt6:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
     - uses: actions/checkout@v2
 
     - name: Install base dependencies
       run: |
         sudo apt update
-        sudo apt install cmake make pkg-config libx11-dev xcb libx11-xcb-dev libxkbcommon-dev libgtk-3-dev sassc
+        sudo apt install cmake make pkg-config libx11-dev xcb libx11-xcb-dev libxkbcommon-dev libgtk-4-dev sassc
 
     - name: Install Qt
       uses: jurplel/install-qt-action@v3
