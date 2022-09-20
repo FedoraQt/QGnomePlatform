@@ -26,14 +26,34 @@
 
 Q_LOGGING_CATEGORY(QGnomePlatformGSettingsHintProvider, "qt.qpa.qgnomeplatform.gsettingshintprovider")
 
+static GSettings *loadGSettingsSchema(const QString &schema)
+{
+    GSettingsSchemaSource *source = g_settings_schema_source_get_default();
+    GSettingsSchema *gschema = nullptr;
+
+    gschema = g_settings_schema_source_lookup(source, schema.toLatin1(), TRUE);
+    if (!gschema) {
+        return nullptr;
+    }
+
+    GSettings *settings = g_settings_new(schema.toLatin1());
+    g_settings_schema_unref(gschema);
+    return settings;
+}
+
 GSettingsHintProvider::GSettingsHintProvider(QObject *parent)
     : HintProvider(parent)
-    , m_gnomeDesktopSettings(g_settings_new("org.gnome.desktop.wm.preferences"))
-    , m_settings(g_settings_new("org.gnome.desktop.interface"))
+    , m_gnomeDesktopSettings(loadGSettingsSchema(QLatin1String("org.gnome.desktop.wm.preferences")))
+    , m_settings(loadGSettingsSchema(QLatin1String("org.gnome.desktop.interface")))
 {
     // Check if this is a Cinnamon session to use additionally a different setting scheme
     if (qgetenv("XDG_CURRENT_DESKTOP").toLower() == QStringLiteral("x-cinnamon")) {
-        m_cinnamonSettings = g_settings_new("org.cinnamon.desktop.interface");
+        m_cinnamonSettings = loadGSettingsSchema(QLatin1String("org.cinnamon.desktop.interface"));
+    }
+
+    // Do not continue on missing GSettings
+    if (!m_settings && !m_cinnamonSettings) {
+        return;
     }
 
     // Watch for changes
