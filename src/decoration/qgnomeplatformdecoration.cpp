@@ -620,7 +620,7 @@ bool QGnomePlatformDecoration::handleTouch(QWaylandInputDevice *inputDevice,
 
 QRect QGnomePlatformDecoration::windowContentGeometry() const
 {
-#if QT_VERSION >= 0x060000
+#ifdef DECORATION_SHADOWS_SUPPORT // Qt 6.2.0+ or patched QtWayland
     return waylandWindow()->windowContentGeometry() + margins(ShadowsOnly);
 #else
     return waylandWindow()->windowContentGeometry();
