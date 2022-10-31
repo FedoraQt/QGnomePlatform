@@ -213,9 +213,11 @@ bool GnomeSettings::canUseFileChooserPortal() const
 
 bool GnomeSettings::useGtkThemeDarkVariant() const
 {
-    const QString theme = m_hintProvider->gtkTheme();
-
-    if (m_hintProvider->canRelyOnAppearance()) {
+    QString theme = m_hintProvider->gtkTheme();
+    if (qEnvironmentVariableIsSet("QT_STYLE_OVERRIDE")) {
+        /* If QT_STYLE_OVERRIDE we should rely on it */
+        theme = QString::fromLocal8Bit(qgetenv("QT_STYLE_OVERRIDE"));
+    } else if (m_hintProvider->canRelyOnAppearance()) {
         return m_hintProvider->appearance() == PreferDark;
     }
 
