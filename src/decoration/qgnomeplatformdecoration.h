@@ -46,11 +46,7 @@ public:
     virtual ~QGnomePlatformDecoration() override = default;
 
 protected:
-#ifdef DECORATION_SHADOWS_SUPPORT // Qt 6.2.0+ or patched QtWayland
     QMargins margins(MarginsType marginsType = Full) const override;
-#else
-    QMargins margins() const override;
-#endif
     void paint(QPaintDevice *device) override;
     bool handleMouse(QWaylandInputDevice *inputDevice, const QPointF &local, const QPointF &global, Qt::MouseButtons b, Qt::KeyboardModifiers mods) override;
 #if QT_VERSION >= 0x060000

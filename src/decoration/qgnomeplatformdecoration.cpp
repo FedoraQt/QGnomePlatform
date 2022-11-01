@@ -64,7 +64,11 @@
 #define BUTTON_WIDTH 28
 
 // Decoration sizing
+#ifdef DECORATION_SHADOWS_SUPPORT // Qt 6.2.0+ or patched QtWayland
 #define SHADOWS_WIDTH 10
+#else
+#define SHADOWS_WIDTH 0
+#endif
 #define TITLEBAR_HEIGHT 37
 #define WINDOW_BORDER_WIDTH 1
 
@@ -141,7 +145,6 @@ QRectF QGnomePlatformDecoration::minimizeButtonRect() const
     }
 }
 
-#ifdef DECORATION_SHADOWS_SUPPORT // Qt 6.2.0+ or patched QtWayland
 QMargins QGnomePlatformDecoration::margins(MarginsType marginsType) const
 {
     const bool maximized = waylandWindow()->windowStates() & Qt::WindowMaximized;
@@ -179,18 +182,6 @@ QMargins QGnomePlatformDecoration::margins(MarginsType marginsType) const
             return QMargins(tiledLeft ? 0 : SHADOWS_WIDTH, tiledTop ? 0 : SHADOWS_WIDTH, tiledRight ? 0 : SHADOWS_WIDTH, tiledBottom ? 0 : SHADOWS_WIDTH);
         }
     }
-#else
-QMargins QGnomePlatformDecoration::margins() const
-{
-    if ((window()->windowStates() & Qt::WindowMaximized)) {
-        return QMargins(0, TITLEBAR_HEIGHT, 0, 0);
-    }
-
-    return QMargins(WINDOW_BORDER_WIDTH, // Left
-                    TITLEBAR_HEIGHT + WINDOW_BORDER_WIDTH, // Top
-                    WINDOW_BORDER_WIDTH, // Right
-                    WINDOW_BORDER_WIDTH); // Bottom
-#endif
 }
 
 void QGnomePlatformDecoration::paint(QPaintDevice *device)
