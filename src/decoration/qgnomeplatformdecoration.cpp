@@ -372,7 +372,7 @@ void QGnomePlatformDecoration::paint(QPaintDevice *device)
     // *                              *
     // ********************************
     QPainterPath borderRect;
-    if (!(window()->windowStates() & Qt::WindowMaximized)) {
+    if (!(waylandWindow()->windowStates() & Qt::WindowMaximized)) {
         borderRect.addRoundedRect(0, 0, surfaceRect.width(), margins().top() + 8, 10, 10);
         p.fillPath(borderRect.simplified(), borderColor);
     }
@@ -390,7 +390,7 @@ void QGnomePlatformDecoration::paint(QPaintDevice *device)
     // *                              *
     // ********************************
     QPainterPath roundedRect;
-    if ((window()->windowStates() & Qt::WindowMaximized)) {
+    if ((waylandWindow()->windowStates() & Qt::WindowMaximized)) {
         roundedRect.addRect(0, 0, surfaceRect.width(), margins().top() + 8);
     } else {
         roundedRect
@@ -414,7 +414,7 @@ void QGnomePlatformDecoration::paint(QPaintDevice *device)
     // *|                            |*
     // *------------------------------*
     // ********************************
-    if (!(window()->windowStates() & Qt::WindowMaximized)) {
+    if (!(waylandWindow()->windowStates() & Qt::WindowMaximized)) {
         QPainterPath borderPath;
         // Left
         borderPath.addRect(0, margins().top(), margins().left(), surfaceRect.height() - margins().top() - WINDOW_BORDER_WIDTH);
@@ -499,7 +499,7 @@ void QGnomePlatformDecoration::paint(QPaintDevice *device)
     if (GnomeSettings::getInstance().titlebarButtons().testFlag(GnomeSettings::getInstance().MaximizeButton)) {
         renderButton(&p,
                      maximizeButtonRect(),
-                     (window()->windowStates() & Qt::WindowMaximized) ? Adwaita::ButtonType::ButtonRestore : Adwaita::ButtonType::ButtonMaximize,
+                     (waylandWindow()->windowStates() & Qt::WindowMaximized) ? Adwaita::ButtonType::ButtonRestore : Adwaita::ButtonType::ButtonMaximize,
                      m_maximizeButtonHovered && active,
                      m_clicking == Button::Maximize || m_clicking == Button::Restore);
     }
