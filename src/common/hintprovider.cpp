@@ -28,7 +28,7 @@
 
 Q_LOGGING_CATEGORY(QGnomePlatformHintProvider, "qt.qpa.qgnomeplatform.hintprovider")
 
-HintProvider::HintProvider(QObject* parent)
+HintProvider::HintProvider(QObject *parent)
     : QObject(parent)
 {
     // Generic hints shared with all providers
@@ -39,7 +39,8 @@ HintProvider::HintProvider(QObject* parent)
     m_hints[QPlatformTheme::PasswordMaskCharacter] = QVariant(QChar(0x2022));
 }
 
-HintProvider::~HintProvider() {
+HintProvider::~HintProvider()
+{
     qDeleteAll(m_fonts);
 }
 

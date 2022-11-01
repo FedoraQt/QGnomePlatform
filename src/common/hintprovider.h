@@ -22,8 +22,8 @@
 
 #include "gnomesettings.h"
 
-#include <QObject>
 #include <QHash>
+#include <QObject>
 #include <QVariant>
 
 #include <qpa/qplatformtheme.h>
@@ -38,25 +38,52 @@ public:
     explicit HintProvider(QObject *parent = nullptr);
     virtual ~HintProvider();
 
-    inline QHash<QPlatformTheme::ThemeHint, QVariant> hints() const { return m_hints; }
-    inline QHash<QPlatformTheme::Font, QFont *> fonts() const { return m_fonts; }
+    inline QHash<QPlatformTheme::ThemeHint, QVariant> hints() const
+    {
+        return m_hints;
+    }
+    inline QHash<QPlatformTheme::Font, QFont *> fonts() const
+    {
+        return m_fonts;
+    }
 
     // Theme
-    inline QString gtkTheme() const { return m_gtkTheme; }
-    inline GnomeSettings::Appearance appearance() const { return m_appearance; }
+    inline QString gtkTheme() const
+    {
+        return m_gtkTheme;
+    }
+    inline GnomeSettings::Appearance appearance() const
+    {
+        return m_appearance;
+    }
     // Whether we can assume e.g. Adwaita-dark should be used when Appearance == PreferDark
     // even though the theme is set to Adwaita
     // Used only when color-scheme from org.freedesktop.Appearance interface is implemented
     // in the xdg-desktop-portal backend
-    inline bool canRelyOnAppearance() const { return m_canRelyOnAppearance; }
+    inline bool canRelyOnAppearance() const
+    {
+        return m_canRelyOnAppearance;
+    }
 
     // Cursor
-    inline int cursorSize() const { return m_cursorSize; }
-    inline QString cursorTheme() const { return m_cursorTheme; }
+    inline int cursorSize() const
+    {
+        return m_cursorSize;
+    }
+    inline QString cursorTheme() const
+    {
+        return m_cursorTheme;
+    }
 
     // Window decorations
-    inline GnomeSettings::TitlebarButtons titlebarButtons() const { return m_titlebarButtons; }
-    inline GnomeSettings::TitlebarButtonsPlacement titlebarButtonPlacement() const { return m_titlebarButtonPlacement; }
+    inline GnomeSettings::TitlebarButtons titlebarButtons() const
+    {
+        return m_titlebarButtons;
+    }
+    inline GnomeSettings::TitlebarButtonsPlacement titlebarButtonPlacement() const
+    {
+        return m_titlebarButtonPlacement;
+    }
 
 Q_SIGNALS:
     void cursorBlinkTimeChanged();
@@ -95,5 +122,3 @@ protected:
 };
 
 #endif // GNOME_SETTINGS_P_H
-
-

@@ -73,6 +73,7 @@ private Q_SLOTS:
     void onThemeChanged();
 
     void onHintProviderChanged();
+
 private:
     void configureKvantum(const QString &theme) const;
     void initializeHintProvider() const;

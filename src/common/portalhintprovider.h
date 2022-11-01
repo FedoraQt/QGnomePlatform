@@ -53,9 +53,6 @@ private:
     void loadStaticHints();
 
     QMap<QString, QVariantMap> m_portalSettings;
-
 };
 
 #endif // PORTAL_HINT_PROVIDER_H
-
-

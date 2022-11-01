@@ -25,10 +25,11 @@
 class QFont;
 class QString;
 
-namespace Utils {
-    QFont* qt_fontFromString(const QString &name);
-    GnomeSettings::TitlebarButtons titlebarButtonsFromString(const QString &layout);
-    GnomeSettings::TitlebarButtonsPlacement titlebarButtonPlacementFromString(const QString &layout);
+namespace Utils
+{
+QFont *qt_fontFromString(const QString &name);
+GnomeSettings::TitlebarButtons titlebarButtonsFromString(const QString &layout);
+GnomeSettings::TitlebarButtonsPlacement titlebarButtonPlacementFromString(const QString &layout);
 }
 
 #endif // UTILS_H

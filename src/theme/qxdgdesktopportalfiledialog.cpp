@@ -28,9 +28,9 @@
 #include <QDBusPendingReply>
 #include <QtDBus/QtDBus>
 
-#include <QGuiApplication>
 #include <QFile>
 #include <QFileInfo>
+#include <QGuiApplication>
 #include <QMetaType>
 #include <QMimeDatabase>
 #include <QMimeType>

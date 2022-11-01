@@ -63,4 +63,3 @@ private:
 };
 
 #endif // GSETTINGS_HINT_PROVIDER_H
-
