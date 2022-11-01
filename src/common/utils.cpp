@@ -23,10 +23,11 @@
 
 #include <pango/pango.h>
 
-namespace Utils {
+namespace Utils
+{
 
 // FIXME: duplicate
-QFont* qt_fontFromString(const QString &name)
+QFont *qt_fontFromString(const QString &name)
 {
     QFont *font = new QFont(QLatin1String("Sans"), 10);
 

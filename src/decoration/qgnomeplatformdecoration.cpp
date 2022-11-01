@@ -81,11 +81,11 @@ QGnomePlatformDecoration::QGnomePlatformDecoration()
     option.setWrapMode(QTextOption::NoWrap);
     m_windowTitle.setTextOption(option);
 
-    connect(&GnomeSettings::getInstance(), &GnomeSettings::themeChanged, this, [this] () {
+    connect(&GnomeSettings::getInstance(), &GnomeSettings::themeChanged, this, [this]() {
         loadConfiguration();
         forceRepaint();
     });
-    connect(&GnomeSettings::getInstance(), &GnomeSettings::titlebarChanged, this, [this] () {
+    connect(&GnomeSettings::getInstance(), &GnomeSettings::titlebarChanged, this, [this]() {
         loadConfiguration();
         forceRepaint();
     });
@@ -128,8 +128,8 @@ QRectF QGnomePlatformDecoration::minimizeButtonRect() const
     const bool maximizeEnabled = GnomeSettings::getInstance().titlebarButtons().testFlag(GnomeSettings::getInstance().MaximizeButton);
 
     if (GnomeSettings::getInstance().titlebarButtonPlacement() == GnomeSettings::getInstance().RightPlacement) {
-        return QRectF(windowContentGeometry().width() - BUTTON_WIDTH * (maximizeEnabled ? 3 : 2) - (BUTTON_SPACING * (maximizeEnabled ? 2 : 1))
-                          - BUTTON_MARGINS - margins().right(),
+        return QRectF(windowContentGeometry().width() - BUTTON_WIDTH * (maximizeEnabled ? 3 : 2) - (BUTTON_SPACING * (maximizeEnabled ? 2 : 1)) - BUTTON_MARGINS
+                          - margins().right(),
                       (margins().top() - BUTTON_WIDTH + margins().bottom()) / 2,
                       BUTTON_WIDTH,
                       BUTTON_WIDTH);
@@ -604,9 +604,11 @@ bool QGnomePlatformDecoration::handleTouch(QWaylandInputDevice *inputDevice,
     if (handled) {
         if (closeButtonRect().contains(local)) {
             QWindowSystemInterface::handleCloseEvent(window());
-        } else if (GnomeSettings::getInstance().titlebarButtons().testFlag(GnomeSettings::getInstance().MaximizeButton) && maximizeButtonRect().contains(local)) {
+        } else if (GnomeSettings::getInstance().titlebarButtons().testFlag(GnomeSettings::getInstance().MaximizeButton)
+                   && maximizeButtonRect().contains(local)) {
             window()->setWindowStates(window()->windowStates() ^ Qt::WindowMaximized);
-        } else if (GnomeSettings::getInstance().titlebarButtons().testFlag(GnomeSettings::getInstance().MinimizeButton) && minimizeButtonRect().contains(local)) {
+        } else if (GnomeSettings::getInstance().titlebarButtons().testFlag(GnomeSettings::getInstance().MinimizeButton)
+                   && minimizeButtonRect().contains(local)) {
             window()->setWindowState(Qt::WindowMinimized);
         } else if (local.y() <= margins().top()) {
             waylandWindow()->shellSurface()->move(inputDevice);

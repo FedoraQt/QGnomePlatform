@@ -96,7 +96,6 @@ GSettingsHintProvider::~GSettingsHintProvider()
     g_object_unref(m_settings);
 }
 
-
 void GSettingsHintProvider::gsettingPropertyChanged(GSettings *settings, gchar *key, GSettingsHintProvider *hintProvider)
 {
     Q_UNUSED(settings)
@@ -114,13 +113,13 @@ void GSettingsHintProvider::gsettingPropertyChanged(GSettings *settings, gchar *
     } else if (changedProperty == QStringLiteral("cursor-blink-time")) {
         hintProvider->loadCursorBlinkTime();
         Q_EMIT hintProvider->cursorBlinkTimeChanged();
-    } else if (changedProperty == QStringLiteral("font-name") ||
-               changedProperty == QStringLiteral("monospace-font-name") ||
-               changedProperty == QStringLiteral("titlebar-font")) {
+    } else if (changedProperty == QStringLiteral("font-name") || changedProperty == QStringLiteral("monospace-font-name")
+               || changedProperty == QStringLiteral("titlebar-font")) {
         hintProvider->loadFonts();
         Q_EMIT hintProvider->fontChanged();
     } else if (changedProperty == QStringLiteral("cursor-size")) {
-        hintProvider->loadCursorSize();;
+        hintProvider->loadCursorSize();
+        ;
         Q_EMIT hintProvider->fontChanged();
     } else if (changedProperty == QStringLiteral("cursor-theme")) {
         hintProvider->loadCursorTheme();

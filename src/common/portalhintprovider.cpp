@@ -20,7 +20,6 @@
 #include "portalhintprovider.h"
 
 // QtDBus
-#include <QtDBus/QtDBus>
 #include <QDBusArgument>
 #include <QDBusConnection>
 #include <QDBusMessage>
@@ -30,11 +29,11 @@
 #include <QDBusVariant>
 #include <QLoggingCategory>
 #include <QVariant>
+#include <QtDBus/QtDBus>
 
 Q_LOGGING_CATEGORY(QGnomePlatformPortalHintProvider, "qt.qpa.qgnomeplatform.portalhintprovider")
 
-const QDBusArgument
-&operator>>(const QDBusArgument &argument, QMap<QString, QVariantMap> &map)
+const QDBusArgument &operator>>(const QDBusArgument &argument, QMap<QString, QVariantMap> &map)
 {
     argument.beginMap();
     map.clear();
@@ -59,7 +58,9 @@ PortalHintProvider::PortalHintProvider(QObject *parent, bool asynchronous)
                                                           QStringLiteral("/org/freedesktop/portal/desktop"),
                                                           QStringLiteral("org.freedesktop.portal.Settings"),
                                                           QStringLiteral("ReadAll"));
-    message << QStringList{{QStringLiteral("org.gnome.desktop.interface")}, {QStringLiteral("org.gnome.desktop.wm.preferences")}, {QStringLiteral("org.freedesktop.appearance")}};
+    message << QStringList{{QStringLiteral("org.gnome.desktop.interface")},
+                           {QStringLiteral("org.gnome.desktop.wm.preferences")},
+                           {QStringLiteral("org.freedesktop.appearance")}};
 
     qCDebug(QGnomePlatformPortalHintProvider) << "Reading settings from xdg-desktop-portal";
     if (asynchronous) {
@@ -123,13 +124,12 @@ void PortalHintProvider::settingChanged(const QString &group, const QString &key
     } else if (key == QStringLiteral("cursor-blink-time")) {
         loadCursorBlinkTime();
         Q_EMIT cursorBlinkTimeChanged();
-    } else if (key == QStringLiteral("font-name") ||
-               key == QStringLiteral("monospace-font-name") ||
-               key == QStringLiteral("titlebar-font")) {
+    } else if (key == QStringLiteral("font-name") || key == QStringLiteral("monospace-font-name") || key == QStringLiteral("titlebar-font")) {
         loadFonts();
         Q_EMIT fontChanged();
     } else if (key == QStringLiteral("cursor-size")) {
-        loadCursorSize();;
+        loadCursorSize();
+        ;
         Q_EMIT fontChanged();
     } else if (key == QStringLiteral("cursor-theme")) {
         loadCursorTheme();
@@ -167,8 +167,10 @@ void PortalHintProvider::loadIconTheme()
 void PortalHintProvider::loadFonts()
 {
     const QString fontName = m_portalSettings.value(QStringLiteral("org.gnome.desktop.interface")).value(QStringLiteral("font-name")).toString();
-    const QString monospaceFontName = m_portalSettings.value(QStringLiteral("org.gnome.desktop.interface")).value(QStringLiteral("monospace-font-name")).toString();
-    const QString titlebarFontName = m_portalSettings.value(QStringLiteral("org.gnome.desktop.wm.preferences")).value(QStringLiteral("titlebar-font")).toString();
+    const QString monospaceFontName =
+        m_portalSettings.value(QStringLiteral("org.gnome.desktop.interface")).value(QStringLiteral("monospace-font-name")).toString();
+    const QString titlebarFontName =
+        m_portalSettings.value(QStringLiteral("org.gnome.desktop.wm.preferences")).value(QStringLiteral("titlebar-font")).toString();
     setFonts(fontName, monospaceFontName, titlebarFontName);
 }
 
@@ -181,7 +183,8 @@ void PortalHintProvider::loadTitlebar()
 void PortalHintProvider::loadTheme()
 {
     const QString theme = m_portalSettings.value(QStringLiteral("org.gnome.desktop.interface")).value(QStringLiteral("gtk-theme")).toString();
-    const GnomeSettings::Appearance appearance = static_cast<GnomeSettings::Appearance>(m_portalSettings.value(QStringLiteral("org.freedesktop.appearance")).value(QStringLiteral("color-scheme")).toUInt());
+    const GnomeSettings::Appearance appearance = static_cast<GnomeSettings::Appearance>(
+        m_portalSettings.value(QStringLiteral("org.freedesktop.appearance")).value(QStringLiteral("color-scheme")).toUInt());
     setTheme(theme, appearance);
 }
 

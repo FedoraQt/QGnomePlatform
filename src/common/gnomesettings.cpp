@@ -18,8 +18,8 @@
  */
 
 #include "gnomesettings.h"
-#include "hintprovider.h"
 #include "gsettingshintprovider.h"
+#include "hintprovider.h"
 #include "portalhintprovider.h"
 
 #if QT_VERSION >= 0x060000
@@ -41,8 +41,8 @@
 #include <QDBusConnection>
 #include <QDBusConnectionInterface>
 #include <QDBusMessage>
-#include <QDBusPendingReply>
 #include <QDBusPendingCallWatcher>
+#include <QDBusPendingReply>
 #include <QDBusReply>
 #include <QDBusServiceWatcher>
 
@@ -103,7 +103,7 @@ GnomeSettings::GnomeSettings(QObject *parent)
         watcher->setConnection(QDBusConnection::sessionBus());
         watcher->setWatchMode(QDBusServiceWatcher::WatchForOwnerChange);
         watcher->addWatchedService(QString::fromLatin1("org.freedesktop.portal.Desktop"));
-        connect(watcher, &QDBusServiceWatcher::serviceOwnerChanged, this, [=] (const QString &service, const QString &oldOwner, const QString &newOwner) {
+        connect(watcher, &QDBusServiceWatcher::serviceOwnerChanged, this, [=](const QString &service, const QString &oldOwner, const QString &newOwner) {
             Q_UNUSED(service)
 
             if (newOwner.isEmpty()) {
@@ -219,9 +219,7 @@ bool GnomeSettings::useGtkThemeDarkVariant() const
         return m_hintProvider->appearance() == PreferDark;
     }
 
-    return theme.toLower().contains("-dark") ||
-           theme.toLower().endsWith("inverse") ||
-           m_hintProvider->appearance() == PreferDark;
+    return theme.toLower().contains("-dark") || theme.toLower().endsWith("inverse") || m_hintProvider->appearance() == PreferDark;
 }
 
 bool GnomeSettings::useGtkThemeHighContrastVariant() const
@@ -259,8 +257,8 @@ GnomeSettings::TitlebarButtonsPlacement GnomeSettings::titlebarButtonPlacement()
 void GnomeSettings::loadPalette()
 {
     if (useGtkThemeHighContrastVariant()) {
-        m_palette = new QPalette(
-            Adwaita::Colors::palette(useGtkThemeDarkVariant() ? Adwaita::ColorVariant::AdwaitaHighcontrastInverse : Adwaita::ColorVariant::AdwaitaHighcontrast));
+        m_palette = new QPalette(Adwaita::Colors::palette(useGtkThemeDarkVariant() ? Adwaita::ColorVariant::AdwaitaHighcontrastInverse
+                                                                                   : Adwaita::ColorVariant::AdwaitaHighcontrast));
     } else {
         m_palette = new QPalette(Adwaita::Colors::palette(useGtkThemeDarkVariant() ? Adwaita::ColorVariant::AdwaitaDark : Adwaita::ColorVariant::Adwaita));
     }
@@ -367,7 +365,10 @@ QStringList GnomeSettings::styleNames() const
 
     // 2) Use GTK theme
     if (!gtkTheme.isEmpty()) {
-        const QStringList adwaitaStyles = { QStringLiteral("adwaita"), QStringLiteral("adwaita-dark"), QStringLiteral("highcontrast"), QStringLiteral("highcontrastinverse") };
+        const QStringList adwaitaStyles = {QStringLiteral("adwaita"),
+                                           QStringLiteral("adwaita-dark"),
+                                           QStringLiteral("highcontrast"),
+                                           QStringLiteral("highcontrastinverse")};
         if (adwaitaStyles.contains(gtkTheme.toLower())) {
             QString theme = gtkTheme;
 
@@ -405,8 +406,7 @@ QStringList GnomeSettings::styleNames() const
     }
 
     // 5) Use other styles
-    styleNames << QStringLiteral("fusion")
-               << QStringLiteral("windows");
+    styleNames << QStringLiteral("fusion") << QStringLiteral("windows");
 
     return styleNames;
 }
