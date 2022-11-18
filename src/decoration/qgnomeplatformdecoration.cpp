@@ -195,19 +195,19 @@ QMargins QGnomePlatformDecoration::margins() const
 
 void QGnomePlatformDecoration::paint(QPaintDevice *device)
 {
-    const bool active = window()->handle()->isActive();
-    const QRect surfaceRect = windowContentGeometry();
-    const QColor borderColor = active ? m_borderColor : m_borderInactiveColor;
-
-    QPainter p(device);
-    p.setRenderHint(QPainter::Antialiasing);
-
     Qt::WindowStates windowStates;
 #ifdef DECORATION_SHADOWS_SUPPORT // Qt 6.2.0+ or patched QtWayland
     windowStates = waylandWindow()->windowStates();
 #else
     windowStates = window()->windowStates();
 #endif
+
+    const bool active = windowStates & Qt::WindowActive;
+    const QRect surfaceRect = windowContentGeometry();
+    const QColor borderColor = active ? m_borderColor : m_borderInactiveColor;
+
+    QPainter p(device);
+    p.setRenderHint(QPainter::Antialiasing);
 
 #ifdef DECORATION_SHADOWS_SUPPORT // Qt 6.2.0+ or patched QtWayland
     const bool maximized = windowStates & Qt::WindowMaximized;
@@ -783,8 +783,14 @@ void QGnomePlatformDecoration::processMouseRight(QWaylandInputDevice *inputDevic
 
 void QGnomePlatformDecoration::renderButton(QPainter *painter, const QRectF &rect, Adwaita::ButtonType button, bool renderFrame, bool sunken)
 {
-    const bool active = window()->handle()->isActive();
+    Qt::WindowStates windowStates;
+#ifdef DECORATION_SHADOWS_SUPPORT // Qt 6.2.0+ or patched QtWayland
+    windowStates = waylandWindow()->windowStates();
+#else
+    windowStates = window()->windowStates();
+#endif
 
+    const bool active = windowStates & Qt::WindowActive;
     Adwaita::StyleOptions decorationButtonStyle(painter, QRect());
     decorationButtonStyle.setColor(active ? m_foregroundColor : m_foregroundInactiveColor);
 
