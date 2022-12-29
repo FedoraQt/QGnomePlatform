@@ -67,6 +67,7 @@
 #define SHADOWS_WIDTH 10
 #define TITLEBAR_HEIGHT 37
 #define WINDOW_BORDER_WIDTH 1
+#define TITLEBAR_SEPARATOR_SIZE 0.5
 
 Q_DECL_IMPORT void qt_blurImage(QPainter *p, QImage &blurImage, qreal radius, bool quality, bool alphaOnly, int transposed = 0);
 
@@ -449,7 +450,10 @@ void QGnomePlatformDecoration::paint(QPaintDevice *device)
     // ********************************
     p.save();
     p.setPen(borderColor);
-    p.drawLine(margins().left(), margins().top() - WINDOW_BORDER_WIDTH, surfaceRect.width() - margins().right(), margins().top() - WINDOW_BORDER_WIDTH);
+    p.drawLine(QLineF(margins().left(),
+                      margins().top() - TITLEBAR_SEPARATOR_SIZE,
+                      surfaceRect.width() - margins().right(),
+                      margins().top() - TITLEBAR_SEPARATOR_SIZE));
     p.restore();
 
     // Window title
