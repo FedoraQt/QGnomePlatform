@@ -50,6 +50,7 @@
 #include <QtGui/QPainterPath>
 #include <QtGui/QPalette>
 #include <QtGui/QPixmap>
+#include <QtGui/private/qguiapplication_p.h>
 
 #include <qpa/qwindowsysteminterface.h>
 
@@ -515,6 +516,13 @@ void QGnomePlatformDecoration::paint(QPaintDevice *device)
     if (GnomeSettings::getInstance().titlebarButtons().testFlag(GnomeSettings::getInstance().MinimizeButton)) {
         renderButton(&p, minimizeButtonRect(), Adwaita::ButtonType::ButtonMinimize, m_minimizeButtonHovered && active, m_clicking == Button::Minimize);
     }
+
+    // HACK to prevent window from losing focus while moving or resizing
+    connect(window(),
+            &QWindow::activeChanged,
+            this,
+            &QGnomePlatformDecoration::forceWindowActivation,
+            static_cast<Qt::ConnectionType>(Qt::DirectConnection | Qt::UniqueConnection));
 }
 
 bool QGnomePlatformDecoration::clickButton(Qt::MouseButtons b, Button btn)
@@ -633,6 +641,21 @@ QRect QGnomePlatformDecoration::windowContentGeometry() const
     return waylandWindow()->windowContentGeometry() + margins(ShadowsOnly);
 #else
     return waylandWindow()->windowContentGeometry();
+#endif
+}
+
+void QGnomePlatformDecoration::forceWindowActivation()
+{
+#ifdef DECORATION_SHADOWS_SUPPORT // Qt 6.2.0+ or patched QtWayland
+    // If windowStates() tells that decoration is focused but keyboard focus is not present,
+    // that means window is being moved or resized, force it re-activation to prevent dimming.
+    // See more info in commit e532733f (qtwayland).
+    if (waylandWindow()->windowStates() & Qt::WindowActive && !QGuiApplication::focusWindow()) {
+        QGuiApplicationPrivate::focus_window = window();
+        QGuiApplicationPrivate *privApp = QGuiApplicationPrivate::instance();
+        if (privApp)
+            privApp->notifyActiveWindowChange(nullptr);
+    }
 #endif
 }
 

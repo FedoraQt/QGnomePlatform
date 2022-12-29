@@ -61,6 +61,9 @@ protected:
     handleTouch(QWaylandInputDevice *inputDevice, const QPointF &local, const QPointF &global, Qt::TouchPointState state, Qt::KeyboardModifiers mods) override;
 #endif
 
+protected slots:
+    void forceWindowActivation();
+
 private:
     QRect windowContentGeometry() const;
 
