@@ -256,6 +256,18 @@ GnomeSettings::TitlebarButtonsPlacement GnomeSettings::titlebarButtonPlacement()
     return m_hintProvider->titlebarButtonPlacement();
 }
 
+static QString colorScheme(bool useHighContrast, bool useDarkVariant)
+{
+    QString colorScheme;
+    if (useHighContrast) {
+        colorScheme = useDarkVariant ? QStringLiteral("AdwaitaHighcontrastInverse") : QStringLiteral("AdwaitaHighcontrast");
+    } else {
+        colorScheme = useDarkVariant ? QStringLiteral("AdwaitaDark") : QStringLiteral("Adwaita");
+    }
+
+    return QStandardPaths::locate(QStandardPaths::GenericDataLocation, QStringLiteral("color-schemes/") + colorScheme + QStringLiteral(".colors"));
+}
+
 void GnomeSettings::loadPalette()
 {
     if (useGtkThemeHighContrastVariant()) {
@@ -264,6 +276,14 @@ void GnomeSettings::loadPalette()
     } else {
         m_palette = new QPalette(Adwaita::Colors::palette(useGtkThemeDarkVariant() ? Adwaita::ColorVariant::AdwaitaDark : Adwaita::ColorVariant::Adwaita));
     }
+
+    const QString colorSchemePath = colorScheme(useGtkThemeHighContrastVariant(), useGtkThemeDarkVariant());
+    if (colorSchemePath.isEmpty()) {
+        qCWarning(QGnomePlatform) << "Could not find color scheme " << colorSchemePath;
+        return;
+    }
+
+    qApp->setProperty("KDE_COLOR_SCHEME_PATH", colorSchemePath);
 }
 
 void GnomeSettings::onCursorBlinkTimeChanged()
