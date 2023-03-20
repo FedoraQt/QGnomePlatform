@@ -1,3 +1,4 @@
+add_subdirectory(color-schemes)
 add_subdirectory(common)
 
 if (NOT DISABLE_DECORATION_SUPPORT)
