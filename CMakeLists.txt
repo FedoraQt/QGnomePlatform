@@ -36,6 +36,7 @@ find_package(Qt${QT_VERSION_MAJOR} ${QT_MIN_VERSION} CONFIG REQUIRED COMPONENTS
     DBus
     Gui
     Widgets
+    QuickControls2
 )
 
 find_package(Qt${QT_VERSION_MAJOR}Gui ${QT_MIN_VERSION} CONFIG REQUIRED Private)
@@ -50,6 +51,17 @@ if (USE_QT6)
 else()
     find_package(AdwaitaQt "1.4.2" REQUIRED)
 endif()
+
+
+if (NOT USE_QT6)
+    find_package(KF5QQC2DesktopStyle)
+    set_package_properties(KF5QQC2DesktopStyle PROPERTIES
+        DESCRIPTION "Styling for QtQuick Controls 2 applications"
+        TYPE RUNTIME)
+else()
+    # TODO, the desktop style for Qt6 is not yet released
+endif()
+
 
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(GTK+3 REQUIRED IMPORTED_TARGET gtk+-3.0)
