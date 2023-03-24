@@ -25,6 +25,8 @@
 
 #include <QApplication>
 #include <QGuiApplication>
+#include <QLoggingCategory>
+#include <QQuickStyle>
 #include <QStyleFactory>
 
 #undef signals
@@ -42,6 +44,8 @@
 #if QT_VERSION > 0x060000
 #include <QtGui/private/qgenericunixthemes_p.h>
 #endif
+
+Q_LOGGING_CATEGORY(QGnomePlatformThemeLog, "qt.qpa.qgnomeplatform.theme")
 
 void gtkMessageHandler(const gchar *log_domain, GLogLevelFlags log_level, const gchar *message, gpointer unused_data)
 {
@@ -87,6 +91,29 @@ QGnomePlatformTheme::QGnomePlatformTheme()
     // Load QGnomeTheme
     m_platformTheme = QGenericUnixTheme::createUnixTheme(QLatin1String("gnome"));
 #endif
+
+    // Configure the Qt Quick Controls 2 style to the KDE desktop style,
+    // Which passes the QtWidgets theme through to Qt Quick Controls.
+    // From https://invent.kde.org/plasma/plasma-integration/-/blob/02fe12a55522a43de3efa6de2185a695ff2a576a/src/platformtheme/kdeplatformtheme.cpp#L582
+
+    // if the user has explicitly set something else, don't meddle
+    // Also ignore the default Fusion style
+    if (!QQuickStyle::name().isEmpty() && QQuickStyle::name() != QLatin1String("Fusion")) {
+        return;
+    }
+
+    // Unfortunately we only have a way to check this on Qt5
+    // On Qt6 this should just fall back to the Fusion style automatically.
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
+    if (!QQuickStyle::availableStyles().contains(QStringLiteral("org.kde.desktop"))) {
+        qCWarning(QGnomePlatformThemeLog) << "The desktop style for QtQuick Controls 2 applications"
+                                          << "is not available on the system (qqc2-desktop-style)."
+                                          << "The application may look broken.";
+        return;
+    }
+#endif
+
+    QQuickStyle::setStyle(QStringLiteral("org.kde.desktop"));
 }
 
 QGnomePlatformTheme::~QGnomePlatformTheme()

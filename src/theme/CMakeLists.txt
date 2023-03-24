@@ -16,6 +16,7 @@ target_link_libraries(qgnomeplatformtheme
     Qt${QT_VERSION_MAJOR}::DBus
     Qt${QT_VERSION_MAJOR}::Gui
     Qt${QT_VERSION_MAJOR}::GuiPrivate
+    Qt${QT_VERSION_MAJOR}::QuickControls2
     ${ADWAITAQT_LIBRARIES}
     PkgConfig::GTK+3
 )
