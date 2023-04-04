@@ -83,7 +83,7 @@ QGnomePlatformTheme::QGnomePlatformTheme()
     g_type_ensure(PANGO_TYPE_FONT_FAMILY);
     g_type_ensure(PANGO_TYPE_FONT_FACE);
 
-#if QT_VERSION > 0x060000
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
     // Load QGnomeTheme
     m_platformTheme = QGenericUnixTheme::createUnixTheme(QLatin1String("gnome"));
 #endif
@@ -148,7 +148,7 @@ QPlatformDialogHelper *QGnomePlatformTheme::createPlatformDialogHelper(QPlatform
     }
 }
 
-#if QT_VERSION < 0x060000
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
 #ifndef QT_NO_SYSTEMTRAYICON
 static bool isDBusTrayAvailable()
 {
@@ -169,7 +169,7 @@ static bool isDBusTrayAvailable()
 #ifndef QT_NO_SYSTEMTRAYICON
 QPlatformSystemTrayIcon *QGnomePlatformTheme::createPlatformSystemTrayIcon() const
 {
-#if QT_VERSION < 0x060000
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
     if (isDBusTrayAvailable()) {
         return new QDBusTrayIcon();
     }
@@ -182,7 +182,12 @@ QPlatformSystemTrayIcon *QGnomePlatformTheme::createPlatformSystemTrayIcon() con
 }
 #endif
 
-#if QT_VERSION > 0x060300
+#if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
+Qt::ColorScheme QGnomePlatformTheme::colorScheme() const
+{
+    return GnomeSettings::getInstance().useGtkThemeDarkVariant() ? Qt::ColorScheme::Dark : Qt::ColorScheme::Light;
+}
+#elif QT_VERSION >= QT_VERSION_CHECK(6, 3, 0)
 QPlatformTheme::Appearance QGnomePlatformTheme::appearance() const
 {
     return GnomeSettings::getInstance().useGtkThemeDarkVariant() ? Appearance::Dark : Appearance::Light;
