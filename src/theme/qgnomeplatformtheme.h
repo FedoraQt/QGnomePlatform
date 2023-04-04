@@ -39,12 +39,14 @@ public:
 #ifndef QT_NO_SYSTEMTRAYICON
     QPlatformSystemTrayIcon *createPlatformSystemTrayIcon() const Q_DECL_OVERRIDE;
 #endif
-#if QT_VERSION > 0x060300
+#if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
+    Qt::ColorScheme colorScheme() const Q_DECL_OVERRIDE;
+#elif QT_VERSION >= QT_VERSION_CHECK(6, 3, 0)
     QPlatformTheme::Appearance appearance() const Q_DECL_OVERRIDE;
 #endif
 
 private:
-#if QT_VERSION > 0x060000
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
     // Used to load Qt's internall platform theme to get access to
     // non-public stuff, like QDBusTrayIcon
     QPlatformTheme *m_platformTheme = nullptr;
