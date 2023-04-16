@@ -58,6 +58,7 @@ GSettingsHintProvider::GSettingsHintProvider(QObject *parent)
 
     // Watch for changes
     QStringList watchListDesktopInterface = {"changed::gtk-theme",
+                                             "changed::color-scheme",
                                              "changed::icon-theme",
                                              "changed::cursor-blink-time",
                                              "changed::font-name",
@@ -76,6 +77,8 @@ GSettingsHintProvider::GSettingsHintProvider(QObject *parent)
     for (const QString &watchedProperty : watchListWmPreferences) {
         g_signal_connect(m_gnomeDesktopSettings, watchedProperty.toStdString().c_str(), G_CALLBACK(gsettingPropertyChanged), this);
     }
+
+    m_canRelyOnAppearance = true;
 
     loadCursorBlinkTime();
     loadCursorSize();
@@ -104,7 +107,7 @@ void GSettingsHintProvider::gsettingPropertyChanged(GSettings *settings, gchar *
 
     qCDebug(QGnomePlatformGSettingsHintProvider) << "GSetting property change: " << key;
 
-    if (changedProperty == QStringLiteral("gtk-theme")) {
+    if (changedProperty == QStringLiteral("gtk-theme") || changedProperty == QStringLiteral("color-scheme")) {
         hintProvider->loadTheme();
         Q_EMIT hintProvider->themeChanged();
     } else if (changedProperty == QStringLiteral("icon-theme")) {
@@ -171,10 +174,9 @@ void GSettingsHintProvider::loadTitlebar()
 
 void GSettingsHintProvider::loadTheme()
 {
-    bool isDarkTheme;
-    g_object_get(gtk_settings_get_default(), "gtk-application-prefer-dark-theme", &isDarkTheme, NULL);
+    const QString colorScheme = getSettingsProperty<QString>(QStringLiteral("color-scheme"));
     const QString theme = getSettingsProperty<QString>(QStringLiteral("gtk-theme"));
-    const GnomeSettings::Appearance appearance = isDarkTheme ? GnomeSettings::PreferDark : GnomeSettings::PreferLight;
+    const GnomeSettings::Appearance appearance = colorScheme == QStringLiteral("prefer-dark") ? GnomeSettings::PreferDark : GnomeSettings::PreferLight;
     setTheme(theme, appearance);
 }
 
