@@ -51,7 +51,9 @@
 
 #undef signals
 #include <gdk/gdk.h>
+#ifdef GDK_WINDOWING_X11
 #include <gdk/gdkx.h>
+#endif
 #include <gtk/gtk.h>
 #include <pango/pango.h>
 
