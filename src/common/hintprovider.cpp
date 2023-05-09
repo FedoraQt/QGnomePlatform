@@ -24,6 +24,7 @@
 
 #include <QDialogButtonBox>
 #include <QFont>
+#include <QGuiApplication>
 #include <QLoggingCategory>
 
 Q_LOGGING_CATEGORY(QGnomePlatformHintProvider, "qt.qpa.qgnomeplatform.hintprovider")
@@ -66,13 +67,26 @@ void HintProvider::setCursorTheme(const QString &cursorTheme)
 
 void HintProvider::setIconTheme(const QString &iconTheme)
 {
-    if (!iconTheme.isEmpty()) {
-        qCDebug(QGnomePlatformHintProvider) << "Icon theme: " << iconTheme;
-        m_hints[QPlatformTheme::SystemIconThemeName] = iconTheme;
-        m_hints[QPlatformTheme::SystemIconFallbackThemeName] = "Adwaita";
+    bool useDarkTheme = false;
+    if (m_canRelyOnAppearance) {
+        useDarkTheme = m_appearance == GnomeSettings::PreferDark;
     } else {
-        m_hints[QPlatformTheme::SystemIconThemeName] = "Adwaita";
+        useDarkTheme = m_gtkTheme.toLower().contains("-dark") || m_gtkTheme.toLower().endsWith("inverse") || m_appearance == GnomeSettings::PreferDark;
     }
+
+    const QString breezeTheme = useDarkTheme ? QStringLiteral("breeze-dark") : QStringLiteral("breeze");
+    const QString adwaitaTheme = QStringLiteral("Adwaita");
+
+    if (!iconTheme.isEmpty() && iconTheme != adwaitaTheme) {
+        m_hints[QPlatformTheme::SystemIconThemeName] = iconTheme;
+        m_hints[QPlatformTheme::SystemIconFallbackThemeName] = adwaitaTheme;
+    } else {
+        m_hints[QPlatformTheme::SystemIconThemeName] = adwaitaTheme;
+        m_hints[QPlatformTheme::SystemIconFallbackThemeName] = breezeTheme;
+    }
+
+    qCDebug(QGnomePlatformHintProvider) << "Icon theme: " << m_hints[QPlatformTheme::SystemIconThemeName].toString();
+    qCDebug(QGnomePlatformHintProvider) << "Fallback icon theme: " << m_hints[QPlatformTheme::SystemIconFallbackThemeName].toString();
 }
 
 void HintProvider::setFonts(const QString &systemFont, const QString &monospaceFont, const QString &titlebarFont)

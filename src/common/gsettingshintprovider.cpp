@@ -83,11 +83,11 @@ GSettingsHintProvider::GSettingsHintProvider(QObject *parent)
     loadCursorBlinkTime();
     loadCursorSize();
     loadCursorTheme();
-    loadIconTheme();
     loadFonts();
     loadStaticHints();
     loadTheme();
     loadTitlebar();
+    loadIconTheme();
 }
 
 GSettingsHintProvider::~GSettingsHintProvider()

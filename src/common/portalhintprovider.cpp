@@ -104,11 +104,11 @@ void PortalHintProvider::onSettingsReceived()
     loadCursorBlinkTime();
     loadCursorSize();
     loadCursorTheme();
-    loadIconTheme();
     loadFonts();
     loadStaticHints();
     loadTheme();
     loadTitlebar();
+    loadIconTheme();
 }
 void PortalHintProvider::settingChanged(const QString &group, const QString &key, const QDBusVariant &value)
 {
