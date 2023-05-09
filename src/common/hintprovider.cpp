@@ -57,11 +57,17 @@ void HintProvider::setCursorBlinkTime(int cursorBlinkTime)
 void HintProvider::setCursorSize(int cursorSize)
 {
     m_cursorSize = cursorSize;
+#if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
+    m_hints[QPlatformTheme::MouseCursorSize] = QSize(cursorSize, cursorSize);
+#endif
 }
 
 void HintProvider::setCursorTheme(const QString &cursorTheme)
 {
     m_cursorTheme = cursorTheme;
+#if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
+    m_hints[QPlatformTheme::MouseCursorTheme] = cursorTheme;
+#endif
 }
 
 void HintProvider::setIconTheme(const QString &iconTheme)
