@@ -129,7 +129,6 @@ void PortalHintProvider::settingChanged(const QString &group, const QString &key
         Q_EMIT fontChanged();
     } else if (key == QStringLiteral("cursor-size")) {
         loadCursorSize();
-        ;
         Q_EMIT fontChanged();
     } else if (key == QStringLiteral("cursor-theme")) {
         loadCursorTheme();
