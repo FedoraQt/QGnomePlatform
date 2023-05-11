@@ -2,7 +2,7 @@ project(QGnomePlatform)
 
 cmake_minimum_required(VERSION 3.0)
 
-set(QGNOMEPLATFORM_VERSION "0.9.0")
+set(QGNOMEPLATFORM_VERSION "0.9.1")
 
 option(USE_QT6 "Use Qt6 instead of Qt5" OFF)
 
