@@ -102,18 +102,17 @@ QGnomePlatformTheme::QGnomePlatformTheme()
         return;
     }
 
-    // Unfortunately we only have a way to check this on Qt5
-    // On Qt6 this should just fall back to the Fusion style automatically.
 #if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
+    // Unfortunately we only have a way to check this on Qt5
     if (!QQuickStyle::availableStyles().contains(QStringLiteral("org.kde.desktop"))) {
         qCWarning(QGnomePlatformThemeLog) << "The desktop style for QtQuick Controls 2 applications"
                                           << "is not available on the system (qqc2-desktop-style)."
                                           << "The application may look broken.";
         return;
     }
-#endif
 
     QQuickStyle::setStyle(QStringLiteral("org.kde.desktop"));
+#endif
 }
 
 QGnomePlatformTheme::~QGnomePlatformTheme()
