@@ -166,9 +166,9 @@ QMargins QGnomePlatformDecoration::margins(MarginsType marginsType) const
         }
 
         // Otherwise include borders and shadows only on non-tiled side
-        return QMargins(tiledLeft ? 0 : WINDOW_BORDER_WIDTH + SHADOWS_WIDTH,
+        return QMargins(tiledLeft ? 0 : SHADOWS_WIDTH + (tiledRight ? 0 : WINDOW_BORDER_WIDTH),
                         tiledTop ? TITLEBAR_HEIGHT : TITLEBAR_HEIGHT + WINDOW_BORDER_WIDTH + SHADOWS_WIDTH,
-                        tiledRight ? 0 : WINDOW_BORDER_WIDTH + SHADOWS_WIDTH,
+                        tiledRight ? 0 :  SHADOWS_WIDTH + (tiledLeft ? 0 : WINDOW_BORDER_WIDTH),
                         tiledBottom ? 0 : WINDOW_BORDER_WIDTH + SHADOWS_WIDTH);
 
     } else { // (marginsType == ShadowsOnly)
@@ -345,7 +345,7 @@ void QGnomePlatformDecoration::paint(QPaintDevice *device)
         // Left
         if (!tiledLeft) {
             // Assume tiled-left also means it will be tiled-top and tiled bottom
-            borderPath.addRect(SHADOWS_WIDTH,
+            borderPath.addRect(SHADOWS_WIDTH + (tiledRight ? -WINDOW_BORDER_WIDTH : 0),
                                tiledTop || tiledBottom ? 0 : margins().top(),
                                WINDOW_BORDER_WIDTH,
                                tiledTop || tiledBottom ? surfaceRect.height() : surfaceRect.height() - margins().top() - SHADOWS_WIDTH - WINDOW_BORDER_WIDTH);
