@@ -45,7 +45,6 @@
 
 #include <QtGui/QColor>
 #include <QtGui/QCursor>
-#include <QtGui/QLinearGradient>
 #include <QtGui/QPainter>
 #include <QtGui/QPainterPath>
 #include <QtGui/QPalette>
@@ -204,6 +203,8 @@ void QGnomePlatformDecoration::paint(QPaintDevice *device)
     const bool active = window()->handle()->isActive();
 #endif
 
+    const bool maximized = windowStates & Qt::WindowMaximized;
+
     const QRect surfaceRect = windowContentGeometry();
     const QColor borderColor = active ? m_borderColor : m_borderInactiveColor;
 
@@ -211,7 +212,6 @@ void QGnomePlatformDecoration::paint(QPaintDevice *device)
     p.setRenderHint(QPainter::Antialiasing);
 
 #ifdef DECORATION_SHADOWS_SUPPORT // Qt 6.2.0+ or patched QtWayland
-    const bool maximized = windowStates & Qt::WindowMaximized;
     const bool tiledLeft = waylandWindow()->toplevelWindowTilingStates() & QWaylandWindow::WindowTiledLeft;
     const bool tiledRight = waylandWindow()->toplevelWindowTilingStates() & QWaylandWindow::WindowTiledRight;
     const bool tiledTop = waylandWindow()->toplevelWindowTilingStates() & QWaylandWindow::WindowTiledTop;
@@ -323,10 +323,7 @@ void QGnomePlatformDecoration::paint(QPaintDevice *device)
         roundedRect.addRoundedRect(margins().left(), margins().bottom(), surfaceRect.width() - margins().left() - margins().right(), margins().top() + 8, 8, 8);
     }
 
-    QLinearGradient gradient(margins().left(), margins().top() + 6, margins().left(), 1);
-    gradient.setColorAt(0, active ? m_backgroundColorStart : m_backgroundInactiveColor);
-    gradient.setColorAt(1, active ? m_backgroundColorEnd : m_backgroundInactiveColor);
-    p.fillPath(roundedRect.simplified(), gradient);
+    p.fillPath(roundedRect.simplified(), active ? m_backgroundColor : m_backgroundInactiveColor);
 
     // Border around
     // ********************************
@@ -405,10 +402,7 @@ void QGnomePlatformDecoration::paint(QPaintDevice *device)
             .addRoundedRect(WINDOW_BORDER_WIDTH, WINDOW_BORDER_WIDTH, surfaceRect.width() - margins().left() - margins().right(), margins().top() + 8, 8, 8);
     }
 
-    QLinearGradient gradient(margins().left(), margins().top() + 6, margins().left(), 1);
-    gradient.setColorAt(0, active ? m_backgroundColorStart : m_backgroundInactiveColor);
-    gradient.setColorAt(1, active ? m_backgroundColorEnd : m_backgroundInactiveColor);
-    p.fillPath(roundedRect.simplified(), gradient);
+    p.fillPath(roundedRect.simplified(), active ? m_backgroundColor : m_backgroundInactiveColor);
 
     // Border around
     // ********************************
@@ -654,13 +648,13 @@ void QGnomePlatformDecoration::loadConfiguration()
     const QPalette &palette(Adwaita::Colors::palette(m_adwaitaVariant));
 
     m_foregroundColor = palette.color(QPalette::Active, QPalette::WindowText);
+    m_backgroundColor = darkVariant ? QColor("#303030") : QColor("#ebebeb");
+    m_backgroundInactiveColor = darkVariant ? QColor("#242424") : QColor("#fafafa");
     m_foregroundInactiveColor = palette.color(QPalette::Inactive, QPalette::WindowText);
-    m_backgroundColorStart = darkVariant ? QColor("#262626") : QColor("#dad6d2"); // Adwaita GtkHeaderBar color
-    m_backgroundColorEnd = darkVariant ? QColor("#2b2b2b") : QColor("#e1dedb"); // Adwaita GtkHeaderBar color
-    m_foregroundInactiveColor = darkVariant ? QColor("#919190") : QColor("#929595");
-    m_backgroundInactiveColor = darkVariant ? QColor("#353535") : QColor("#f6f5f4");
-    m_borderColor = darkVariant ? Adwaita::Colors::transparentize(QColor("#1b1b1b"), 0.1) : Adwaita::Colors::transparentize(QColor("black"), 0.77);
-    m_borderInactiveColor = darkVariant ? Adwaita::Colors::transparentize(QColor("#1b1b1b"), 0.1) : Adwaita::Colors::transparentize(QColor("black"), 0.82);
+    m_borderColor = darkVariant ? QColor("#3b3b3b") : QColor("#dbdbdb");
+    m_borderInactiveColor = darkVariant ? QColor("#303030") : QColor("#dbdbdb");
+    m_buttonBackgroundColor = darkVariant ? QColor("#444444") : QColor("#d8d8d8");
+    m_buttonHoverColor = darkVariant ? QColor("#4a4a4a") : QColor("#c9c9c9");
 }
 
 void QGnomePlatformDecoration::forceRepaint()
@@ -787,27 +781,21 @@ void QGnomePlatformDecoration::processMouseRight(QWaylandInputDevice *inputDevic
 
 void QGnomePlatformDecoration::renderButton(QPainter *painter, const QRectF &rect, Adwaita::ButtonType button, bool renderFrame, bool sunken)
 {
-#ifdef DECORATION_SHADOWS_SUPPORT // Qt 6.2.0+ or patched QtWayland
-    const Qt::WindowStates windowStates = waylandWindow()->windowStates();
-    const bool active = windowStates & Qt::WindowActive;
-#else
-    const Qt::WindowStates windowStates = window()->windowStates();
     const bool active = window()->handle()->isActive();
-#endif
 
     Adwaita::StyleOptions decorationButtonStyle(painter, QRect());
     decorationButtonStyle.setColor(active ? m_foregroundColor : m_foregroundInactiveColor);
 
-    if (renderFrame) {
-        QRect buttonRect(static_cast<int>(rect.x()), static_cast<int>(rect.y()), BUTTON_WIDTH, BUTTON_WIDTH);
-        Adwaita::StyleOptions styleOptions(painter, buttonRect);
-        styleOptions.setMouseOver(true);
-        styleOptions.setSunken(sunken);
-        styleOptions.setColorVariant(m_adwaitaVariant);
-        styleOptions.setColor(Adwaita::Colors::buttonBackgroundColor(styleOptions));
-        styleOptions.setOutlineColor(Adwaita::Colors::buttonOutlineColor(styleOptions));
-        Adwaita::Renderer::renderFlatRoundedButtonFrame(styleOptions);
-    }
+    // Render button frame
+
+    QRect buttonRect(static_cast<int>(rect.x()), static_cast<int>(rect.y()), BUTTON_WIDTH, BUTTON_WIDTH);
+    Adwaita::StyleOptions styleOptions(painter, buttonRect);
+    styleOptions.setMouseOver(true);
+    styleOptions.setSunken(sunken);
+    styleOptions.setColorVariant(m_adwaitaVariant);
+    styleOptions.setColor(renderFrame ? m_buttonHoverColor : m_buttonBackgroundColor);
+    Adwaita::Renderer::renderFlatRoundedButtonFrame(styleOptions);
+
     decorationButtonStyle.setRect(
         QRect(static_cast<int>(rect.x()) + (BUTTON_WIDTH / 4), static_cast<int>(rect.y()) + (BUTTON_WIDTH / 4), BUTTON_WIDTH / 2, BUTTON_WIDTH / 2));
     Adwaita::Renderer::renderDecorationButton(decorationButtonStyle, button);

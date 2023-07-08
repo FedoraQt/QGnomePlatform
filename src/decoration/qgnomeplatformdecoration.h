@@ -82,13 +82,14 @@ private:
     QRectF minimizeButtonRect() const;
 
     // Colors
-    QColor m_backgroundColorStart;
-    QColor m_backgroundColorEnd;
+    QColor m_backgroundColor;
+    QColor m_foregroundColor;
     QColor m_backgroundInactiveColor;
+    QColor m_foregroundInactiveColor;
     QColor m_borderColor;
     QColor m_borderInactiveColor;
-    QColor m_foregroundColor;
-    QColor m_foregroundInactiveColor;
+    QColor m_buttonBackgroundColor;
+    QColor m_buttonHoverColor;
 
     // Buttons
     bool m_closeButtonHovered;
