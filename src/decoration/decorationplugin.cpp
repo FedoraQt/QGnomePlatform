@@ -23,7 +23,7 @@
 QWaylandAbstractDecoration *QGnomePlatformDecorationPlugin::create(const QString &key, const QStringList &paramList)
 {
     Q_UNUSED(paramList)
-    if (key == "gnome" || key == "gtk3" || key == "qgnomeplatform")
+    if (key == "gnome" || key == "qgnomeplatform")
         return new QGnomePlatformDecoration();
     return nullptr;
 }
