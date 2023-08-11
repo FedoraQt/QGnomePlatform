@@ -1,6 +1,8 @@
 QGnomePlatform
 ==========
 
+# QGnomePlatform project is unmaintained a no longer actively developed.
+
 QGnomePlatform is a Qt Platform Theme designed to use as many of the GNOME settings as possible in unmodified Qt applications. It allows Qt applications to fit into the environment as well as possible.
 
 ## How to compile
